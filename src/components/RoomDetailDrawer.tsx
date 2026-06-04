@@ -7,6 +7,8 @@ import { Photo } from "./Photo";
 import { FavoriteBadge, RatingPill, ScarcityBadge, ViewersNudge } from "./conversion";
 import { IconBed, IconCheck, IconClose, IconLeaf, IconShield, IconSun, IconUsers, IconWave } from "./icons";
 
+// ⚠️ DÉMO (en dur) : Mews n'expose pas d'équipements structurés sur les RoomCategories ici.
+// À remplacer par de vraies données équipements en production.
 const AMENITIES = [
   { icon: IconWave, label: "Vue lagon / jardin" },
   { icon: IconSun, label: "Terrasse privative" },

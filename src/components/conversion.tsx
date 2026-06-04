@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 import { eur } from "../lib/format";
 import { IconCheck, IconClock, IconFlame, IconHeart, IconLock, IconStar, IconTag, IconUsers } from "./icons";
 
+// ⚠️ DONNÉES DE DÉMONSTRATION (EN DUR) — leviers de conversion.
+// Tout ce fichier produit des valeurs *non issues de Mews* : notes & avis, « X personnes
+// consultent », « réservé N fois », badges marketing, minuteur, bandeaux d'urgence, copie
+// « annulation gratuite », etc. En production : brancher de vraies sources (avis clients,
+// politique d'annulation depuis les RateGroups Mews, etc.). Voir l'onglet « Sources des
+// données » du Dev Panel. NB : ScarcityBadge/SavingsBadge reçoivent des valeurs RÉELLES
+// (AvailableRoomCount / MaxPrice) — c'est l'appelant qui décide.
+
 // Pseudo-aléatoire déterministe (stable par chambre) pour les nudges de conversion.
 function hash(s: string): number {
   let h = 2166136261;

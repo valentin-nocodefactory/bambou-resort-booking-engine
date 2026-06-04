@@ -21,9 +21,11 @@ export function RoomCard({
   onDetails: () => void;
 }) {
   const cheapest = room.rates[0];
+  // RÉEL (Mews) : AvailableRoomCount → « Plus que N chambres ».
   const lowStock = room.availableRoomCount > 0 && room.availableRoomCount <= 3;
+  // ⚠️ DÉMO (en dur) : « Très demandé », note & nombre d'avis — générés, pas issus de Mews.
   const hot = !lowStock && seeded(room.categoryId, 0, 2) === 0;
-  const rating = (90 + (seeded(room.categoryId + "r", 0, 9))) / 10; // 9.0–9.9
+  const rating = (90 + seeded(room.categoryId + "r", 0, 9)) / 10; // 9.0–9.9
   const reviews = seeded(room.categoryId + "rc", 64, 540);
 
   return (

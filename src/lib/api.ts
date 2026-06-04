@@ -12,7 +12,7 @@ import type {
   ReservationStatusResult,
 } from "../types/mews";
 import { toUtc } from "./format";
-import { apiLog, summarize } from "./apiLog";
+import { apiLog } from "./apiLog";
 
 export class ApiError extends Error {
   status: number;
@@ -56,11 +56,11 @@ async function call<T>(path: string, init: RequestInit | undefined, meta: Meta):
 
   if (!res.ok) {
     const code = (data as { error?: string } | null)?.error ?? `http_${res.status}`;
-    apiLog.finish(id, { ok: false, status: res.status, durationMs: ms(), error: code, response: summarize(data) });
+    apiLog.finish(id, { ok: false, status: res.status, durationMs: ms(), error: code, response: data });
     throw new ApiError(code, res.status, data);
   }
 
-  apiLog.finish(id, { ok: true, status: res.status, durationMs: ms(), response: summarize(data) });
+  apiLog.finish(id, { ok: true, status: res.status, durationMs: ms(), response: data });
   return data as T;
 }
 
