@@ -173,6 +173,10 @@ configurée côté Mews. En sandbox : `https://pay.sandbox.datatrans.com/...` ; 
 - **Catégories d'âge** : remplacer `MEWS_ADULT/CHILD_AGE_CATEGORY_ID` par les UUID réels (visibles dans Mews) —
   ne pas s'appuyer sur les fallbacks demo.
 - **Visuels** : remplacer ceux de `src/lib/assets.ts` par les vrais (ou ceux des `RoomCategories` Mews via `ImageBaseUrl`).
+- **E-mails de confirmation** : envoyés par **Mews** (PMS), pas par le moteur. En prod, activer/configurer
+  les templates d'e-mails de confirmation côté établissement Mews → envoi auto au client (`Customer.Email`) à la
+  confirmation/paiement. La demo n'envoie pas d'e-mail (sandbox). _(Le moteur peut aussi envoyer un e-mail custom
+  ou une notif webhook en V2 — non câblé.)_
 - **Voie B** (optionnel) : brancher PCI Proxy une fois `PaymentGateway` configuré, retirer `sandbox.`.
 - Vérifier que `dist/` ne contient **aucun secret** (`grep -r "My Client" dist/` doit être vide).
 
