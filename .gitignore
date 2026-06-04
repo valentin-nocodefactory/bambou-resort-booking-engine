@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# Cloudflare / Wrangler
+.wrangler/
+.mf/
+
+# secrets & local env (JAMAIS committé)
+.dev.vars
+.env
+.env.*
+!.env.example
+
+# logs & os
+npm-debug.log*
+yarn-error.log*
+.DS_Store
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Claude Code local settings (permissions machine-locales)
+.claude/settings.local.json

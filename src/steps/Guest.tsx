@@ -1,0 +1,156 @@
+import { useEffect, useState } from "react";
+import { useBooking } from "../state/booking";
+import { EMAIL_RE } from "../lib/format";
+import { StepLayout } from "../components/StepLayout";
+import { IconArrowRight } from "../components/icons";
+
+const NATIONALITIES = [
+  ["FR", "France"],
+  ["BE", "Belgique"],
+  ["CH", "Suisse"],
+  ["LU", "Luxembourg"],
+  ["CA", "Canada"],
+  ["GB", "Royaume-Uni"],
+  ["US", "États-Unis"],
+  ["DE", "Allemagne"],
+  ["ES", "Espagne"],
+  ["IT", "Italie"],
+  ["NL", "Pays-Bas"],
+  ["PT", "Portugal"],
+];
+
+export function Guest() {
+  const { selectedRoom, selectedRate, guest, setGuest, goTo } = useBooking();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Garde-fou : pas de sélection → retour aux résultats.
+  useEffect(() => {
+    if (!selectedRoom || !selectedRate) goTo("results");
+  }, [selectedRoom, selectedRate, goTo]);
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const errs: Record<string, string> = {};
+    if (!guest.firstName.trim()) errs.firstName = "Prénom requis.";
+    if (!guest.lastName.trim()) errs.lastName = "Nom requis.";
+    if (!EMAIL_RE.test(guest.email.trim())) errs.email = "E-mail invalide.";
+    setErrors(errs);
+    if (Object.keys(errs).length === 0) goTo("extras");
+  }
+
+  return (
+    <StepLayout
+      title="Vos informations"
+      subtitle="Le voyageur principal de la réservation."
+      onBack={() => goTo("results")}
+      backLabel="Retour aux chambres"
+    >
+      <form onSubmit={submit} className="card space-y-5 p-5 sm:p-6" noValidate>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Prénom" error={errors.firstName} required>
+            <input
+              className="field-input"
+              value={guest.firstName}
+              autoComplete="given-name"
+              onChange={(e) => setGuest({ firstName: e.target.value })}
+            />
+          </Field>
+          <Field label="Nom" error={errors.lastName} required>
+            <input
+              className="field-input"
+              value={guest.lastName}
+              autoComplete="family-name"
+              onChange={(e) => setGuest({ lastName: e.target.value })}
+            />
+          </Field>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="E-mail" error={errors.email} required>
+            <input
+              type="email"
+              className="field-input"
+              value={guest.email}
+              autoComplete="email"
+              placeholder="vous@exemple.com"
+              onChange={(e) => setGuest({ email: e.target.value })}
+            />
+          </Field>
+          <Field label="Téléphone">
+            <input
+              type="tel"
+              className="field-input"
+              value={guest.telephone}
+              autoComplete="tel"
+              placeholder="+596 696 00 00 00"
+              onChange={(e) => setGuest({ telephone: e.target.value })}
+            />
+          </Field>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Nationalité">
+            <select
+              className="field-input"
+              value={guest.nationalityCode}
+              onChange={(e) => setGuest({ nationalityCode: e.target.value })}
+            >
+              {NATIONALITIES.map(([code, name]) => (
+                <option key={code} value={code}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+
+        <Field label="Demandes particulières (optionnel)">
+          <textarea
+            className="field-input min-h-[90px] resize-y"
+            value={guest.notes}
+            placeholder="Étage élevé, lit bébé, arrivée tardive…"
+            onChange={(e) => setGuest({ notes: e.target.value })}
+          />
+        </Field>
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-cream/60 p-3 text-sm text-ink/75">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 accent-turquoise"
+            checked={guest.sendMarketingEmails}
+            onChange={(e) => setGuest({ sendMarketingEmails: e.target.checked })}
+          />
+          Je souhaite recevoir les offres et nouvelles du Bambou Resort par e-mail.
+        </label>
+
+        <div className="flex justify-end pt-1">
+          <button type="submit" className="btn-primary">
+            Continuer vers les extras <IconArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      </form>
+    </StepLayout>
+  );
+}
+
+function Field({
+  label,
+  error,
+  required,
+  children,
+}: {
+  label: string;
+  error?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="field-label">
+        {label} {required && <span className="text-creole">*</span>}
+      </label>
+      {children}
+      {error && <p className="mt-1 text-xs font-medium text-red-600">{error}</p>}
+    </div>
+  );
+}

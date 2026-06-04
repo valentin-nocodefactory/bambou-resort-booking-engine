@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cream font-body text-ink antialiased;
+    font-feature-settings: "ss01";
+  }
+
+  /* Titres : serif Fraunces, optical sizing pour l'élégance éditoriale */
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+    font-optical-sizing: auto;
+  }
+
+  /* Accents éditoriaux en italique (ex. « à l'essentiel ») */
+  .accent {
+    @apply font-display italic text-creole;
+    font-weight: 500;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold
+      transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-turquoise-vivid
+      focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-turquoise text-white shadow-card hover:bg-teal-deep hover:shadow-float;
+  }
+  .btn-accent {
+    @apply btn bg-creole text-ink shadow-card hover:brightness-105;
+  }
+  .btn-ghost {
+    @apply btn border border-turquoise/30 bg-white/70 text-teal-deep hover:border-turquoise hover:bg-white;
+  }
+  .btn-link {
+    @apply inline-flex items-center gap-1.5 text-sm font-semibold text-turquoise underline-offset-4 hover:text-teal-deep hover:underline;
+  }
+
+  .card {
+    @apply rounded-xl2 border border-ink/5 bg-white shadow-card;
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-teal-deep/70;
+  }
+  .field-input {
+    @apply w-full rounded-xl border border-ink/15 bg-white px-4 py-3 text-ink shadow-sm outline-none
+      transition focus:border-turquoise focus:ring-2 focus:ring-turquoise/30 placeholder:text-ink/35;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full bg-turquoise/10 px-3 py-1 text-xs font-semibold text-teal-deep;
+  }
+}
+
+@layer utilities {
+  /* Léger grain / fondu pour les fonds sombres du hero */
+  .text-balance {
+    text-wrap: balance;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

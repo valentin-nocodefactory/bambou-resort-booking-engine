@@ -1,0 +1,16 @@
+# Copiez ce fichier en `.dev.vars` (gitignored) pour le développement local.
+# `wrangler pages dev` le lit automatiquement. NE COMMITTEZ JAMAIS `.dev.vars`.
+
+MEWS_BASE_URL=https://api.mews-demo.com
+MEWS_APP_BASE_URL=https://app.mews-demo.com
+
+# Booking Engine API only. Seule valeur qui passe (200) sur la demo aujourd'hui.
+# 🔁 À remplacer par "Hotel Bambou 1.0" une fois la chaîne Client activée par Mews.
+MEWS_CLIENT=My Client 1.0.0
+
+MEWS_HOTEL_ID=3edbe1b4-6739-40b7-81b3-d369d9469c48
+MEWS_CONFIG_ID=93e27b6f-cba7-4e0b-a24a-819e1b7b388a
+
+# Catégories d'âge (demo, vérifiées). En prod : UUID réels de l'entreprise.
+MEWS_ADULT_AGE_CATEGORY_ID=5485e2f3-4034-4ca1-8a8f-ade30114c61f
+MEWS_CHILD_AGE_CATEGORY_ID=fece4b6b-39fa-4ccd-9909-afba0092eeb1

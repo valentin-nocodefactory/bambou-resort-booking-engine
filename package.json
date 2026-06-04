@@ -1,0 +1,33 @@
+{
+  "name": "bambou-booking",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Moteur de réservation sur-mesure Bambou Resort (Mews Booking Engine API) — Cloudflare Pages + Functions",
+  "scripts": {
+    "dev": "concurrently -k -n functions,web -c magenta,cyan \"npm:dev:functions\" \"npm:dev:web\"",
+    "dev:functions": "wrangler pages dev public --port 8788 --ip 127.0.0.1",
+    "dev:web": "vite",
+    "build": "vite build",
+    "preview": "npm run build && wrangler pages dev dist --port 8788 --ip 127.0.0.1",
+    "deploy": "npm run build && wrangler pages deploy dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240314.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.2.1",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.20",
+    "wrangler": "^4.0.0"
+  }
+}
