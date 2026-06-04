@@ -1,63 +1,50 @@
 import { useState } from "react";
+import { AsYouType, getCountryCallingCode, isValidPhoneNumber, parsePhoneNumber, type CountryCode } from "libphonenumber-js";
+import { IconCheck } from "./icons";
 
-interface Country {
-  code: string;
-  name: string;
-  dial: string;
-  flag: string;
-  groups: number[]; // découpage du numéro national pour le masque
-}
-
-// Liste ciblée (Martinique/France en tête car c'est le marché du resort).
-const COUNTRIES: Country[] = [
-  { code: "FR", name: "France", dial: "33", flag: "🇫🇷", groups: [1, 2, 2, 2, 2] },
-  { code: "MQ", name: "Martinique", dial: "596", flag: "🇲🇶", groups: [3, 2, 2, 2] },
-  { code: "GP", name: "Guadeloupe", dial: "590", flag: "🇬🇵", groups: [3, 2, 2, 2] },
-  { code: "GF", name: "Guyane", dial: "594", flag: "🇬🇫", groups: [3, 2, 2, 2] },
-  { code: "BE", name: "Belgique", dial: "32", flag: "🇧🇪", groups: [3, 2, 2, 2] },
-  { code: "CH", name: "Suisse", dial: "41", flag: "🇨🇭", groups: [2, 3, 2, 2] },
-  { code: "LU", name: "Luxembourg", dial: "352", flag: "🇱🇺", groups: [3, 3, 3] },
-  { code: "CA", name: "Canada", dial: "1", flag: "🇨🇦", groups: [3, 3, 4] },
-  { code: "US", name: "États-Unis", dial: "1", flag: "🇺🇸", groups: [3, 3, 4] },
-  { code: "GB", name: "Royaume-Uni", dial: "44", flag: "🇬🇧", groups: [4, 6] },
-  { code: "DE", name: "Allemagne", dial: "49", flag: "🇩🇪", groups: [3, 3, 4] },
-  { code: "ES", name: "Espagne", dial: "34", flag: "🇪🇸", groups: [3, 2, 2, 2] },
-  { code: "IT", name: "Italie", dial: "39", flag: "🇮🇹", groups: [3, 3, 4] },
-  { code: "NL", name: "Pays-Bas", dial: "31", flag: "🇳🇱", groups: [1, 4, 4] },
-  { code: "PT", name: "Portugal", dial: "351", flag: "🇵🇹", groups: [3, 3, 3] },
-  { code: "MA", name: "Maroc", dial: "212", flag: "🇲🇦", groups: [3, 3, 3] },
-  { code: "SN", name: "Sénégal", dial: "221", flag: "🇸🇳", groups: [2, 3, 2, 2] },
-  { code: "BR", name: "Brésil", dial: "55", flag: "🇧🇷", groups: [2, 5, 4] },
+// Liste ciblée (Martinique/France en tête — marché du resort). Code ISO + drapeau +
+// exemple national (placeholder). Indicatif & formatage/validation = libphonenumber-js.
+const COUNTRIES: { code: CountryCode; name: string; flag: string; example: string }[] = [
+  { code: "FR", name: "France", flag: "🇫🇷", example: "06 12 34 56 78" },
+  { code: "MQ", name: "Martinique", flag: "🇲🇶", example: "0696 12 34 56" },
+  { code: "GP", name: "Guadeloupe", flag: "🇬🇵", example: "0690 12 34 56" },
+  { code: "GF", name: "Guyane", flag: "🇬🇫", example: "0694 12 34 56" },
+  { code: "BE", name: "Belgique", flag: "🇧🇪", example: "0470 12 34 56" },
+  { code: "CH", name: "Suisse", flag: "🇨🇭", example: "078 123 45 67" },
+  { code: "LU", name: "Luxembourg", flag: "🇱🇺", example: "621 123 456" },
+  { code: "CA", name: "Canada", flag: "🇨🇦", example: "(506) 234-5678" },
+  { code: "US", name: "États-Unis", flag: "🇺🇸", example: "(201) 555-0123" },
+  { code: "GB", name: "Royaume-Uni", flag: "🇬🇧", example: "07400 123456" },
+  { code: "DE", name: "Allemagne", flag: "🇩🇪", example: "01512 3456789" },
+  { code: "ES", name: "Espagne", flag: "🇪🇸", example: "612 34 56 78" },
+  { code: "IT", name: "Italie", flag: "🇮🇹", example: "312 345 6789" },
+  { code: "NL", name: "Pays-Bas", flag: "🇳🇱", example: "06 12345678" },
+  { code: "PT", name: "Portugal", flag: "🇵🇹", example: "912 345 678" },
+  { code: "MA", name: "Maroc", flag: "🇲🇦", example: "0650 123456" },
+  { code: "SN", name: "Sénégal", flag: "🇸🇳", example: "70 123 45 67" },
+  { code: "BR", name: "Brésil", flag: "🇧🇷", example: "11 96123-4567" },
 ];
 
-const DEFAULT = COUNTRIES[0];
-const byCode = (code?: string) => COUNTRIES.find((c) => c.code === code);
-
-function formatNational(digits: string, groups: number[]): string {
-  const parts: string[] = [];
-  let i = 0;
-  for (const g of groups) {
-    if (i >= digits.length) break;
-    parts.push(digits.slice(i, i + g));
-    i += g;
+const dialOf = (c: CountryCode) => {
+  try {
+    return getCountryCallingCode(c);
+  } catch {
+    return "";
   }
-  if (i < digits.length) parts.push(digits.slice(i));
-  return parts.join(" ");
+};
+
+function safeParse(value: string): { country: CountryCode; national: string } | null {
+  if (!value) return null;
+  try {
+    const pn = parsePhoneNumber(value);
+    return pn?.country ? { country: pn.country, national: pn.formatNational() } : null;
+  } catch {
+    return null;
+  }
 }
 
-// Sépare une valeur E.164 (+33612…) en pays + chiffres nationaux.
-function parseValue(value: string): { country: Country; national: string } | null {
-  if (!value || !value.startsWith("+")) return null;
-  const rest = value.slice(1).replace(/\D/g, "");
-  // plus long indicatif qui matche
-  const match = [...COUNTRIES].sort((a, b) => b.dial.length - a.dial.length).find((c) => rest.startsWith(c.dial));
-  if (!match) return null;
-  return { country: match, national: rest.slice(match.dial.length) };
-}
-
-const isValid = (digits: string) => digits.length >= 6 && digits.length <= 15;
-
-// Champ téléphone international : indicatif + masque de saisie + validation.
+// Champ téléphone international PARFAIT : formatage « as-you-type » et validation
+// exacts par pays (libphonenumber-js). Stocke un E.164 valide ; signale l'invalidité.
 export function PhoneInput({
   value,
   defaultCountry,
@@ -67,60 +54,84 @@ export function PhoneInput({
   defaultCountry?: string;
   onChange: (e164: string, valid: boolean) => void;
 }) {
-  const parsed = parseValue(value);
-  const [country, setCountry] = useState<Country>(parsed?.country ?? byCode(defaultCountry) ?? DEFAULT);
-  const [national, setNational] = useState<string>(parsed?.national ?? "");
+  const init = safeParse(value);
+  const fallback = (COUNTRIES.find((c) => c.code === defaultCountry)?.code ?? "FR") as CountryCode;
+  const [country, setCountry] = useState<CountryCode>(init?.country ?? fallback);
+  const [text, setText] = useState(init?.national ?? "");
+  const [valid, setValid] = useState(true);
 
-  const emit = (c: Country, digits: string) =>
-    onChange(digits ? `+${c.dial}${digits}` : "", digits ? isValid(digits) : true);
-
-  function onCountry(code: string) {
-    const c = byCode(code) ?? DEFAULT;
-    setCountry(c);
-    emit(c, national);
+  function compute(c: CountryCode, raw: string) {
+    const digits = raw.replace(/\D/g, "").slice(0, 18);
+    const formatted = digits ? new AsYouType(c).input(digits) : "";
+    const ok = digits === "" ? true : isValidPhoneNumber(digits, c);
+    let e164 = "";
+    if (ok && digits) {
+      try {
+        e164 = parsePhoneNumber(digits, c)?.number ?? "";
+      } catch {
+        e164 = "";
+      }
+    }
+    return { formatted, ok, e164 };
   }
-  function onNational(raw: string) {
-    const digits = raw.replace(/\D/g, "").slice(0, 15);
-    setNational(digits);
-    emit(country, digits);
+
+  function apply(c: CountryCode, raw: string) {
+    const { formatted, ok, e164 } = compute(c, raw);
+    setText(formatted);
+    setValid(ok);
+    onChange(e164, ok);
   }
 
-  const placeholder = formatNational("0".repeat(country.groups.reduce((a, b) => a + b, 0)), country.groups);
+  const country_ = COUNTRIES.find((c) => c.code === country) ?? COUNTRIES[0];
+  const showInvalid = text.trim() !== "" && !valid;
+  const showValid = text.trim() !== "" && valid;
 
   return (
-    <div className="flex gap-2">
-      <div className="relative w-36 shrink-0">
-        <select
-          value={country.code}
-          onChange={(e) => onCountry(e.target.value)}
-          aria-label="Indicatif pays"
-          className="field-input w-full appearance-none truncate pr-7 font-medium"
-        >
-          {COUNTRIES.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.flag} +{c.dial} · {c.name}
-            </option>
-          ))}
-        </select>
-        <svg
-          className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+    <div>
+      <div className="flex gap-2">
+        <div className="relative w-36 shrink-0">
+          <select
+            value={country}
+            onChange={(e) => {
+              setCountry(e.target.value as CountryCode);
+              apply(e.target.value as CountryCode, text);
+            }}
+            aria-label="Indicatif pays"
+            className="field-input w-full appearance-none truncate pr-7 font-medium"
+          >
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.flag} +{dialOf(c.code)} · {c.name}
+              </option>
+            ))}
+          </select>
+          <svg
+            className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <div className="relative flex-1">
+          <input
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel-national"
+            className={`field-input w-full pr-9 ${
+              showInvalid ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""
+            }`}
+            placeholder={country_.example}
+            value={text}
+            onChange={(e) => apply(country, e.target.value)}
+          />
+          {showValid && (
+            <IconCheck className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500" />
+          )}
+        </div>
       </div>
-      <input
-        type="tel"
-        inputMode="tel"
-        autoComplete="tel-national"
-        className="field-input flex-1"
-        placeholder={placeholder}
-        value={formatNational(national, country.groups)}
-        onChange={(e) => onNational(e.target.value)}
-      />
     </div>
   );
 }

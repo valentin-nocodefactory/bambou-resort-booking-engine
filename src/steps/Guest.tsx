@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useBooking } from "../state/booking";
 import { EMAIL_RE } from "../lib/format";
 import { upgradeRooms } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
-import { PhoneInput } from "../components/PhoneInput";
 import { IconArrowRight } from "../components/icons";
+
+// Code-split : libphonenumber-js (~38 Ko gzip) n'est chargé qu'à cette étape.
+const PhoneInput = lazy(() => import("../components/PhoneInput").then((m) => ({ default: m.PhoneInput })));
 
 const NATIONALITIES = [
   ["FR", "France"],
@@ -37,7 +39,7 @@ export function Guest() {
     if (!guest.firstName.trim()) errs.firstName = "Prénom requis.";
     if (!guest.lastName.trim()) errs.lastName = "Nom requis.";
     if (!EMAIL_RE.test(guest.email.trim())) errs.email = "E-mail invalide.";
-    if (guest.telephone && !phoneValid) errs.telephone = "Numéro de téléphone invalide.";
+    if (!phoneValid) errs.telephone = "Numéro de téléphone invalide.";
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
     // Propose le surclassement seulement s'il existe des chambres supérieures.
@@ -85,14 +87,16 @@ export function Guest() {
             />
           </Field>
           <Field label="Téléphone" error={errors.telephone}>
-            <PhoneInput
-              value={guest.telephone}
-              defaultCountry={guest.nationalityCode}
-              onChange={(val, valid) => {
-                setGuest({ telephone: val });
-                setPhoneValid(valid);
-              }}
-            />
+            <Suspense fallback={<div className="field-input animate-pulse text-ink/30">…</div>}>
+              <PhoneInput
+                value={guest.telephone}
+                defaultCountry={guest.nationalityCode}
+                onChange={(val, valid) => {
+                  setGuest({ telephone: val });
+                  setPhoneValid(valid);
+                }}
+              />
+            </Suspense>
           </Field>
         </div>
 

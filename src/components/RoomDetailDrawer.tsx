@@ -95,36 +95,9 @@ export function RoomDetailDrawer({
           entered ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {/* Barre supérieure : miniatures (au-dessus de la photo) + fermer */}
-        <div className="flex shrink-0 items-center gap-3 border-b border-ink/10 px-4 py-2.5">
-          <div className="no-scrollbar flex flex-1 gap-2 overflow-x-auto">
-            {images.map((id, i) => (
-              <button
-                key={`${id}-${i}`}
-                type="button"
-                onClick={() => setActive(i)}
-                className={`h-12 w-16 shrink-0 overflow-hidden rounded-lg ring-2 transition ${
-                  i === active ? "ring-turquoise" : "ring-transparent opacity-70 hover:opacity-100"
-                }`}
-                aria-label={`Photo ${i + 1}`}
-              >
-                <Photo src={imgUrl(imageBaseUrl, id, 200)} alt="" className="h-full w-full object-cover" />
-              </button>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={close}
-            aria-label="Fermer"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-ink shadow-card transition hover:bg-sand"
-          >
-            <IconClose className="h-5 w-5" />
-          </button>
-        </div>
-
         {/* Contenu défilant */}
         <div className="flex-1 overflow-y-auto">
-          {/* Photo principale */}
+          {/* Photo principale — miniatures EN OVERLAY (ne prend pas de place en plus) */}
           <div className="relative">
             <Photo
               src={imgUrl(imageBaseUrl, images[active], 1200)}
@@ -134,9 +107,33 @@ export function RoomDetailDrawer({
             <span className="absolute left-3 top-3 rounded-full bg-teal-deep/85 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cream">
               {spaceLabel(room.spaceType)}
             </span>
-            <span className="absolute bottom-3 left-3">
-              <FavoriteBadge />
-            </span>
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Fermer"
+              className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-ink shadow-card backdrop-blur transition hover:bg-white"
+            >
+              <IconClose className="h-5 w-5" />
+            </button>
+            {images.length > 1 && (
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/65 via-ink/15 to-transparent p-3">
+                <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                  {images.map((id, i) => (
+                    <button
+                      key={`${id}-${i}`}
+                      type="button"
+                      onClick={() => setActive(i)}
+                      aria-label={`Photo ${i + 1}`}
+                      className={`h-11 w-14 shrink-0 overflow-hidden rounded-md ring-2 transition ${
+                        i === active ? "ring-white" : "ring-white/40 opacity-80 hover:opacity-100"
+                      }`}
+                    >
+                      <Photo src={imgUrl(imageBaseUrl, id, 200)} alt="" className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Détails sur 2 colonnes */}
@@ -160,6 +157,7 @@ export function RoomDetailDrawer({
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
+                <FavoriteBadge />
                 {lowStock && <ScarcityBadge count={room.availableRoomCount} />}
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
                   <IconCheck className="h-3.5 w-3.5" /> Annulation gratuite
