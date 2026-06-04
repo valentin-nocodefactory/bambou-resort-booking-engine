@@ -1,12 +1,18 @@
-name = "bambou-booking"
-pages_build_output_dir = "dist"
+name = "bambou-resort-booking-engine"
+main = "worker/index.ts"
 compatibility_date = "2025-05-01"
-# fetch() est global sur le runtime Workers — pas besoin de nodejs_compat a priori.
+# fetch() est global sur le runtime Workers — pas besoin de nodejs_compat.
 
-# ⚠️ Les valeurs ci-dessous ne sont PAS des secrets : ce sont des identifiants publics
-# de l'établissement demo. Le secret (MEWS_CLIENT) n'est PAS défini ici — il est fourni
-# en local par .dev.vars (gitignored) et en prod par les Environment Variables Cloudflare
-# (chiffré / "Encrypt"). Voir README §"Variables d'environnement".
+# Static Assets : le front buildé (dist/) est servi par le binding ASSETS.
+# not_found_handling = SPA → /confirmation et autres routes client renvoient index.html.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# ⚠️ Valeurs NON secrètes : identifiants publics de l'établissement demo. Le secret
+# (MEWS_CLIENT) n'est PAS ici — il est fourni en local par .dev.vars (gitignored) et en
+# prod par les variables d'environnement Cloudflare (chiffré). Voir README.
 [vars]
 MEWS_BASE_URL = "https://api.mews-demo.com"
 MEWS_APP_BASE_URL = "https://app.mews-demo.com"

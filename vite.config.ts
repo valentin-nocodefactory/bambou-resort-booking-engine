@@ -12,12 +12,12 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    // En dev : Vite sert le front (HMR) et proxie /api/* vers l'instance
-    // `wrangler pages dev` (Functions) lancée en parallèle sur le port 8788.
-    // En prod (Cloudflare Pages) front + Functions sont déjà sur la même origine.
+    // En dev : Vite sert le front (HMR) et proxie /api/* vers le Worker lancé en
+    // parallèle par `wrangler dev` sur le port 8787.
+    // En prod (Cloudflare Workers) le Worker sert le front ET /api sur la même origine.
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:8788",
+        target: "http://127.0.0.1:8787",
         changeOrigin: true,
       },
     },

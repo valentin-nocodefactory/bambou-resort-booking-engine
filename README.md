@@ -2,7 +2,7 @@
 
 Moteur de réservation custom construit par-dessus la **Mews Booking Engine API** (alias Distributor API)
 pour le **Bambou Resort** (Martinique). Front statique **Vite + React + TypeScript + Tailwind**, proxy
-serveur en **Cloudflare Pages Functions**, déploiement continu via **GitHub → Cloudflare Pages**.
+serveur en **Cloudflare Worker** (Static Assets), déploiement continu via **GitHub → Cloudflare Workers Builds**.
 
 Ambiance : luxe tropical créole, « les pieds dans l'eau ». Parcours en 6 étapes, données 100 % en direct de Mews.
 
@@ -37,17 +37,22 @@ liens partageables et retour de paiement robustes, sans base de données.
 ## 🧱 Architecture
 
 ```
-Navigateur ──(/api/mews/*, même origine)──▶ Cloudflare Pages Functions ──(Client injecté)──▶ Mews Distributor API
-   front statique (dist/)                       functions/api/mews/*                      api.mews-demo.com
+Navigateur ──(/api/mews/*, même origine)──▶ Cloudflare Worker ──(Client injecté)──▶ Mews Distributor API
+   front statique (dist/, binding ASSETS)       worker/index.ts → worker/mews/*       api.mews-demo.com
 ```
 
-**Pourquoi des Pages Functions (et pas un Worker séparé ni des appels navigateur) ?**
+Un **seul Worker** (`worker/index.ts`) :
+- route `/api/mews/*` vers les handlers proxy (`worker/mews/*`),
+- sert le front buildé via le binding **Static Assets** (`dist/`), avec fallback SPA
+  (`not_found_handling = "single-page-application"`) pour les routes client (`/confirmation`…).
+
+**Pourquoi ce modèle (et pas des appels navigateur directs) ?**
 
 - Le `Client` Mews et les IDs (`HotelId`/`ConfigId`/catégories d'âge) restent **server-side**, jamais dans le bundle.
 - **Pas de CORS** : le navigateur n'appelle que `/api/mews/*` (même origine que le front).
 - Centralisation du timeout (12 s), des erreurs, de la vérification de paiement, et de la **curation** des réponses
   (ex. `getPricing` brut ≈ 380 Ko → ~1 Ko en EUR ; réservations curées en JSON léger).
-- Un seul repo, un seul déploiement, intégration GitHub native.
+- Un seul repo, un seul déploiement (`wrangler deploy`), compatible **Cloudflare Workers Builds** (Git).
 
 ---
 
@@ -56,27 +61,24 @@ Navigateur ──(/api/mews/*, même origine)──▶ Cloudflare Pages Function
 ```bash
 npm install
 cp .dev.vars.example .dev.vars   # secrets locaux (gitignored)
-npm run dev                      # front (Vite :5173) + Functions (wrangler :8788)
+npm run dev                      # front (Vite :5173) + Worker (wrangler :8787)
 ```
 
-Ouvrez **http://localhost:5173**. Vite sert le front avec HMR et **proxie `/api/*`** vers l'instance
-`wrangler pages dev` qui émule les Functions et lit `.dev.vars`. Du point de vue du navigateur, tout est sur la
-même origine (`:5173`).
+Ouvrez **http://localhost:5173**. Vite sert le front avec HMR et **proxie `/api/*`** vers le **Worker**
+(`wrangler dev`, :8787) qui lit `.dev.vars`. Du point de vue du navigateur, tout est sur la même origine (`:5173`).
 
-> **Note sur la commande `dev`.** Le prompt d'origine proposait `wrangler pages dev -- vite`. Avec les versions
-> récentes de Wrangler (≥ 4.9x), cette forme entre en conflit avec `pages_build_output_dir` du `wrangler.toml`
-> (« Cannot specify both a directory and a proxy command »). On utilise donc `concurrently` pour lancer Vite **et**
-> `wrangler pages dev` en parallèle, Vite proxant `/api` vers Wrangler (voir `vite.config.ts` et `package.json`).
-> Résultat identique : `npm run dev` = front + `/api/mews/*` en local.
+> `npm run dev` lance d'abord un `vite build` (le binding ASSETS de `wrangler dev` a besoin de `dist/`), puis
+> `concurrently` exécute `wrangler dev` (le Worker, :8787) **et** `vite` (HMR, :5173). En prod, le Worker sert
+> à la fois le front et `/api/*` sur la même origine.
 
 ### Scripts
 
 | Script | Rôle |
 | --- | --- |
-| `npm run dev` | Front (HMR, :5173) + Functions (:8788), `/api` proxifié. |
+| `npm run dev` | Build front + Worker (`wrangler dev`, :8787) + Vite (HMR, :5173), `/api` proxifié. |
 | `npm run build` | Build statique du front → `dist/`. |
-| `npm run preview` | Build puis `wrangler pages dev dist` (:8788) — teste le rendu prod + Functions sur une seule origine. |
-| `npm run deploy` | Build puis `wrangler pages deploy dist` (déploiement manuel via Direct Upload). |
+| `npm run preview` | Build puis `wrangler dev` (:8787) — teste le Worker (front + `/api`) sur une seule origine, comme en prod. |
+| `npm run deploy` | Build puis `wrangler deploy` (déploiement manuel du Worker + assets). |
 | `npm run typecheck` | `tsc --noEmit` sur `src/`. |
 
 ---
@@ -87,7 +89,7 @@ même origine (`:5173`).
 | --- | --- | --- | --- | --- |
 | `MEWS_BASE_URL` | Base API Mews (`https://api.mews-demo.com`) | non | `.dev.vars` | `wrangler.toml [vars]` ou dashboard |
 | `MEWS_APP_BASE_URL` | Base app Mews (page de paiement) | non | `.dev.vars` | idem |
-| `MEWS_CLIENT` | Chaîne `Client` Booking Engine API | **OUI** | `.dev.vars` | **Encrypt** dans le dashboard |
+| `MEWS_CLIENT` | Chaîne `Client` Booking Engine API | **OUI** | `.dev.vars` | **Secret** (dashboard Worker) |
 | `MEWS_HOTEL_ID` | UUID établissement | non | `.dev.vars` | `wrangler.toml [vars]` ou dashboard |
 | `MEWS_CONFIG_ID` | UUID configuration | non | `.dev.vars` | idem |
 | `MEWS_ADULT_AGE_CATEGORY_ID` | Catégorie d'âge « adulte » | non | `.dev.vars` | idem (fallback demo intégré) |
@@ -102,36 +104,40 @@ finissent **jamais** dans le front (aucune variable `VITE_*` n'est utilisée).
 Sur la demo aujourd'hui, **seule `My Client 1.0.0` passe (200)** ; `Hotel Bambou 1.0` renvoie 401 tant que Mews ne
 l'a pas activée sur l'entreprise. Quand c'est fait :
 
-1. Dashboard Cloudflare → Pages → projet → **Settings → Environment variables**.
-2. Modifier `MEWS_CLIENT` = `Hotel Bambou 1.0` (Production **et** Preview), garder « Encrypt ».
-3. Re-déployer (ou « Retry deployment »). **Aucun changement de code.**
+1. Dashboard Cloudflare → ton Worker → **Settings → Variables and Secrets**.
+2. Modifier/ajouter le **secret** `MEWS_CLIENT` = `Hotel Bambou 1.0`. **Aucun changement de code.**
+3. Re-déployer (ou « Retry deployment »).
 
-En CLI : `npx wrangler pages secret put MEWS_CLIENT`.
+En CLI : `npx wrangler secret put MEWS_CLIENT`.
 
 ---
 
-## ☁️ Déploiement GitHub → Cloudflare Pages
+## ☁️ Déploiement GitHub → Cloudflare Workers Builds
 
-1. `git init && git add . && git commit -m "init" && git push` vers un repo GitHub.
-2. Cloudflare Dashboard → **Workers & Pages → Create → Pages → Connect to Git** → choisir le repo.
-3. **Build settings** :
-   - Framework preset : **Vite** (ou aucun)
-   - Build command : `npm run build`
-   - Build output directory : `dist`
-   - Les Functions du dossier `functions/` sont détectées et déployées automatiquement.
-4. **Environment variables** (onglets **Production** *et* **Preview**) : ajouter `MEWS_CLIENT` en **Encrypt**.
-   Les autres variables sont fournies par `wrangler.toml [vars]` (ou ajoutez-les ici pour surcharger).
-5. **Deploy**. Ensuite : push sur `main` = **production** ; chaque **PR = Preview Deployment** (URL dédiée, idéale
-   pour faire valider l'hôtel).
-6. **Domaine** : Custom domains → `reservation.bambouresort.com` (DNS géré par Cloudflare).
+Le projet est un **Worker + Static Assets** : `npm run build` produit le front (`dist/`), puis `wrangler deploy`
+publie le Worker (`worker/index.ts`) **et** uploade `dist/` comme assets.
 
-**Alternative CLI** (sans connecter Git) :
+1. Push sur GitHub (déjà fait).
+2. Cloudflare Dashboard → **Workers & Pages → Create → Workers → Import a repository** → choisir le repo.
+3. **Build & deploy settings** :
+   - **Build command** : `npm run build`
+   - **Deploy command** : `npx wrangler deploy`
+   - **Non-production branch deploy command** : `npx wrangler versions upload` (= preview-URLs sur les PR)
+   - **API token** : laisser vide (Cloudflare en crée un)
+4. **Variables and Secrets** : ajouter `MEWS_CLIENT` en **Secret** (les autres variables viennent de `wrangler.toml [vars]`).
+5. **Deploy**. Ensuite : push sur `main` = **production** automatique ; chaque **PR** = version preview (URL dédiée).
+6. **Domaine** : Worker → **Settings → Domains & Routes** → `reservation.bambouresort.com` (DNS géré par Cloudflare).
+
+**Déploiement manuel (CLI)** :
 
 ```bash
-npm run build
-npx wrangler pages deploy dist
-# secrets : npx wrangler pages secret put MEWS_CLIENT
+npm run build && npx wrangler deploy
+# secret : npx wrangler secret put MEWS_CLIENT
 ```
+
+> ℹ️ Ce projet n'utilise **pas** le modèle « Pages Functions » (`functions/`) mais le modèle **Workers + Static
+> Assets** : un seul Worker route `/api/*` et sert le front. C'est le flux proposé par défaut dans le dashboard
+> Cloudflare actuel (« Workers Builds »), avec `wrangler deploy`.
 
 ---
 
@@ -175,29 +181,30 @@ configurée côté Mews. En sandbox : `https://pay.sandbox.datatrans.com/...` ; 
 ## 📁 Structure
 
 ```
-functions/api/mews/        # Proxy serveur — un fichier = une route /api/mews/*
-  _lib.ts                  #   helper mews() (injection Client + timeout 12s), validations, occupancyData()
-  hotel.ts                 #   hotels/get            (cache 5 min)
-  availability.ts          #   hotels/getAvailability
-  pricing.ts               #   reservations/getPricing  (curé EUR-only)
-  reservation.ts           #   reservationGroups/create (whitelist + construit paymentUrl Voie A)
-  reservation-status.ts    #   reservationGroups/get    (statut paiement curé)
-  payment-link.ts          #   reconstruit l'URL de paiement pour un PaymentRequest en attente
-  voucher.ts               #   vouchers/validate
+worker/
+  index.ts                 # Entrée Worker : route /api/mews/* + sert le front (binding ASSETS) + fallback SPA
+  mews/                    # Proxy serveur — un fichier = une route /api/mews/*
+    _lib.ts                #   helper mews() (injection Client + timeout 12s), validations, occupancyData()
+    hotel.ts               #   hotels/get            (cache 5 min)
+    availability.ts        #   hotels/getAvailability
+    pricing.ts             #   reservations/getPricing  (curé EUR-only)
+    reservation.ts         #   reservationGroups/create (whitelist + construit paymentUrl Voie A)
+    reservation-status.ts  #   reservationGroups/get    (statut paiement curé)
+    payment-link.ts        #   reconstruit l'URL de paiement pour un PaymentRequest en attente
+    voucher.ts             #   vouchers/validate
 src/
   lib/        api.ts (frontière réseau unique), shaping.ts (buildRooms, min-price, dédup),
-              format.ts (loc/eur/nights/imgUrl), assets.ts
-  lib/        apiLog.ts (journal des appels → Dev Panel)
+              format.ts (loc/eur/nights/imgUrl), assets.ts, apiLog.ts (journal → Dev Panel)
   state/      booking.tsx (Context + encodage URL + config hôtel + totaux)
   types/      mews.ts
   components/ Brand, StepProgress, DateRangePicker, RoomCard, RoomDetailDrawer, UpsellCard,
               BookingSummary, StepLayout, DataBadge, DevPanel, conversion, Photo, icons
   steps/      Dates (recherche standalone), Results, Guest, Extras, Payment, Confirmation
   App.tsx     machine d'étapes + header + footer + Dev Panel
-wrangler.toml  .dev.vars(.example)  public/_redirects (SPA fallback)
+wrangler.toml (main + [assets] + [vars])   .dev.vars(.example)   .node-version
 ```
 
-**Sécurité** : chaque Function reconstruit l'objet Mews à partir de champs **whitelistés** (jamais de forward du body
+**Sécurité** : chaque handler reconstruit l'objet Mews à partir de champs **whitelistés** (jamais de forward du body
 brut), injecte les IDs depuis `env`, et n'expose aucun CORS large.
 
 ---
@@ -211,10 +218,10 @@ Les réservations créées par le moteur y apparaissent (n° de confirmation aff
 
 ## 🔀 Variantes (non implémentées)
 
-- **Worker standalone** : un Worker `itty-router` (`/api/mews/*`) + Pages pour le front. Plus de pièces, CORS à gérer
-  entre les deux origines → on préfère les Pages Functions (mono-repo) pour le MVP.
-- **Embed Webflow** : héberger le moteur sur `reservation.bambouresort.com` (Cloudflare Pages) et y pointer les
-  boutons « Réserver » du site Webflow, ou l'embarquer en `<iframe>`. Le proxy Mews reste la Pages Function.
+- **Embed Webflow** : héberger le moteur sur `reservation.bambouresort.com` (Cloudflare Worker) et y pointer les
+  boutons « Réserver » du site Webflow, ou l'embarquer en `<iframe>`. Le proxy Mews reste le Worker.
+- **Pages Functions** : variante alternative (dossier `functions/`, `wrangler pages deploy`) si un compte
+  expose encore le flux Pages. Ici on utilise **Workers + Static Assets**, le flux par défaut du dashboard actuel.
 - **Log des réservations (V2)** : binder un namespace **KV** (ou **D1**) dans `wrangler.toml` et écrire
   `reservationGroupId` + récap après confirmation (point d'extension prévu, pas de DB pour le MVP).
 
@@ -229,4 +236,4 @@ Les réservations créées par le moteur y apparaissent (n° de confirmation aff
 5. **Catégories d'âge** : absentes de `hotels/get` → fournies par env (fallback demo), à remplacer en prod.
 6. **Paiement** : `PaymentRequestId` seulement si le `RateGroup` est en settlement automatique ; sinon « paiement à l'arrivée ».
 7. **returnUrl** : Base64 d'une URL absolue (construit côté serveur).
-8. **Secrets** : `.dev.vars` gitignored ; en prod `MEWS_CLIENT` en Encrypt ; `dist/` sans secret.
+8. **Secrets** : `.dev.vars` gitignored ; en prod `MEWS_CLIENT` en **Secret** (dashboard Worker) ; `dist/` sans secret.

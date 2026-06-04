@@ -1,9 +1,10 @@
-// Helper partagé des Pages Functions.
+// Helper partagé du Worker.
 // Toute requête Mews passe par ici : le `Client` et les IDs établissement sont injectés
-// côté serveur (jamais exposés au front), avec un timeout dur. Les fichiers préfixés `_`
-// ne sont pas routés par Cloudflare Pages — c'est un module utilitaire.
+// côté serveur (jamais exposés au front), avec un timeout dur.
 
 export interface Env {
+  // Binding Static Assets : sert le front buildé (dist/) + fallback SPA.
+  ASSETS: Fetcher;
   MEWS_BASE_URL: string;
   MEWS_APP_BASE_URL: string;
   MEWS_CLIENT: string;

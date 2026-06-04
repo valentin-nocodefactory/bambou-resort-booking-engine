@@ -1,5 +1,0 @@
-# SPA fallback : toute route sans fichier correspondant renvoie index.html
-# (routing client : /confirmation, retour de paiement, liens partagés…).
-# Les Pages Functions (/api/*) sont évaluées AVANT _redirects et ne sont jamais
-# shadowées ; les fichiers statiques (/assets/*) sont servis tels quels.
-/*  /index.html  200
