@@ -4,6 +4,7 @@ import { ApiError, api, errorMessage } from "../lib/api";
 import { eur, fmtDate, toUtc } from "../lib/format";
 import { StepLayout } from "../components/StepLayout";
 import { SecureBadge } from "../components/DataBadge";
+import { HoldTimer, TrustRow } from "../components/conversion";
 import { IconArrowRight, IconCheck, IconShield } from "../components/icons";
 
 export function Payment() {
@@ -95,6 +96,12 @@ export function Payment() {
       backLabel="Retour aux extras"
     >
       <div className="space-y-5">
+        {/* Réassurance / urgence */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <HoldTimer minutes={10} />
+          <span className="text-xs text-ink/55">Confirmation immédiate · annulation gratuite</span>
+        </div>
+
         {/* Récap final */}
         <div className="card p-5">
           <h2 className="font-display text-lg text-ink">Votre réservation</h2>
@@ -163,6 +170,10 @@ export function Payment() {
           </div>
         )}
         {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+
+        <div className="rounded-xl2 bg-cream/70 p-4">
+          <TrustRow compact />
+        </div>
 
         <div className="flex flex-wrap items-center justify-between gap-4">
           <SecureBadge />

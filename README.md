@@ -12,8 +12,8 @@ Ambiance : luxe tropical créole, « les pieds dans l'eau ». Parcours en 6 éta
 
 1. **Dates + occupants** → recherche de disponibilité.
 2. **Disponibilité groupée par type de chambre** : cartes « à partir de », avec **Choisir** ou **Voir le détail**
-   (popup photos + description + liste des tarifs, badge « Meilleur prix », prix barré, confirmation du prix exact
-   via `reservations/getPricing`).
+   (**panneau latéral** qui glisse depuis la droite — photos + description + équipements + liste des tarifs, badge
+   « Meilleur prix », prix barré, confirmation du prix exact via `reservations/getPricing`).
 3. **Upsells** : suggestion inline sur l'écran résultats **+** étape Extras dédiée (produits Mews, total recalculé).
 4. **Infos client** (voyageur principal, validations).
 5. **Extras additionnels**.
@@ -22,6 +22,15 @@ Ambiance : luxe tropical créole, « les pieds dans l'eau ». Parcours en 6 éta
 
 L'état (dates, occupants, sélection, n° de groupe) est porté par l'**URL** (`searchParams`) + un Context React :
 liens partageables et retour de paiement robustes, sans base de données.
+
+### Expérience & conversion (style Airbnb)
+
+- **Moteur standalone** : pas de hero — écran de recherche épuré (barre Destination · Dates · Voyageurs · Rechercher).
+- **Calendrier de plage à la Airbnb** (`DateRangePicker`) : popover 2 mois, sélection début → fin, surbrillance + aperçu au survol, dates passées désactivées.
+- **Panneau détail latéral** (`RoomDetailDrawer`) qui glisse depuis la droite (scrim, Escape, slide animé) — pas une popup modale.
+- **Leviers de conversion** : note & avis, « Coup de cœur voyageurs », rareté (« Plus que N »), forte demande, nombre de personnes qui consultent, prix barrés & % d'économie, annulation gratuite, paiement sécurisé, minuteur de maintien au paiement.
+- **Dev Panel** (`</> API`, en bas à gauche) : journal en direct de chaque appel `/api/mews/*` avec son **statut, sa durée, le corps de requête, un résumé de réponse, et une explication « pourquoi cet appel »**. Transparence totale sur les échanges avec Mews.
+- Typo éditoriale **Fraunces** (serif) + **Manrope** (corps), palette tropicale, micro-animations (slide/scale/fade), cibles tactiles ≥ 44 px, focus visibles.
 
 ---
 
@@ -178,11 +187,13 @@ functions/api/mews/        # Proxy serveur — un fichier = une route /api/mews/
 src/
   lib/        api.ts (frontière réseau unique), shaping.ts (buildRooms, min-price, dédup),
               format.ts (loc/eur/nights/imgUrl), assets.ts
+  lib/        apiLog.ts (journal des appels → Dev Panel)
   state/      booking.tsx (Context + encodage URL + config hôtel + totaux)
   types/      mews.ts
-  components/ Hero, StepProgress, RoomCard, RoomDetailModal, UpsellCard, BookingSummary, StepLayout, DataBadge, Photo, icons
-  steps/      Dates, Results, Guest, Extras, Payment, Confirmation
-  App.tsx     machine d'étapes + header + footer
+  components/ Brand, StepProgress, DateRangePicker, RoomCard, RoomDetailDrawer, UpsellCard,
+              BookingSummary, StepLayout, DataBadge, DevPanel, conversion, Photo, icons
+  steps/      Dates (recherche standalone), Results, Guest, Extras, Payment, Confirmation
+  App.tsx     machine d'étapes + header + footer + Dev Panel
 wrangler.toml  .dev.vars(.example)  public/_redirects (SPA fallback)
 ```
 

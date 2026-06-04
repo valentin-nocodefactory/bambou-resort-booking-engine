@@ -90,3 +90,48 @@ export const IconWave = (p: SVGProps<SVGSVGElement>) => (
     <path d="M2 8c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2M2 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2" />
   </svg>
 );
+export const IconStar = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)} fill="currentColor" stroke="none">
+    <path d="M12 3.2l2.5 5.1 5.6.8-4 4 1 5.6-5.1-2.7L7.4 18.7l1-5.6-4-4 5.6-.8L12 3.2Z" />
+  </svg>
+);
+export const IconClock = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7.5V12l3 2" />
+  </svg>
+);
+export const IconFlame = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M12 3c1 3-1 4-1 6a2.5 2.5 0 0 0 5 .2C18 12 19 14 19 16a7 7 0 1 1-14 0c0-3 2.5-5 3.5-7 .8-1.6.5-3.8 0-4 2 .5 3 1.5 3.5 3Z" />
+  </svg>
+);
+export const IconTag = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M3 12V5a2 2 0 0 1 2-2h7l9 9-7 7-9-9Z" />
+    <circle cx="7.5" cy="7.5" r="1.4" />
+  </svg>
+);
+export const IconHeart = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M12 20s-7-4.3-9.3-8.6C1 8 2.6 5 5.7 5c1.9 0 3.1 1.1 3.8 2.2L12 9l2.5-1.8C15.2 6.1 16.4 5 18.3 5c3.1 0 4.7 3 3 6.4C19 15.7 12 20 12 20Z" />
+  </svg>
+);
+export const IconLock = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <rect x="4.5" y="10.5" width="15" height="9.5" rx="2.5" />
+    <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+  </svg>
+);
+export const IconGift = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <rect x="3.5" y="8.5" width="17" height="12" rx="1.5" />
+    <path d="M3.5 12.5h17M12 8.5v12M12 8.5C9 8.5 7 7 8 4.5c1-2 4 .5 4 4Zm0 0c3 0 5-1.5 4-4-1-2-4 .5-4 4Z" />
+  </svg>
+);
+export const IconSun = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" />
+  </svg>
+);

@@ -5,9 +5,10 @@ import { fmtDate } from "../lib/format";
 import { buildRooms } from "../lib/shaping";
 import type { AvailabilityResponse, ShapedRate, ShapedRoom } from "../types/mews";
 import { RoomCard } from "../components/RoomCard";
-import { RoomDetailModal } from "../components/RoomDetailModal";
+import { RoomDetailDrawer } from "../components/RoomDetailDrawer";
 import { InlineUpsell } from "../components/UpsellCard";
 import { DataBadge } from "../components/DataBadge";
+import { RatingPill, UrgencyBanner } from "../components/conversion";
 import { IconCalendar, IconUsers } from "../components/icons";
 
 export function Results() {
@@ -100,10 +101,21 @@ export function Results() {
         </button>
       </div>
 
-      <div className="mt-6 flex items-end justify-between gap-3">
+      {!loading && !error && rooms.length > 0 && (
+        <div className="mt-5">
+          <UrgencyBanner />
+        </div>
+      )}
+
+      <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl text-ink sm:text-3xl">Nos hébergements disponibles</h1>
-          <p className="text-sm text-ink/55">Choisissez votre cocon, comparez les tarifs.</p>
+          <h1 className="font-display text-2xl text-ink sm:text-3xl">
+            {rooms.length > 0 ? `${rooms.length} hébergement${rooms.length > 1 ? "s" : ""} disponible${rooms.length > 1 ? "s" : ""}` : "Nos hébergements"}
+          </h1>
+          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink/55">
+            <RatingPill />
+            <span>Choisissez votre cocon, comparez les tarifs.</span>
+          </div>
         </div>
         <DataBadge />
       </div>
@@ -125,6 +137,7 @@ export function Results() {
                 room={room}
                 imageBaseUrl={imageBaseUrl}
                 nightsCount={nightsCount}
+                featured={i === 0}
                 onChoose={() => choose(room, room.rates[0])}
                 onDetails={() => setOpenRoom(room)}
               />
@@ -142,7 +155,7 @@ export function Results() {
       )}
 
       {openRoom && (
-        <RoomDetailModal
+        <RoomDetailDrawer
           room={openRoom}
           imageBaseUrl={imageBaseUrl}
           search={search}

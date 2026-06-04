@@ -1,7 +1,8 @@
 import { productLineTotal, useBooking } from "../state/booking";
 import { eur, fmtDate } from "../lib/format";
 import { chargingLabel, spaceLabel } from "../lib/shaping";
-import { IconBed, IconCalendar, IconUsers } from "./icons";
+import { SavingsLine } from "./conversion";
+import { IconBed, IconCalendar, IconCheck, IconLock, IconUsers } from "./icons";
 
 // Récapitulatif sticky : hébergement, tarif, dates, occupants, extras, total.
 export function BookingSummary() {
@@ -19,6 +20,11 @@ export function BookingSummary() {
     productsTotal,
     grandTotal,
   } = useBooking();
+
+  const savings =
+    selectedRate?.maxGross != null && selectedRate.totalGross != null
+      ? Math.max(0, selectedRate.maxGross - selectedRate.totalGross)
+      : 0;
 
   return (
     <aside className="card overflow-hidden">
@@ -80,14 +86,25 @@ export function BookingSummary() {
       <div className="flex items-end justify-between border-t border-ink/10 bg-cream/60 px-5 py-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-teal-deep/70">Total</p>
-          <p className="text-[11px] text-ink/50">taxes incluses</p>
+          <p className="text-[11px] text-ink/50">taxes incluses{productsTotal > 0 ? ` · dont ${eur(productsTotal)} d'extras` : ""}</p>
         </div>
         <p className="font-display text-2xl text-teal-deep">{grandTotal > 0 ? eur(grandTotal) : "—"}</p>
       </div>
 
-      {productsTotal > 0 && (
-        <p className="px-5 pb-4 text-[11px] text-ink/45">Dont {eur(productsTotal)} d'extras.</p>
+      {savings > 0 && (
+        <div className="border-t border-ink/10 px-5 py-2.5">
+          <SavingsLine amount={savings} />
+        </div>
       )}
+
+      <ul className="space-y-1.5 border-t border-ink/10 px-5 py-4 text-xs text-ink/60">
+        <li className="inline-flex items-center gap-2">
+          <IconCheck className="h-3.5 w-3.5 text-emerald-600" /> Annulation gratuite jusqu'à 3 jours avant
+        </li>
+        <li className="inline-flex items-center gap-2">
+          <IconLock className="h-3.5 w-3.5 text-turquoise" /> Paiement sécurisé · 3-D Secure
+        </li>
+      </ul>
     </aside>
   );
 }

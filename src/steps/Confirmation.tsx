@@ -3,7 +3,7 @@ import { useBooking } from "../state/booking";
 import { api, errorMessage } from "../lib/api";
 import { eur, fmtDate } from "../lib/format";
 import type { ReservationStatusResult } from "../types/mews";
-import { Brand } from "../components/Hero";
+import { Brand } from "../components/Brand";
 import { IconArrowRight, IconCalendar, IconCheck, IconShield } from "../components/icons";
 
 const MAX_POLLS = 5;
