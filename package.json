@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Moteur de réservation sur-mesure Bambou Resort (Mews Booking Engine API) — Cloudflare Workers + Static Assets",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "npm run build && concurrently -k -n worker,web -c magenta,cyan \"npm:dev:worker\" \"npm:dev:web\"",
     "dev:worker": "wrangler dev --port 8787 --ip 127.0.0.1",
