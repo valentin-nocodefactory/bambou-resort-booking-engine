@@ -135,32 +135,40 @@ export function DateRangePicker({
                     </span>
                   ))}
                   {monthCells(mv.y, mv.m).map((day, i) => {
-                    if (!day) return <span key={`b${i}`} />;
+                    if (!day) return <span key={`b${i}`} className="h-10" />;
                     const disabled = day < minDate;
-                    const isStart = day === checkIn;
-                    const isEnd = day === checkOut || (previewEnd === day && !checkOut);
-                    const ranged = inRange(day);
-                    const selectedEdge = isStart || isEnd;
+                    const isStart = !!checkIn && day === checkIn;
+                    const isEnd = !!previewEnd && day === previewEnd && day !== checkIn;
+                    const between = inRange(day);
+                    const edge = isStart || isEnd;
+                    // Bande de fond sur la CELLULE pleine largeur → plage continue.
+                    // Demi-dégradé aux extrémités (côté intérieur de la plage uniquement).
+                    const band = between
+                      ? "bg-turquoise/15"
+                      : isStart && previewEnd
+                        ? "bg-[linear-gradient(to_right,transparent_50%,#0E7E8C26_50%)]"
+                        : isEnd
+                          ? "bg-[linear-gradient(to_right,#0E7E8C26_50%,transparent_50%)]"
+                          : "";
                     return (
-                      <button
-                        key={day}
-                        type="button"
-                        disabled={disabled}
-                        onMouseEnter={() => setHover(day)}
-                        onClick={() => pick(day)}
-                        aria-label={fmtDate(day)}
-                        aria-pressed={selectedEdge}
-                        className={[
-                          "relative mx-auto flex h-9 w-9 items-center justify-center text-sm transition",
-                          disabled ? "cursor-not-allowed text-ink/20 line-through" : "text-ink hover:bg-turquoise/10",
-                          ranged ? "rounded-none bg-turquoise/12" : "rounded-full",
-                          selectedEdge ? "!rounded-full bg-teal-deep font-semibold text-cream hover:bg-teal-deep" : "",
-                          isStart && checkOut ? "rounded-l-full" : "",
-                          isEnd && checkIn && checkOut ? "rounded-r-full" : "",
-                        ].join(" ")}
-                      >
-                        {parseInt(day.slice(8), 10)}
-                      </button>
+                      <div key={day} onMouseEnter={() => setHover(day)} className={`relative h-10 ${band}`}>
+                        <button
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => pick(day)}
+                          aria-label={fmtDate(day)}
+                          aria-pressed={isStart || day === checkOut}
+                          className={`absolute inset-0 m-auto grid h-9 w-9 place-items-center rounded-full text-sm transition ${
+                            disabled
+                              ? "cursor-not-allowed text-ink/25 line-through"
+                              : edge
+                                ? "bg-teal-deep font-semibold text-cream"
+                                : "text-ink hover:bg-turquoise/20"
+                          }`}
+                        >
+                          {parseInt(day.slice(8), 10)}
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
