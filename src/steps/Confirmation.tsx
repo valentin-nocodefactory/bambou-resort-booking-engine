@@ -113,9 +113,7 @@ export function Confirmation() {
                 {fmtDate(checkIn)} → {fmtDate(checkOut)}
               </Line>
             )}
-            {guest.email && (
-              <Line label="Confirmation envoyée à">{guest.email}</Line>
-            )}
+            {guest.email && <Line label="E-mail du voyageur">{guest.email}</Line>}
             {selectedRate && grandTotal > 0 && <Line label="Total">{eur(grandTotal)}</Line>}
             {created?.totalAmount?.gross != null && !selectedRate && (
               <Line label="Total">{eur(created.totalAmount.gross)}</Line>
@@ -152,7 +150,7 @@ export function Confirmation() {
 
           {paid && (
             <p className="flex items-center justify-center gap-2 text-sm text-teal-deep">
-              <IconCheck className="h-4 w-4" /> Un e-mail récapitulatif vous a été adressé.
+              <IconCheck className="h-4 w-4" /> Conservez votre numéro de confirmation pour l'enregistrement.
             </p>
           )}
 

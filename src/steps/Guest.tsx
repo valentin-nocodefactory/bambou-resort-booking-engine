@@ -3,6 +3,7 @@ import { useBooking } from "../state/booking";
 import { EMAIL_RE } from "../lib/format";
 import { upgradeRooms } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
+import { PhoneInput } from "../components/PhoneInput";
 import { IconArrowRight } from "../components/icons";
 
 const NATIONALITIES = [
@@ -23,6 +24,7 @@ const NATIONALITIES = [
 export function Guest() {
   const { selectedRoom, selectedRate, availableRooms, guest, setGuest, goTo } = useBooking();
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [phoneValid, setPhoneValid] = useState(true);
 
   // Garde-fou : pas de sélection → retour aux résultats.
   useEffect(() => {
@@ -35,6 +37,7 @@ export function Guest() {
     if (!guest.firstName.trim()) errs.firstName = "Prénom requis.";
     if (!guest.lastName.trim()) errs.lastName = "Nom requis.";
     if (!EMAIL_RE.test(guest.email.trim())) errs.email = "E-mail invalide.";
+    if (guest.telephone && !phoneValid) errs.telephone = "Numéro de téléphone invalide.";
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
     // Propose le surclassement seulement s'il existe des chambres supérieures.
@@ -81,14 +84,14 @@ export function Guest() {
               onChange={(e) => setGuest({ email: e.target.value })}
             />
           </Field>
-          <Field label="Téléphone">
-            <input
-              type="tel"
-              className="field-input"
+          <Field label="Téléphone" error={errors.telephone}>
+            <PhoneInput
               value={guest.telephone}
-              autoComplete="tel"
-              placeholder="+596 696 00 00 00"
-              onChange={(e) => setGuest({ telephone: e.target.value })}
+              defaultCountry={guest.nationalityCode}
+              onChange={(val, valid) => {
+                setGuest({ telephone: val });
+                setPhoneValid(valid);
+              }}
             />
           </Field>
         </div>

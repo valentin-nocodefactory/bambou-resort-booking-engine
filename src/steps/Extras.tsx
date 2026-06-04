@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useBooking } from "../state/booking";
+import { eur } from "../lib/format";
 import { groupProducts, upgradeRooms } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
 import { UpsellCard } from "../components/UpsellCard";
@@ -17,6 +18,7 @@ export function Extras() {
     selectedRoom,
     selectedRate,
     availableRooms,
+    grandTotal,
     goTo,
   } = useBooking();
 
@@ -82,13 +84,23 @@ export function Extras() {
           </div>
         )}
 
-        <div className="flex flex-col-reverse items-center justify-between gap-3 pt-2 sm:flex-row">
-          <button type="button" onClick={() => goTo("payment")} className="btn-link">
-            Passer cette étape
-          </button>
-          <button type="button" onClick={() => goTo("payment")} className="btn-primary w-full sm:w-auto">
-            Continuer vers le paiement <IconArrowRight className="h-4 w-4" />
-          </button>
+        {/* Barre d'action collante : toujours visible sans scroller */}
+        <div className="sticky bottom-0 z-20 mt-2 border-t border-ink/10 bg-cream/95 py-3 backdrop-blur">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <span className="text-xs text-ink/55">Total </span>
+              <span className="font-display text-lg text-teal-deep">{eur(grandTotal)}</span>
+              <span className="ml-1 text-[11px] text-ink/45">taxes incl.</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => goTo("payment")} className="btn-link hidden sm:inline-flex">
+                Passer
+              </button>
+              <button type="button" onClick={() => goTo("payment")} className="btn-primary">
+                Continuer vers le paiement <IconArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </StepLayout>
