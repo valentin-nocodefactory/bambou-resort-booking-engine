@@ -193,7 +193,7 @@ brut), injecte les IDs depuis `env`, et n'expose aucun CORS large.
 
 ## 🧪 Vérifier les réservations créées
 
-Back-office demo Mews : **https://app.mews-demo.com** · `distributor-api@mews.li` · `Distributor-api1`.
+Back-office demo Mews : **https://app.mews-demo.com** — _identifiants de la demo Mews fournis séparément (ne pas committer)._
 Les réservations créées par le moteur y apparaissent (n° de confirmation affiché sur l'écran final).
 
 ---
