@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useBooking } from "../state/booking";
 import { EMAIL_RE } from "../lib/format";
+import { upgradeRooms } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
 import { IconArrowRight } from "../components/icons";
 
@@ -20,7 +21,7 @@ const NATIONALITIES = [
 ];
 
 export function Guest() {
-  const { selectedRoom, selectedRate, guest, setGuest, goTo } = useBooking();
+  const { selectedRoom, selectedRate, availableRooms, guest, setGuest, goTo } = useBooking();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Garde-fou : pas de sélection → retour aux résultats.
@@ -35,7 +36,11 @@ export function Guest() {
     if (!guest.lastName.trim()) errs.lastName = "Nom requis.";
     if (!EMAIL_RE.test(guest.email.trim())) errs.email = "E-mail invalide.";
     setErrors(errs);
-    if (Object.keys(errs).length === 0) goTo("extras");
+    if (Object.keys(errs).length > 0) return;
+    // Propose le surclassement seulement s'il existe des chambres supérieures.
+    const currentTotal = selectedRate?.totalGross ?? selectedRoom?.fromGross ?? 0;
+    const hasUpgrades = upgradeRooms(availableRooms, selectedRoom, currentTotal).length > 0;
+    goTo(hasUpgrades ? "upgrade" : "extras");
   }
 
   return (
@@ -125,7 +130,7 @@ export function Guest() {
 
         <div className="flex justify-end pt-1">
           <button type="submit" className="btn-primary">
-            Continuer vers les extras <IconArrowRight className="h-4 w-4" />
+            Continuer <IconArrowRight className="h-4 w-4" />
           </button>
         </div>
       </form>

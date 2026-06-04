@@ -16,7 +16,8 @@ const AMENITIES = [
   { icon: IconCheck, label: "Wi-Fi gratuit" },
 ];
 
-// Panneau détail qui glisse depuis la DROITE (pas une popup centrée).
+// Panneau détail qui glisse depuis la DROITE — large, miniatures au-dessus de la
+// photo, détails sur 2 colonnes (infos à gauche, tarifs à droite).
 export function RoomDetailDrawer({
   room,
   imageBaseUrl,
@@ -37,7 +38,6 @@ export function RoomDetailDrawer({
   const [confirmed, setConfirmed] = useState<Record<string, number>>({});
   const [confirming, setConfirming] = useState(false);
 
-  // Anim d'entrée + verrou de scroll + Escape.
   useEffect(() => {
     document.body.style.overflow = "hidden";
     const raf = requestAnimationFrame(() => setEntered(true));
@@ -56,7 +56,6 @@ export function RoomDetailDrawer({
     setTimeout(onClose, 240);
   }
 
-  // Confirme les prix exacts (getPricing) selon l'occupation choisie.
   useEffect(() => {
     let alive = true;
     setConfirming(true);
@@ -87,149 +86,157 @@ export function RoomDetailDrawer({
 
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={`Détails — ${room.name}`}>
-      {/* Scrim */}
       <div
         onClick={close}
         className={`absolute inset-0 bg-ink/55 transition-opacity duration-300 ${entered ? "opacity-100" : "opacity-0"}`}
       />
-      {/* Panneau */}
       <div
-        className={`absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-cream shadow-float transition-transform duration-300 ease-out sm:max-w-lg ${
+        className={`absolute right-0 top-0 flex h-full w-full max-w-3xl flex-col bg-cream shadow-float transition-transform duration-300 ease-out ${
           entered ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {/* Galerie */}
-        <div className="relative shrink-0">
-          <Photo
-            src={imgUrl(imageBaseUrl, images[active], 1000)}
-            alt={`${room.name} — photo ${active + 1}`}
-            className="aspect-[4/3] w-full object-cover"
-          />
-          <button
-            type="button"
-            onClick={close}
-            aria-label="Fermer"
-            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-cream/90 text-ink shadow-card transition hover:bg-white"
-          >
-            <IconClose className="h-5 w-5" />
-          </button>
-          <span className="absolute left-3 top-3 rounded-full bg-teal-deep/85 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cream">
-            {spaceLabel(room.spaceType)}
-          </span>
-          <span className="absolute bottom-3 left-3">
-            <FavoriteBadge />
-          </span>
-        </div>
-        {images.length > 1 && (
-          <div className="no-scrollbar flex shrink-0 gap-2 overflow-x-auto px-4 py-3">
+        {/* Barre supérieure : miniatures (au-dessus de la photo) + fermer */}
+        <div className="flex shrink-0 items-center gap-3 border-b border-ink/10 px-4 py-2.5">
+          <div className="no-scrollbar flex flex-1 gap-2 overflow-x-auto">
             {images.map((id, i) => (
               <button
                 key={`${id}-${i}`}
                 type="button"
                 onClick={() => setActive(i)}
-                className={`h-14 w-20 shrink-0 overflow-hidden rounded-lg ring-2 transition ${
+                className={`h-12 w-16 shrink-0 overflow-hidden rounded-lg ring-2 transition ${
                   i === active ? "ring-turquoise" : "ring-transparent opacity-70 hover:opacity-100"
                 }`}
+                aria-label={`Photo ${i + 1}`}
               >
                 <Photo src={imgUrl(imageBaseUrl, id, 200)} alt="" className="h-full w-full object-cover" />
               </button>
             ))}
           </div>
-        )}
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Fermer"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-ink shadow-card transition hover:bg-sand"
+          >
+            <IconClose className="h-5 w-5" />
+          </button>
+        </div>
 
         {/* Contenu défilant */}
-        <div className="flex-1 overflow-y-auto px-5 pb-5 sm:px-6">
-          <div className="pt-4">
-            <h2 className="font-display text-2xl text-ink">{room.name}</h2>
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-teal-deep/85">
-              {room.capacity > 0 && (
-                <span className="inline-flex items-center gap-1.5">
-                  <IconUsers className="h-4 w-4 text-turquoise" /> {room.capacity} pers.
-                </span>
-              )}
-              <span className="inline-flex items-center gap-1.5">
-                <IconBed className="h-4 w-4 text-turquoise" /> {room.normalBedCount} lit{room.normalBedCount > 1 ? "s" : ""}
-                {room.extraBedCount > 0 ? ` + ${room.extraBedCount}` : ""}
-              </span>
-              <RatingPill score="9,3" count="312" />
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {lowStock && <ScarcityBadge count={room.availableRoomCount} />}
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-                <IconCheck className="h-3.5 w-3.5" /> Annulation gratuite
-              </span>
-            </div>
-            <div className="mt-3">
-              <ViewersNudge seed={room.categoryId} />
-            </div>
-
-            {room.description && (
-              <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-ink/75">{room.description}</p>
-            )}
-
-            {/* Équipements */}
-            <ul className="mt-4 grid grid-cols-2 gap-2.5">
-              {AMENITIES.map((a) => (
-                <li key={a.label} className="inline-flex items-center gap-2 text-sm text-ink/75">
-                  <a.icon className="h-4 w-4 shrink-0 text-turquoise" /> {a.label}
-                </li>
-              ))}
-            </ul>
+        <div className="flex-1 overflow-y-auto">
+          {/* Photo principale */}
+          <div className="relative">
+            <Photo
+              src={imgUrl(imageBaseUrl, images[active], 1200)}
+              alt={`${room.name} — photo ${active + 1}`}
+              className="aspect-[16/9] w-full object-cover"
+            />
+            <span className="absolute left-3 top-3 rounded-full bg-teal-deep/85 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cream">
+              {spaceLabel(room.spaceType)}
+            </span>
+            <span className="absolute bottom-3 left-3">
+              <FavoriteBadge />
+            </span>
           </div>
 
-          {/* Tarifs */}
-          <div className="mt-6">
-            <div className="flex items-center justify-between">
-              <h3 className="font-display text-lg text-teal-deep">Choisissez votre tarif</h3>
-              <span className="text-[11px] text-ink/45">{confirming ? "Confirmation…" : "Prix en direct"}</span>
-            </div>
-            <ul className="mt-3 space-y-3">
-              {room.rates.map((rate, i) => {
-                const total = confirmed[rate.rateId] ?? rate.totalGross;
-                const best = i === 0;
-                return (
-                  <li
-                    key={rate.rateId}
-                    className={`rounded-2xl border p-4 transition ${best ? "border-turquoise bg-white shadow-card" : "border-ink/10 bg-white/70"}`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold text-ink">{rate.name}</p>
-                          {best && (
-                            <span className="chip bg-turquoise text-white">
-                              <IconCheck className="h-3.5 w-3.5" /> Meilleur prix
-                            </span>
-                          )}
-                          {rate.isPrivate && <span className="chip bg-creole/20 text-creole">Tarif privé</span>}
-                        </div>
-                        {rate.description && <p className="mt-1 text-sm leading-relaxed text-ink/60">{rate.description}</p>}
-                        <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-teal-deep/70">
-                          <IconShield className="h-3.5 w-3.5" />
-                          {rate.settlement.isAutomatic ? "Paiement en ligne sécurisé" : "Paiement à l'hôtel"}
-                        </p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        {rate.maxGross != null && <p className="text-xs text-ink/40 line-through">{eur(rate.maxGross)}</p>}
-                        <p className="font-display text-2xl text-teal-deep">{eur(total)}</p>
-                        {rate.perNightGross != null && (
-                          <p className="text-[11px] text-ink/45">
-                            {eur(rate.perNightGross)}/nuit · {nightsCount} nuit{nightsCount > 1 ? "s" : ""}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => onSelectRate({ ...rate, totalGross: total ?? rate.totalGross })}
-                      className={`mt-3 w-full ${best ? "btn-primary" : "btn-ghost"}`}
-                    >
-                      Réserver à ce tarif
-                    </button>
+          {/* Détails sur 2 colonnes */}
+          <div className="grid gap-x-7 gap-y-6 px-5 py-5 sm:grid-cols-2 sm:px-6">
+            {/* Colonne gauche : infos */}
+            <div>
+              <h2 className="font-display text-2xl text-ink">{room.name}</h2>
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-teal-deep/85">
+                {room.capacity > 0 && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <IconUsers className="h-4 w-4 text-turquoise" /> {room.capacity} pers.
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1.5">
+                  <IconBed className="h-4 w-4 text-turquoise" /> {room.normalBedCount} lit{room.normalBedCount > 1 ? "s" : ""}
+                  {room.extraBedCount > 0 ? ` + ${room.extraBedCount}` : ""}
+                </span>
+              </div>
+              <div className="mt-2">
+                <RatingPill score="9,3" count="312" />
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {lowStock && <ScarcityBadge count={room.availableRoomCount} />}
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                  <IconCheck className="h-3.5 w-3.5" /> Annulation gratuite
+                </span>
+              </div>
+              <div className="mt-3">
+                <ViewersNudge seed={room.categoryId} />
+              </div>
+
+              {room.description && (
+                <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-ink/75">{room.description}</p>
+              )}
+
+              <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-teal-deep/60">Équipements</p>
+              <ul className="mt-2 grid grid-cols-2 gap-2.5">
+                {AMENITIES.map((a) => (
+                  <li key={a.label} className="inline-flex items-center gap-2 text-sm text-ink/75">
+                    <a.icon className="h-4 w-4 shrink-0 text-turquoise" /> {a.label}
                   </li>
-                );
-              })}
-            </ul>
+                ))}
+              </ul>
+            </div>
+
+            {/* Colonne droite : tarifs */}
+            <div>
+              <div className="flex items-center justify-between">
+                <h3 className="font-display text-lg text-teal-deep">Choisissez votre tarif</h3>
+                <span className="text-[11px] text-ink/45">{confirming ? "Confirmation…" : "Prix en direct"}</span>
+              </div>
+              <ul className="mt-3 space-y-3">
+                {room.rates.map((rate, i) => {
+                  const total = confirmed[rate.rateId] ?? rate.totalGross;
+                  const best = i === 0;
+                  return (
+                    <li
+                      key={rate.rateId}
+                      className={`rounded-2xl border p-4 transition ${best ? "border-turquoise bg-white shadow-card" : "border-ink/10 bg-white/70"}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-ink">{rate.name}</p>
+                            {best && (
+                              <span className="chip bg-turquoise text-white">
+                                <IconCheck className="h-3.5 w-3.5" /> Meilleur prix
+                              </span>
+                            )}
+                            {rate.isPrivate && <span className="chip bg-creole/20 text-creole">Tarif privé</span>}
+                          </div>
+                          {rate.description && <p className="mt-1 text-sm leading-relaxed text-ink/60">{rate.description}</p>}
+                          <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-teal-deep/70">
+                            <IconShield className="h-3.5 w-3.5" />
+                            {rate.settlement.isAutomatic ? "Paiement en ligne sécurisé" : "Paiement à l'hôtel"}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          {rate.maxGross != null && <p className="text-xs text-ink/40 line-through">{eur(rate.maxGross)}</p>}
+                          <p className="font-display text-2xl text-teal-deep">{eur(total)}</p>
+                          {rate.perNightGross != null && (
+                            <p className="text-[11px] text-ink/45">
+                              {eur(rate.perNightGross)}/nuit · {nightsCount} nuit{nightsCount > 1 ? "s" : ""}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onSelectRate({ ...rate, totalGross: total ?? rate.totalGross })}
+                        className={`mt-3 w-full ${best ? "btn-primary" : "btn-ghost"}`}
+                      >
+                        Réserver à ce tarif
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
         </div>
       </div>

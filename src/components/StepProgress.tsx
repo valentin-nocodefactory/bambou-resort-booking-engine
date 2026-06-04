@@ -5,6 +5,7 @@ const STEPS: { key: Step; label: string }[] = [
   { key: "dates", label: "Dates" },
   { key: "results", label: "Chambre" },
   { key: "guest", label: "Vos infos" },
+  { key: "upgrade", label: "Surclassement" },
   { key: "extras", label: "Extras" },
   { key: "payment", label: "Paiement" },
 ];

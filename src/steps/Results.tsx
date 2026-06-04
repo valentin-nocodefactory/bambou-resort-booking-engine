@@ -27,6 +27,7 @@ export function Results() {
     selectedRoom,
     selectRoomRate,
     hydrateSelection,
+    setAvailableRooms,
     toggleProduct,
     productIds,
     goTo,
@@ -58,6 +59,11 @@ export function Results() {
   }, [checkIn, checkOut, adults, children, voucherCode, reloadKey]);
 
   const rooms = useMemo(() => (data ? buildRooms(data, hotel) : []), [data, hotel]);
+
+  // Publie la liste pour l'étape de surclassement (upsell chambre après Guest).
+  useEffect(() => {
+    if (rooms.length) setAvailableRooms(rooms);
+  }, [rooms, setAvailableRooms]);
 
   // Réhydrate la sélection depuis l'URL (lien partagé / retour arrière).
   useEffect(() => {

@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useBooking } from "../state/booking";
+import { groupProducts, upgradeRooms } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
 import { UpsellCard } from "../components/UpsellCard";
 import { DataBadge } from "../components/DataBadge";
@@ -15,6 +16,7 @@ export function Extras() {
     guestsCount,
     selectedRoom,
     selectedRate,
+    availableRooms,
     goTo,
   } = useBooking();
 
@@ -22,14 +24,21 @@ export function Extras() {
     if (!selectedRoom || !selectedRate) goTo("results");
   }, [selectedRoom, selectedRate, goTo]);
 
+  // Regroupement des extras par catégorie.
+  const groups = useMemo(() => groupProducts(products), [products]);
+
+  // Retour : vers le surclassement s'il y en avait, sinon vers les infos.
+  const currentTotal = selectedRate?.totalGross ?? selectedRoom?.fromGross ?? 0;
+  const back = upgradeRooms(availableRooms, selectedRoom, currentTotal).length > 0 ? "upgrade" : "guest";
+
   return (
     <StepLayout
       title="Composez votre séjour"
       subtitle="Ajoutez des expériences et services pour sublimer votre escapade."
-      onBack={() => goTo("guest")}
-      backLabel="Retour aux informations"
+      onBack={() => goTo(back)}
+      backLabel="Retour"
     >
-      <div className="space-y-5">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <p className="inline-flex items-center gap-2 text-sm text-ink/60">
             <IconSparkles className="h-4 w-4 text-creole" />
@@ -40,18 +49,31 @@ export function Extras() {
           <DataBadge label="Extras · Mews" />
         </div>
 
-        {products.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {products.map((p) => (
-              <UpsellCard
-                key={p.id}
-                product={p}
-                imageBaseUrl={imageBaseUrl}
-                selected={productIds.includes(p.id)}
-                nightsCount={nightsCount}
-                guestsCount={guestsCount}
-                onToggle={() => toggleProduct(p.id)}
-              />
+        {groups.length > 0 ? (
+          <div className="space-y-7">
+            {groups.map((g) => (
+              <section key={g.key}>
+                <div className="mb-3 flex items-center gap-3">
+                  <span className="h-5 w-1 rounded-full bg-creole" />
+                  <h2 className="font-display text-lg text-teal-deep">{g.label}</h2>
+                  <span className="text-xs text-ink/40">
+                    {g.items.length} option{g.items.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {g.items.map((p) => (
+                    <UpsellCard
+                      key={p.id}
+                      product={p}
+                      imageBaseUrl={imageBaseUrl}
+                      selected={productIds.includes(p.id)}
+                      nightsCount={nightsCount}
+                      guestsCount={guestsCount}
+                      onToggle={() => toggleProduct(p.id)}
+                    />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         ) : (

@@ -6,6 +6,7 @@ import { DevPanel } from "./components/DevPanel";
 import { Dates } from "./steps/Dates";
 import { Results } from "./steps/Results";
 import { Guest } from "./steps/Guest";
+import { Upgrade } from "./steps/Upgrade";
 import { Extras } from "./steps/Extras";
 import { Payment } from "./steps/Payment";
 import { Confirmation } from "./steps/Confirmation";
@@ -15,6 +16,7 @@ const STEP_COMPONENTS: Record<Step, () => JSX.Element | null> = {
   dates: Dates,
   results: Results,
   guest: Guest,
+  upgrade: Upgrade,
   extras: Extras,
   payment: Payment,
   confirmation: Confirmation,
@@ -23,7 +25,7 @@ const STEP_COMPONENTS: Record<Step, () => JSX.Element | null> = {
 function Shell() {
   const { step, hotelError, reloadHotel, resetAll, goTo } = useBooking();
   const StepView = STEP_COMPONENTS[step];
-  const showProgress = ["results", "guest", "extras", "payment"].includes(step);
+  const showProgress = ["results", "guest", "upgrade", "extras", "payment"].includes(step);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });

@@ -12,8 +12,8 @@ import { nights as countNights } from "../lib/format";
 import { shapeProducts } from "../lib/shaping";
 import type { HotelConfig, ReservationCreateResult, ShapedProduct, ShapedRate, ShapedRoom } from "../types/mews";
 
-export type Step = "dates" | "results" | "guest" | "extras" | "payment" | "confirmation";
-export const STEP_ORDER: Step[] = ["dates", "results", "guest", "extras", "payment", "confirmation"];
+export type Step = "dates" | "results" | "guest" | "upgrade" | "extras" | "payment" | "confirmation";
+export const STEP_ORDER: Step[] = ["dates", "results", "guest", "upgrade", "extras", "payment", "confirmation"];
 
 export interface Guest {
   firstName: string;
@@ -104,6 +104,7 @@ interface BookingContextValue extends BookingState {
   // sélection runtime (hydratée depuis les résultats)
   selectedRoom: ShapedRoom | null;
   selectedRate: ShapedRate | null;
+  availableRooms: ShapedRoom[]; // liste des résultats (pour le surclassement)
   guest: Guest;
   created: ReservationCreateResult | null;
   // dérivés
@@ -117,6 +118,7 @@ interface BookingContextValue extends BookingState {
   setSearch: (p: Partial<Pick<BookingState, "checkIn" | "checkOut" | "adults" | "children" | "voucherCode">>) => void;
   selectRoomRate: (room: ShapedRoom, rate: ShapedRate) => void;
   hydrateSelection: (room: ShapedRoom | null, rate: ShapedRate | null) => void;
+  setAvailableRooms: (rooms: ShapedRoom[]) => void;
   clearSelection: () => void;
   toggleProduct: (id: string) => void;
   setGuest: (p: Partial<Guest>) => void;
@@ -144,6 +146,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<BookingState>(() => ({ ...defaults, ...readUrl() }));
   const [selectedRoom, setSelectedRoom] = useState<ShapedRoom | null>(null);
   const [selectedRate, setSelectedRate] = useState<ShapedRate | null>(null);
+  const [availableRooms, setAvailableRoomsState] = useState<ShapedRoom[]>([]);
   const [guest, setGuestState] = useState<Guest>(emptyGuest);
   const [created, setCreatedState] = useState<ReservationCreateResult | null>(null);
 
@@ -183,6 +186,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         if (searchChanged) {
           setSelectedRoom(null);
           setSelectedRate(null);
+          setAvailableRoomsState([]);
         }
         return {
           ...s,
@@ -203,6 +207,11 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setSelectedRoom(room);
     setSelectedRate(rate);
   }, []);
+
+  const setAvailableRooms: BookingContextValue["setAvailableRooms"] = useCallback(
+    (rooms) => setAvailableRoomsState(rooms),
+    [],
+  );
 
   const clearSelection = useCallback(() => {
     setSelectedRoom(null);
@@ -266,6 +275,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     reloadHotel: loadHotel,
     selectedRoom,
     selectedRate,
+    availableRooms,
     guest,
     created,
     nightsCount,
@@ -277,6 +287,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setSearch,
     selectRoomRate,
     hydrateSelection,
+    setAvailableRooms,
     clearSelection,
     toggleProduct,
     setGuest,
