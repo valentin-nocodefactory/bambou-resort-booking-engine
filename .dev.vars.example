@@ -4,9 +4,8 @@
 MEWS_BASE_URL=https://api.mews-demo.com
 MEWS_APP_BASE_URL=https://app.mews-demo.com
 
-# Booking Engine API only. Seule valeur qui passe (200) sur la demo aujourd'hui.
-# 🔁 À remplacer par "Hotel Bambou 1.0" une fois la chaîne Client activée par Mews.
-MEWS_CLIENT=My Client 1.0.0
+# Booking Engine API — chaîne Client activée par Mews sur l'entreprise Bambou Resort.
+MEWS_CLIENT=bambouresort1.0
 
 MEWS_HOTEL_ID=3edbe1b4-6739-40b7-81b3-d369d9469c48
 MEWS_CONFIG_ID=93e27b6f-cba7-4e0b-a24a-819e1b7b388a

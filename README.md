@@ -99,13 +99,13 @@ Les valeurs **non secrètes** ont des défauts demo dans [`wrangler.toml`](./wra
 fonctionne immédiatement, seul **`MEWS_CLIENT`** doit être ajouté en **secret chiffré**. Le `Client` et les IDs ne
 finissent **jamais** dans le front (aucune variable `VITE_*` n'est utilisée).
 
-### 🔁 Swap du Client `Hotel Bambou 1.0` (last-minute)
+### 🔑 Chaîne Client
 
-Sur la demo aujourd'hui, **seule `My Client 1.0.0` passe (200)** ; `Hotel Bambou 1.0` renvoie 401 tant que Mews ne
-l'a pas activée sur l'entreprise. Quand c'est fait :
+`MEWS_CLIENT = bambouresort1.0` — chaîne **activée par Mews** sur l'entreprise Bambou Resort (vérifiée **200 OK**).
+À définir comme **secret** côté Cloudflare :
 
 1. Dashboard Cloudflare → ton Worker → **Settings → Variables and Secrets**.
-2. Modifier/ajouter le **secret** `MEWS_CLIENT` = `Hotel Bambou 1.0`. **Aucun changement de code.**
+2. Ajouter/Modifier le **secret** `MEWS_CLIENT` = `bambouresort1.0`. **Aucun changement de code.**
 3. Re-déployer (ou « Retry deployment »).
 
 En CLI : `npx wrangler secret put MEWS_CLIENT`.
@@ -168,7 +168,7 @@ configurée côté Mews. En sandbox : `https://pay.sandbox.datatrans.com/...` ; 
 ## 🏭 Passage en production
 
 - **API** : `MEWS_BASE_URL=https://api.mews.com`, `MEWS_APP_BASE_URL=https://app.mews.com`.
-- **`MEWS_CLIENT`** : la vraie chaîne activée (`Hotel Bambou 1.0`).
+- **`MEWS_CLIENT`** : la chaîne activée par Mews — `bambouresort1.0`.
 - **`MEWS_HOTEL_ID` / `MEWS_CONFIG_ID`** : UUID réels de l'établissement.
 - **Catégories d'âge** : remplacer `MEWS_ADULT/CHILD_AGE_CATEGORY_ID` par les UUID réels (visibles dans Mews) —
   ne pas s'appuyer sur les fallbacks demo.
@@ -233,7 +233,7 @@ Les réservations créées par le moteur y apparaissent (n° de confirmation aff
 
 ## ⚠️ Pièges (vérifiés en live)
 
-1. **401 Client** : seule `My Client 1.0.0` passe sur la demo ; swap via l'env var (cf. ci-dessus). Jamais de Client côté front.
+1. **401 Client** : le `Client` doit être une chaîne activée par Mews (`bambouresort1.0`). Réglé via l'env var/secret, jamais côté front.
 2. **CORS** : résolu par l'architecture (front → `/api/mews/*` même origine).
 3. **Prix null** : certains combos renvoient `GrossValue: null` → ignorés (`buildRooms`).
 4. **Dates** : toujours `...T00:00:00Z` ; Mews normalise ensuite aux heures réelles de check-in/out de l'hôtel.
