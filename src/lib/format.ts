@@ -65,10 +65,13 @@ export function fmtDateLong(date: string): string {
   return Number.isNaN(t) ? date : dateFmtLong.format(new Date(t));
 }
 
-// URL d'image Mews : `${ImageBaseUrl}/{imageId}?w=…`. Renvoie null si pas d'id.
-export function imgUrl(baseUrl: string | undefined, imageId: string | null | undefined, w = 900): string | null {
+// URL d'image Mews : `${ImageBaseUrl}/{imageId}?width=…`. Renvoie null si pas d'id.
+// ⚠️ Le CDN Mews attend `width` (et non `w`) : avec `w`, le prod sert l'image pleine
+// résolution TRONQUÉE à 1 Mio (illisible → image cassée). `width` renvoie une image
+// complète ET redimensionnée (prod + demo).
+export function imgUrl(baseUrl: string | undefined, imageId: string | null | undefined, width = 900): string | null {
   if (!baseUrl || !imageId) return null;
-  return `${baseUrl}/${imageId}?w=${w}`;
+  return `${baseUrl}/${imageId}?width=${width}`;
 }
 
 // yyyy-mm-dd du jour (en UTC) + ajout de N jours — pour les valeurs par défaut du sélecteur.
