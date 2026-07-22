@@ -38,7 +38,7 @@ liens partageables et retour de paiement robustes, sans base de données.
 
 ```
 Navigateur ──(/api/mews/*, même origine)──▶ Cloudflare Worker ──(Client injecté)──▶ Mews Distributor API
-   front statique (dist/, binding ASSETS)       worker/index.ts → worker/mews/*       api.mews-demo.com
+   front statique (dist/, binding ASSETS)       worker/index.ts → worker/mews/*          api.mews.com
 ```
 
 Un **seul Worker** (`worker/index.ts`) :
@@ -87,25 +87,25 @@ Ouvrez **http://localhost:5173**. Vite sert le front avec HMR et **proxie `/api/
 
 | Variable | Rôle | Secret ? | Local | Prod |
 | --- | --- | --- | --- | --- |
-| `MEWS_BASE_URL` | Base API Mews (`https://api.mews-demo.com`) | non | `.dev.vars` | `wrangler.toml [vars]` ou dashboard |
+| `MEWS_BASE_URL` | Base API Mews (`https://api.mews.com`) | non | `.dev.vars` | `wrangler.toml [vars]` ou dashboard |
 | `MEWS_APP_BASE_URL` | Base app Mews (page de paiement) | non | `.dev.vars` | idem |
 | `MEWS_CLIENT` | Chaîne `Client` Booking Engine API | **OUI** | `.dev.vars` | **Secret** (dashboard Worker) |
 | `MEWS_HOTEL_ID` | UUID établissement | non | `.dev.vars` | `wrangler.toml [vars]` ou dashboard |
 | `MEWS_CONFIG_ID` | UUID configuration | non | `.dev.vars` | idem |
-| `MEWS_ADULT_AGE_CATEGORY_ID` | Catégorie d'âge « adulte » | non | `.dev.vars` | idem (fallback demo intégré) |
+| `MEWS_ADULT_AGE_CATEGORY_ID` | Catégorie d'âge « adulte » | non | `.dev.vars` | idem (fallback entreprise intégré) |
 | `MEWS_CHILD_AGE_CATEGORY_ID` | Catégorie d'âge « enfant » | non | `.dev.vars` | idem |
 
-Les valeurs **non secrètes** ont des défauts demo dans [`wrangler.toml`](./wrangler.toml) (`[vars]`) : un déploiement
-fonctionne immédiatement, seul **`MEWS_CLIENT`** doit être ajouté en **secret chiffré**. Le `Client` et les IDs ne
+Les valeurs **non secrètes** (prod Bambou Resort) sont dans [`wrangler.toml`](./wrangler.toml) (`[vars]`) : un
+déploiement fonctionne immédiatement, seul **`MEWS_CLIENT`** doit être ajouté en **secret chiffré**. Le `Client` et les IDs ne
 finissent **jamais** dans le front (aucune variable `VITE_*` n'est utilisée).
 
 ### 🔑 Chaîne Client
 
-`MEWS_CLIENT = bambouresort1.0` — chaîne **activée par Mews** sur l'entreprise Bambou Resort (vérifiée **200 OK**).
+`MEWS_CLIENT = ‹chaîne Client Mews — secret›` — chaîne **activée par Mews** sur l'entreprise Bambou Resort (vérifiée **200 OK**).
 À définir comme **secret** côté Cloudflare :
 
 1. Dashboard Cloudflare → ton Worker → **Settings → Variables and Secrets**.
-2. Ajouter/Modifier le **secret** `MEWS_CLIENT` = `bambouresort1.0`. **Aucun changement de code.**
+2. Ajouter/Modifier le **secret** `MEWS_CLIENT` = `‹chaîne Client Mews — secret›`. **Aucun changement de code.**
 3. Re-déployer (ou « Retry deployment »).
 
 En CLI : `npx wrangler secret put MEWS_CLIENT`.
@@ -145,8 +145,8 @@ npm run build && npx wrangler deploy
 
 ### Voie A — Payment Request (implémentée, MVP)
 
-1. `reservationGroups/create` **sans** `CreditCardData` → comme les `RateGroups` demo sont en
-   `Automatic / ChargeCreditCard`, Mews renvoie un `PaymentRequestId`.
+1. `reservationGroups/create` **sans** `CreditCardData` → pour un `RateGroup` en
+   `Automatic / ChargeCreditCard` (le cas de la plupart des tarifs Bambou), Mews renvoie un `PaymentRequestId`.
 2. La Function construit (server-side) l'URL hébergée par Mews :
    `${MEWS_APP_BASE_URL}/navigator/payment-requests/detail/{PaymentRequestId}?returnUrl={base64}`
    où `returnUrl` = Base64 de `${origin}/confirmation?rgid={groupId}`.
@@ -160,25 +160,28 @@ affiche **« paiement à l'arrivée »**.
 ### Voie B — PCI Proxy Secure Fields (V2, non implémentée)
 
 Paiement intégré via Datatrans Secure Fields, `merchantId = PaymentGateway.PublicKey` de `hotels/get`.
-⚠️ Sur la demo actuelle, `PaymentGateway` est **`null`** → Voie B non testable tant que la passerelle n'est pas
-configurée côté Mews. En sandbox : `https://pay.sandbox.datatrans.com/...` ; en prod retirer `sandbox.`.
+En **production**, la passerelle est configurée (`PciProxy`, Visa/MasterCard/Apple Pay/Google Pay) → Voie B
+branchable en V2. En sandbox : `https://pay.sandbox.datatrans.com/...` ; en prod retirer `sandbox.`.
 
 ---
 
-## 🏭 Passage en production
+## 🏭 Production — Bambou Resort Martinique (ACTIF)
 
-- **API** : `MEWS_BASE_URL=https://api.mews.com`, `MEWS_APP_BASE_URL=https://app.mews.com`.
-- **`MEWS_CLIENT`** : la chaîne activée par Mews — `bambouresort1.0`.
-- **`MEWS_HOTEL_ID` / `MEWS_CONFIG_ID`** : UUID réels de l'établissement.
-- **Catégories d'âge** : remplacer `MEWS_ADULT/CHILD_AGE_CATEGORY_ID` par les UUID réels (visibles dans Mews) —
-  ne pas s'appuyer sur les fallbacks demo.
-- **Visuels** : remplacer ceux de `src/lib/assets.ts` par les vrais (ou ceux des `RoomCategories` Mews via `ImageBaseUrl`).
-- **E-mails de confirmation** : envoyés par **Mews** (PMS), pas par le moteur. En prod, activer/configurer
-  les templates d'e-mails de confirmation côté établissement Mews → envoi auto au client (`Customer.Email`) à la
-  confirmation/paiement. La demo n'envoie pas d'e-mail (sandbox). _(Le moteur peut aussi envoyer un e-mail custom
-  ou une notif webhook en V2 — non câblé.)_
-- **Voie B** (optionnel) : brancher PCI Proxy une fois `PaymentGateway` configuré, retirer `sandbox.`.
-- Vérifier que `dist/` ne contient **aucun secret** (`grep -r "My Client" dist/` doit être vide).
+Le déploiement pointe sur l'entreprise **réelle**. Config actuelle (`wrangler.toml [vars]` + `.dev.vars`) :
+
+- **API** : `api.mews.com` / `app.mews.com`.
+- **`MEWS_CLIENT`** : `‹chaîne Client Mews — secret›` (secret Cloudflare + `.dev.vars` local).
+- **`MEWS_HOTEL_ID`** = `d81c0909-…` (Enterprise Bambou Resort Martinique) · **`MEWS_CONFIG_ID`** = `43ec5bf8-…` (Booking Engine « Hôtel Bambou »).
+- **Catégories d'âge** réelles : adulte `3b9bdb28-…`, enfant `5cd331e0-…`.
+- **Passerelle de paiement** : `PciProxy` configurée → Voie A opérationnelle (page carte + 3-D Secure). Un groupe de tarifs est en règlement **Manual** → « paiement à l'arrivée ».
+- **E-mails de confirmation** : Mews les envoie au client (`Customer.Email`) si les templates sont activés côté établissement.
+
+> ⚠️ **En production, toute réservation menée jusqu'au paiement est RÉELLE** (créée dans le PMS du Bambou, e-mail
+> client déclenché). Pour tester sans risque, réactivez les valeurs **demo** commentées en bas de `.dev.vars`
+> (bascule locale instantanée, aucun changement de code).
+
+- **Visuels d'accueil** : `src/lib/assets.ts` (placeholders du site bambouresort.com) — remplaçables par les vrais.
+- Vérifier que `dist/` ne contient **aucun secret**.
 
 ---
 
@@ -215,8 +218,9 @@ brut), injecte les IDs depuis `env`, et n'expose aucun CORS large.
 
 ## 🧪 Vérifier les réservations créées
 
-Back-office demo Mews : **https://app.mews-demo.com** — _identifiants de la demo Mews fournis séparément (ne pas committer)._
+Back-office Mews : **https://app.mews.com** (compte de l'établissement Bambou Resort).
 Les réservations créées par le moteur y apparaissent (n° de confirmation affiché sur l'écran final).
+⚠️ En production, ce sont de **vraies** réservations.
 
 ---
 
@@ -233,7 +237,7 @@ Les réservations créées par le moteur y apparaissent (n° de confirmation aff
 
 ## ⚠️ Pièges (vérifiés en live)
 
-1. **401 Client** : le `Client` doit être une chaîne activée par Mews (`bambouresort1.0`). Réglé via l'env var/secret, jamais côté front.
+1. **401 Client** : le `Client` doit être une chaîne activée par Mews (`‹chaîne Client Mews — secret›`). Réglé via l'env var/secret, jamais côté front.
 2. **CORS** : résolu par l'architecture (front → `/api/mews/*` même origine).
 3. **Prix null** : certains combos renvoient `GrossValue: null` → ignorés (`buildRooms`).
 4. **Dates** : toujours `...T00:00:00Z` ; Mews normalise ensuite aux heures réelles de check-in/out de l'hôtel.

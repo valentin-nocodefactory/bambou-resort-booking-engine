@@ -311,11 +311,13 @@ export function productLineTotal(p: ShapedProduct, nights: number, guests: numbe
   const g = Math.max(1, guests);
   switch (p.chargingMode) {
     case "PerNight":
+    case "PerTimeUnit": // TimeUnit = nuit sur un hébergement
       return p.priceEur * n;
     case "PerPerson":
       return p.priceEur * g;
     case "PerPersonPerNight":
     case "PerNightPerPerson":
+    case "PerPersonPerTimeUnit": // ex. « Déjeuner (Pension complète) »
       return p.priceEur * g * n;
     default: // Once / inconnu
       return p.priceEur;

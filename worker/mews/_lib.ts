@@ -14,11 +14,11 @@ export interface Env {
   MEWS_CHILD_AGE_CATEGORY_ID?: string;
 }
 
-// Catégories d'âge (demo, vérifiées en live) — fallback si les vars ne sont pas définies.
-// En prod : surcharger via MEWS_ADULT_AGE_CATEGORY_ID / MEWS_CHILD_AGE_CATEGORY_ID.
+// Catégories d'âge de l'entreprise Bambou Resort (vérifiées en live) — fallback si les
+// vars ne sont pas définies. Surchargeables via MEWS_ADULT/CHILD_AGE_CATEGORY_ID.
 const AGE_FALLBACK = {
-  adult: "5485e2f3-4034-4ca1-8a8f-ade30114c61f",
-  child: "fece4b6b-39fa-4ccd-9909-afba0092eeb1",
+  adult: "3b9bdb28-d9e1-4fac-904f-b2cf00febb8f",
+  child: "5cd331e0-0069-4f46-a20f-b2cf00febb8f",
 };
 
 const TIMEOUT_MS = 12_000;

@@ -1,15 +1,26 @@
 # Copiez ce fichier en `.dev.vars` (gitignored) pour le développement local.
-# `wrangler pages dev` le lit automatiquement. NE COMMITTEZ JAMAIS `.dev.vars`.
+# `wrangler dev` le lit automatiquement. NE COMMITTEZ JAMAIS `.dev.vars`.
+#
+# ⚠️ Ces valeurs pointent sur la PRODUCTION : aller au bout du paiement crée une
+#    VRAIE réservation. Utilisez le bloc DEMO en bas pour tester sans risque.
 
-MEWS_BASE_URL=https://api.mews-demo.com
-MEWS_APP_BASE_URL=https://app.mews-demo.com
+MEWS_BASE_URL=https://api.mews.com
+MEWS_APP_BASE_URL=https://app.mews.com
 
 # Booking Engine API — chaîne Client activée par Mews sur l'entreprise Bambou Resort.
-MEWS_CLIENT=bambouresort1.0
+MEWS_CLIENT=<chaîne Client fournie par Mews — NE PAS committer la vraie valeur>
 
-MEWS_HOTEL_ID=3edbe1b4-6739-40b7-81b3-d369d9469c48
-MEWS_CONFIG_ID=93e27b6f-cba7-4e0b-a24a-819e1b7b388a
+MEWS_HOTEL_ID=d81c0909-af62-4227-9cfe-b2cf00fea600
+MEWS_CONFIG_ID=43ec5bf8-09e2-4ae8-83d2-b39900e86b9b
 
-# Catégories d'âge (demo, vérifiées). En prod : UUID réels de l'entreprise.
-MEWS_ADULT_AGE_CATEGORY_ID=5485e2f3-4034-4ca1-8a8f-ade30114c61f
-MEWS_CHILD_AGE_CATEGORY_ID=fece4b6b-39fa-4ccd-9909-afba0092eeb1
+MEWS_ADULT_AGE_CATEGORY_ID=3b9bdb28-d9e1-4fac-904f-b2cf00febb8f
+MEWS_CHILD_AGE_CATEGORY_ID=5cd331e0-0069-4f46-a20f-b2cf00febb8f
+
+# ── Bascule DEMO (tests sans risque) ────────────────────────────────────────
+# MEWS_BASE_URL=https://api.mews-demo.com
+# MEWS_APP_BASE_URL=https://app.mews-demo.com
+# MEWS_CLIENT=<chaîne Client fournie par Mews — NE PAS committer la vraie valeur>
+# MEWS_HOTEL_ID=3edbe1b4-6739-40b7-81b3-d369d9469c48
+# MEWS_CONFIG_ID=93e27b6f-cba7-4e0b-a24a-819e1b7b388a
+# MEWS_ADULT_AGE_CATEGORY_ID=5485e2f3-4034-4ca1-8a8f-ade30114c61f
+# MEWS_CHILD_AGE_CATEGORY_ID=fece4b6b-39fa-4ccd-9909-afba0092eeb1

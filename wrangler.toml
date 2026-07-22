@@ -10,14 +10,14 @@ directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
-# ⚠️ Valeurs NON secrètes : identifiants publics de l'établissement demo. Le secret
-# (MEWS_CLIENT) n'est PAS ici — il est fourni en local par .dev.vars (gitignored) et en
-# prod par les variables d'environnement Cloudflare (chiffré). Voir README.
+# ⚠️ PRODUCTION — Bambou Resort Martinique (identifiants publics, NON secrets).
+# Le secret MEWS_CLIENT n'est PAS ici : .dev.vars en local, secret Cloudflare en prod.
+# ⚠️⚠️ Une réservation créée depuis cette config est une VRAIE réservation dans le PMS.
 [vars]
-MEWS_BASE_URL = "https://api.mews-demo.com"
-MEWS_APP_BASE_URL = "https://app.mews-demo.com"
-MEWS_HOTEL_ID = "3edbe1b4-6739-40b7-81b3-d369d9469c48"
-MEWS_CONFIG_ID = "93e27b6f-cba7-4e0b-a24a-819e1b7b388a"
-# Catégories d'âge (demo, vérifiées). À remplacer par les UUID réels de l'entreprise en prod.
-MEWS_ADULT_AGE_CATEGORY_ID = "5485e2f3-4034-4ca1-8a8f-ade30114c61f"
-MEWS_CHILD_AGE_CATEGORY_ID = "fece4b6b-39fa-4ccd-9909-afba0092eeb1"
+MEWS_BASE_URL = "https://api.mews.com"
+MEWS_APP_BASE_URL = "https://app.mews.com"
+MEWS_HOTEL_ID = "d81c0909-af62-4227-9cfe-b2cf00fea600"
+MEWS_CONFIG_ID = "43ec5bf8-09e2-4ae8-83d2-b39900e86b9b"
+# Catégories d'âge réelles de l'entreprise (vérifiées en live).
+MEWS_ADULT_AGE_CATEGORY_ID = "3b9bdb28-d9e1-4fac-904f-b2cf00febb8f"
+MEWS_CHILD_AGE_CATEGORY_ID = "5cd331e0-0069-4f46-a20f-b2cf00febb8f"

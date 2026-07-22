@@ -198,7 +198,9 @@ const CHARGING_LABELS: Record<string, string> = {
   Once: "une fois",
   PerPerson: "par personne",
   PerNight: "par nuit",
+  PerTimeUnit: "par nuit",
   PerPersonPerNight: "par personne / nuit",
   PerNightPerPerson: "par personne / nuit",
+  PerPersonPerTimeUnit: "par personne / nuit",
 };
 export const chargingLabel = (mode: string) => CHARGING_LABELS[mode] ?? "";
