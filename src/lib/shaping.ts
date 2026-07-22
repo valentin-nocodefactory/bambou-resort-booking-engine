@@ -67,10 +67,14 @@ export function buildRooms(avail: AvailabilityResponse, hotel: HotelConfig | nul
       });
     }
 
-    if (!rates.length) continue; // rien de réservable pour ces dates
+    // On ne propose QUE des tarifs payables EN LIGNE : règlement `Automatic`
+    // (→ Mews renvoie un PaymentRequestId → redirection carte). Les tarifs en
+    // règlement `Manual` (« paiement à l'arrivée ») sont exclus : pas de résa sans paiement.
+    const payableRates = rates.filter((r) => r.settlement.isAutomatic);
+    if (!payableRates.length) continue; // aucun tarif payable en ligne → chambre non proposée
 
-    rates.sort((a, b) => (a.totalGross ?? Infinity) - (b.totalGross ?? Infinity));
-    const fromGross = rates[0]?.totalGross ?? null;
+    payableRates.sort((a, b) => (a.totalGross ?? Infinity) - (b.totalGross ?? Infinity));
+    const fromGross = payableRates[0]?.totalGross ?? null;
 
     const cat = categoryById.get(rca.RoomCategoryId);
     rooms.push({
@@ -83,7 +87,7 @@ export function buildRooms(avail: AvailabilityResponse, hotel: HotelConfig | nul
       spaceType: cat?.SpaceType ?? "Room",
       availableRoomCount: rca.AvailableRoomCount,
       capacity: (cat?.NormalBedCount ?? 0) + (cat?.ExtraBedCount ?? 0),
-      rates,
+      rates: payableRates,
       fromGross,
     });
   }
