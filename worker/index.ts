@@ -17,8 +17,10 @@ import { onRequestPost as reservationStatus } from "./mews/reservation-status";
 import { onRequestPost as paymentLink } from "./mews/payment-link";
 import { onRequestPost as voucher } from "./mews/voucher";
 
-// Les handlers gardent la signature Pages ({ request, env }) — on les adapte ici.
-type Handler = (ctx: { request: Request; env: Env }) => Response | Promise<Response>;
+// Les handlers gardent la signature Pages ({ request, env, waitUntil }) — on les adapte ici.
+// waitUntil permet de lancer les webhooks en tâche de fond sans bloquer la réponse.
+type Ctx = { request: Request; env: Env; waitUntil: (p: Promise<unknown>) => void };
+type Handler = (ctx: Ctx) => Response | Promise<Response>;
 const h = (fn: unknown) => fn as Handler;
 
 const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
@@ -38,13 +40,13 @@ const json = (data: unknown, status: number) =>
   });
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const match = url.pathname.match(/^\/api\/mews\/([a-z-]+)\/?$/);
     if (match) {
       const handler = ROUTES[match[1]]?.[request.method.toUpperCase()];
       if (!handler) return json({ error: "not_found" }, 404);
-      return handler({ request, env });
+      return handler({ request, env, waitUntil: (p) => ctx.waitUntil(p) });
     }
     // Front statique + fallback SPA (géré par le binding ASSETS).
     return env.ASSETS.fetch(request);

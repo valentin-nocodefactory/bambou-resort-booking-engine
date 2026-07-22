@@ -12,6 +12,29 @@ export interface Env {
   MEWS_CONFIG_ID: string;
   MEWS_ADULT_AGE_CATEGORY_ID?: string;
   MEWS_CHILD_AGE_CATEGORY_ID?: string;
+  // URL de webhook (optionnelle) : reçoit les événements payment.initiated / reservation.paid.
+  WEBHOOK_URL?: string;
+}
+
+// POST best-effort vers le webhook configuré (WEBHOOK_URL). No-op si absent.
+// N'échoue JAMAIS l'appel principal (à envelopper dans ctx.waitUntil côté handler).
+export async function notify(env: Env, event: string, data: Record<string, unknown>): Promise<void> {
+  const url = env.WEBHOOK_URL;
+  if (!url || !/^https?:\/\//.test(url)) return;
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 8_000);
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event, timestamp: new Date().toISOString(), ...data }),
+      signal: ctrl.signal,
+    });
+  } catch {
+    // best-effort : on ne casse jamais la réservation à cause du webhook
+  } finally {
+    clearTimeout(to);
+  }
 }
 
 // Catégories d'âge de l'entreprise Bambou Resort (vérifiées en live) — fallback si les

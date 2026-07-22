@@ -94,6 +94,9 @@ Ouvrez **http://localhost:5173**. Vite sert le front avec HMR et **proxie `/api/
 | `MEWS_CONFIG_ID` | UUID configuration | non | `.dev.vars` | idem |
 | `MEWS_ADULT_AGE_CATEGORY_ID` | Catégorie d'âge « adulte » | non | `.dev.vars` | idem (fallback entreprise intégré) |
 | `MEWS_CHILD_AGE_CATEGORY_ID` | Catégorie d'âge « enfant » | non | `.dev.vars` | idem |
+| `WEBHOOK_URL` | URL notifiée `payment.initiated` / `reservation.paid` (voir [🔔 Webhooks](#-webhooks)) | non¹ | `.dev.vars` | `wrangler.toml [vars]` ou dashboard |
+
+> ¹ Non secrète au sens Mews, mais si l'URL contient un jeton, ajoutez-la plutôt en **Secret** côté Cloudflare.
 
 Les valeurs **non secrètes** (prod Bambou Resort) sont dans [`wrangler.toml`](./wrangler.toml) (`[vars]`) : un
 déploiement fonctionne immédiatement, seul **`MEWS_CLIENT`** doit être ajouté en **secret chiffré**. Le `Client` et les IDs ne
@@ -165,6 +168,61 @@ branchable en V2. En sandbox : `https://pay.sandbox.datatrans.com/...` ; en prod
 
 ---
 
+## 🔔 Webhooks
+
+Le Worker peut notifier une **URL externe** (`WEBHOOK_URL`) à deux moments. Optionnel : si la variable n'est
+pas définie, rien n'est envoyé (aucun impact sur la réservation). Chaque notification est un `POST`
+`application/json`, envoyé **en tâche de fond** (`ctx.waitUntil`) — un webhook lent ou en échec **ne bloque ni
+ne casse jamais** la réservation.
+
+| Événement | Déclencheur | Fiabilité |
+| --- | --- | --- |
+| `payment.initiated` | `reservationGroups/create` renvoie un `PaymentRequestId` (tarif à règlement automatique) | **Serveur** — fiable, à chaque paiement initié. |
+| `reservation.paid` | Au retour sur `/confirmation`, le front sonde le statut et le paiement est encaissé (`Charged`/`Completed`) | Dépend du **retour du client** sur la page. |
+
+Payload commun : `{ event, timestamp (ISO), ... }`.
+
+```jsonc
+// payment.initiated
+{
+  "event": "payment.initiated",
+  "timestamp": "2026-07-22T09:25:51.931Z",
+  "reservationGroupId": "abc3…",
+  "paymentRequestId": "268e…",
+  "paymentUrl": "https://app.mews.com/navigator/payment-requests/detail/268e…?returnUrl=…",
+  "customer": { "email": "…", "firstName": "…", "lastName": "…" },
+  "totalAmount": { "currency": "EUR", "gross": 2465.85, "net": 2465.85 },
+  "reservations": [
+    { "number": "8017", "roomCategoryId": "256f…", "rateId": "e835…",
+      "startUtc": "2026-09-15T12:00:00Z", "endUtc": "2026-09-18T10:00:00Z",
+      "adultCount": 2, "childCount": 0 }
+  ]
+}
+
+// reservation.paid
+{
+  "event": "reservation.paid",
+  "timestamp": "…",
+  "reservationGroupId": "abc3…",
+  "confirmationNumbers": ["8017"],
+  "payments": [{ "id": "…", "state": "Charged" }]
+}
+```
+
+**⚠️ Déduplication obligatoire.** `reservation.paid` part **côté front** : il peut se répéter si le client
+recharge/revisite `/confirmation`. Le consommateur **doit dédupliquer** par `reservationGroupId`. Pour une source
+d'événements « payé » 100 % serveur et garantie, brancher plutôt un **webhook Mews Connector**
+(`PaymentUpdated` / `ServiceOrderUpdated`) côté PMS — complémentaire à ce mécanisme léger.
+
+**Configuration**
+
+- **Local** : `WEBHOOK_URL=https://…` dans `.dev.vars`.
+- **Cloudflare** : Worker → **Settings → Variables and Secrets** → ajouter `WEBHOOK_URL` (Variable, ou **Secret**
+  si l'URL porte un jeton), puis re-déployer. Un service comme [webhook.site](https://webhook.site) permet de
+  tester la réception en un clic.
+
+---
+
 ## 🏭 Production — Bambou Resort Martinique (ACTIF)
 
 Le déploiement pointe sur l'entreprise **réelle**. Config actuelle (`wrangler.toml [vars]` + `.dev.vars`) :
@@ -191,12 +249,12 @@ Le déploiement pointe sur l'entreprise **réelle**. Config actuelle (`wrangler.
 worker/
   index.ts                 # Entrée Worker : route /api/mews/* + sert le front (binding ASSETS) + fallback SPA
   mews/                    # Proxy serveur — un fichier = une route /api/mews/*
-    _lib.ts                #   helper mews() (injection Client + timeout 12s), validations, occupancyData()
+    _lib.ts                #   helper mews() (injection Client + timeout 12s), validations, occupancyData(), notify() (webhooks)
     hotel.ts               #   hotels/get            (cache 5 min)
     availability.ts        #   hotels/getAvailability
     pricing.ts             #   reservations/getPricing  (curé EUR-only)
-    reservation.ts         #   reservationGroups/create (whitelist + construit paymentUrl Voie A)
-    reservation-status.ts  #   reservationGroups/get    (statut paiement curé)
+    reservation.ts         #   reservationGroups/create (whitelist + paymentUrl Voie A + webhook payment.initiated)
+    reservation-status.ts  #   reservationGroups/get    (statut paiement curé + webhook reservation.paid)
     payment-link.ts        #   reconstruit l'URL de paiement pour un PaymentRequest en attente
     voucher.ts             #   vouchers/validate
 src/
