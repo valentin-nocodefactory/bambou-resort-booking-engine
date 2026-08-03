@@ -77,7 +77,7 @@ export interface SearchParams {
   adults: number;
   children: number;
   voucherCode?: string;
-  categoryIds?: string[];
+  properties?: string[]; // hébergements cochés (hotel/creole/villas)
 }
 
 export interface GuestPayload {
@@ -117,7 +117,7 @@ export const api = {
         adults: p.adults,
         children: p.children,
         ...(p.voucherCode ? { voucherCode: p.voucherCode } : {}),
-        ...(p.categoryIds?.length ? { categoryIds: p.categoryIds } : {}),
+        ...(p.properties?.length ? { properties: p.properties } : {}),
       },
       {
         label: "Disponibilités & prix",
@@ -154,6 +154,7 @@ export const api = {
   createReservation: (payload: {
     customer: GuestPayload;
     booker?: GuestPayload;
+    property?: string; // hébergement de la chambre choisie → config Mews côté serveur
     reservations: ReservationLine[];
     returnUrl?: string;
   }) =>

@@ -20,6 +20,7 @@ export function Results() {
     adults,
     children,
     voucherCode,
+    properties,
     nightsCount,
     roomId,
     rateId,
@@ -48,14 +49,14 @@ export function Results() {
     setLoading(true);
     setError(null);
     api
-      .availability({ checkIn, checkOut, adults, children, voucherCode })
+      .availability({ checkIn, checkOut, adults, children, voucherCode, properties })
       .then((res) => alive && setData(res))
       .catch((e) => alive && setError(errorMessage(e)))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [checkIn, checkOut, adults, children, voucherCode, reloadKey]);
+  }, [checkIn, checkOut, adults, children, voucherCode, properties, reloadKey]);
 
   const rooms = useMemo(() => (data ? buildRooms(data, hotel) : []), [data, hotel]);
 

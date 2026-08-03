@@ -5,6 +5,13 @@ import { Photo } from "./Photo";
 import { FavoriteBadge, HotBadge, RatingPill, SavingsBadge, ScarcityBadge, ViewersNudge, seeded } from "./conversion";
 import { IconArrowRight, IconBed, IconCheck, IconUsers } from "./icons";
 
+// Libellés d'hébergement (pour le badge sur la carte, quand plusieurs sont affichés).
+const PROPERTY_LABELS: Record<string, string> = {
+  hotel: "Hôtel Bambou",
+  creole: "Culture Créole",
+  villas: "Villas",
+};
+
 export function RoomCard({
   room,
   imageBaseUrl,
@@ -42,7 +49,7 @@ export function RoomCard({
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
         />
         <span className="absolute left-3 top-3 rounded-full bg-teal-deep/85 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-cream backdrop-blur">
-          {spaceLabel(room.spaceType)}
+          {(room.property && PROPERTY_LABELS[room.property]) || spaceLabel(room.spaceType)}
         </span>
         {featured && (
           <span className="absolute bottom-3 left-3">

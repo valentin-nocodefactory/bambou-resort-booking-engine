@@ -1,4 +1,4 @@
-import { mewsJson, readJson, bad, json, isIsoDate, clampInt, eurAmount, notify, type Env } from "./_lib";
+import { mewsJson, readJson, bad, json, isIsoDate, clampInt, eurAmount, notify, propertyByKey, type Env } from "./_lib";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -24,6 +24,8 @@ interface InReservation {
 interface Body {
   customer?: InCustomer;
   booker?: InCustomer;
+  // Hébergement de la chambre choisie (hotel/creole/villas) → détermine la config Mews.
+  property?: string;
   reservations?: InReservation[];
   // URL absolue de retour (origine + chemin) fournie par le front — sert à
   // construire la redirection Payment Request (Voie A). Jamais l'app base url côté front.
@@ -88,7 +90,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
   const Booker = cleanCustomer(b.booker);
 
   const res = await mewsJson<any>(env, "reservationGroups/create", {
-    ConfigurationId: env.MEWS_CONFIG_ID,
+    // Config de l'hébergement choisi (Bambou/Créole/Villas) ; défaut = config primaire.
+    ConfigurationId: propertyByKey(b.property)?.configId ?? env.MEWS_CONFIG_ID,
     HotelId: env.MEWS_HOTEL_ID,
     Customer,
     ...(Booker ? { Booker } : {}),

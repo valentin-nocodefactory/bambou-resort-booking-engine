@@ -53,6 +53,33 @@ const AGE_FALLBACK = {
   child: "5cd331e0-0069-4f46-a20f-b2cf00febb8f",
 };
 
+// ── Hébergements (Booking Engine configs) — setup Bambou Resort ────────────────
+// Non secret (comme MEWS_CONFIG_ID, déjà public). Chaque hébergement = 1 config Mews
+// + SES catégories d'âge (adulte/enfant). IDs vérifiés en live via configuration/get.
+export interface Property {
+  key: string; // "hotel" | "creole" | "villas"
+  label: string;
+  configId: string;
+  adultAgeCategoryId: string;
+  childAgeCategoryId: string | null; // null = pas d'enfants (ex. Culture Créole)
+}
+export const PROPERTIES: Property[] = [
+  { key: "hotel", label: "Hôtel Bambou", configId: "43ec5bf8-09e2-4ae8-83d2-b39900e86b9b", adultAgeCategoryId: "3b9bdb28-d9e1-4fac-904f-b2cf00febb8f", childAgeCategoryId: "5cd331e0-0069-4f46-a20f-b2cf00febb8f" },
+  { key: "creole", label: "Culture Créole", configId: "14625406-8090-43ca-b671-b39900ec4c4a", adultAgeCategoryId: "5e456326-2b0f-49ff-9a2f-b2cf00febb8e", childAgeCategoryId: null },
+  { key: "villas", label: "Villas", configId: "ff229529-717c-4b37-9c0f-b2cf00febe21", adultAgeCategoryId: "663eebb6-9663-4916-96d2-b2cf00febb8f", childAgeCategoryId: "2232f4de-28c3-445b-9aaa-b2cf00febb8f" },
+];
+export const propertyByKey = (key: unknown): Property | undefined =>
+  typeof key === "string" ? PROPERTIES.find((p) => p.key === key) : undefined;
+export const propertyByConfig = (configId: string): Property | undefined => PROPERTIES.find((p) => p.configId === configId);
+
+// OccupancyData Mews pour UN hébergement (utilise SES catégories d'âge).
+export function occupancyForProperty(prop: Property, adults: number, children = 0) {
+  const out: { AgeCategoryId: string; PersonCount: number }[] = [];
+  if (adults > 0) out.push({ AgeCategoryId: prop.adultAgeCategoryId, PersonCount: adults });
+  if (children > 0 && prop.childAgeCategoryId) out.push({ AgeCategoryId: prop.childAgeCategoryId, PersonCount: children });
+  return out;
+}
+
 const TIMEOUT_MS = 12_000;
 
 /** POST Mews → renvoie une Response JSON (passthrough). Le front shape la réponse brute. */

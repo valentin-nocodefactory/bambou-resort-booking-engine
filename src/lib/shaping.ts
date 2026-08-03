@@ -89,6 +89,7 @@ export function buildRooms(avail: AvailabilityResponse, hotel: HotelConfig | nul
       capacity: (cat?.NormalBedCount ?? 0) + (cat?.ExtraBedCount ?? 0),
       rates: payableRates,
       fromGross,
+      property: cat?.Property ?? null,
     });
   }
 

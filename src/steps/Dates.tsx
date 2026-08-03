@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { useBooking } from "../state/booking";
+import { useBooking, DEFAULT_PROPERTIES } from "../state/booking";
 import { nights } from "../lib/format";
 import { DateRangePicker } from "../components/DateRangePicker";
 import { RatingPill } from "../components/conversion";
 import {
   IconArrowRight,
+  IconCheck,
   IconLeaf,
   IconMapPin,
   IconMinus,
@@ -14,15 +15,23 @@ import {
   IconWave,
 } from "../components/icons";
 
+// Hébergements sélectionnables (libellés). Le serveur whiteliste les clés.
+const PROPERTY_OPTIONS = [
+  { key: "hotel", label: "Hôtel Bambou" },
+  { key: "creole", label: "Culture Créole" },
+  { key: "villas", label: "Villas" },
+];
+
 // Écran de recherche STANDALONE (pas de hero) — moteur de réservation seul,
 // entouré d'éléments de réassurance / conversion. Style Airbnb.
 export function Dates() {
-  const { checkIn, checkOut, adults, children, setSearch, goTo } = useBooking();
+  const { checkIn, checkOut, adults, children, properties, setSearch, goTo } = useBooking();
   const [form, setForm] = useState({
     checkIn: checkIn || "",
     checkOut: checkOut || "",
     adults: adults || 2,
     children: children || 0,
+    properties: properties?.length ? properties : DEFAULT_PROPERTIES,
   });
   const [error, setError] = useState("");
 
@@ -39,6 +48,7 @@ export function Dates() {
       adults: form.adults,
       children: form.children,
       voucherCode: "",
+      properties: form.properties,
     });
     goTo("results");
   }
@@ -65,14 +75,12 @@ export function Dates() {
         {/* Moteur de recherche */}
         <form onSubmit={submit} className="relative z-20 mt-8 rounded-3xl border border-ink/10 bg-white/90 p-3 shadow-float backdrop-blur sm:p-4">
           <div className="grid gap-3 lg:grid-cols-[1.1fr_1.6fr_1fr_auto] lg:items-stretch">
-            {/* Destination (fixe) */}
-            <div className="flex items-center gap-2.5 rounded-2xl border border-ink/15 bg-white px-4 py-3">
-              <IconMapPin className="h-4 w-4 shrink-0 text-turquoise" />
-              <span className="min-w-0">
-                <span className="block text-[11px] font-semibold uppercase tracking-wide text-teal-deep/60">Destination</span>
-                <span className="block truncate text-sm font-medium text-ink">Bambou Resort · Le Diamant</span>
-              </span>
-            </div>
+            {/* Hébergements (multi-sélection : 1, 2 ou 3) → filtre les logements */}
+            <PropertiesField
+              options={PROPERTY_OPTIONS}
+              selected={form.properties}
+              onChange={(props) => setForm((f) => ({ ...f, properties: props }))}
+            />
 
             {/* Dates (range picker) */}
             <DateRangePicker
@@ -145,6 +153,82 @@ function PromiseCard({ icon, title, text }: { icon: React.ReactNode; title: stri
       </span>
       <p className="mt-4 font-semibold text-marine">{title}</p>
       <p className="mt-1.5 text-sm leading-relaxed text-marine/60">{text}</p>
+    </div>
+  );
+}
+
+// Sélecteur d'hébergements (popover multi-sélection ; au moins 1 coché).
+function PropertiesField({
+  options,
+  selected,
+  onChange,
+}: {
+  options: { key: string; label: string }[];
+  selected: string[];
+  onChange: (keys: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setOpen(false);
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  const count = selected.length;
+  const summary =
+    count >= options.length
+      ? "Tous les hébergements"
+      : count === 1
+        ? (options.find((o) => o.key === selected[0])?.label ?? "1 hébergement")
+        : `${count} hébergements`;
+
+  function toggle(key: string) {
+    const has = selected.includes(key);
+    if (has && selected.length === 1) return; // garder au moins un hébergement
+    onChange(has ? selected.filter((k) => k !== key) : [...selected, key]);
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2.5 rounded-2xl border border-ink/15 bg-white px-4 py-3 text-left transition hover:border-turquoise"
+      >
+        <IconMapPin className="h-4 w-4 shrink-0 text-turquoise" />
+        <span className="min-w-0">
+          <span className="block text-[11px] font-semibold uppercase tracking-wide text-teal-deep/60">Hébergement</span>
+          <span className="block truncate text-sm font-medium text-ink">{summary}</span>
+        </span>
+      </button>
+      {open && (
+        <div className="absolute left-0 z-50 mt-2 w-72 animate-scale-in rounded-2xl border border-ink/10 bg-white p-2 shadow-float">
+          {options.map((o) => {
+            const on = selected.includes(o.key);
+            return (
+              <button
+                key={o.key}
+                type="button"
+                onClick={() => toggle(o.key)}
+                aria-pressed={on}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-cream"
+              >
+                <span
+                  className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border transition ${
+                    on ? "border-corail bg-corail text-white" : "border-ink/25 text-transparent"
+                  }`}
+                >
+                  <IconCheck className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-sm font-medium text-ink">{o.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

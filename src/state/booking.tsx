@@ -63,6 +63,9 @@ const emptyGuest: Guest = {
   notes: "",
 };
 
+// Hébergements sélectionnables (Booking Engine configs) — cf. worker _lib PROPERTIES.
+export const DEFAULT_PROPERTIES = ["hotel", "creole", "villas"];
+
 interface BookingState {
   step: Step;
   checkIn: string; // yyyy-mm-dd
@@ -70,6 +73,7 @@ interface BookingState {
   adults: number;
   children: number;
   voucherCode: string;
+  properties: string[]; // hébergements cochés (hotel/creole/villas)
   roomId: string | null;
   rateId: string | null;
   productIds: string[];
@@ -92,6 +96,7 @@ function readUrl(): Partial<BookingState> {
   if (q.has("adults")) out.adults = num("adults", 2);
   if (q.has("children")) out.children = num("children", 0);
   if (q.get("voucher")) out.voucherCode = q.get("voucher")!;
+  if (q.get("props")) out.properties = q.get("props")!.split(",").filter(Boolean);
   if (q.get("cat")) out.roomId = q.get("cat");
   if (q.get("rate")) out.rateId = q.get("rate");
   if (q.get("products")) out.productIds = q.get("products")!.split(",").filter(Boolean);
@@ -110,6 +115,7 @@ function writeUrl(s: BookingState) {
   q.set("adults", String(s.adults));
   if (s.children) q.set("children", String(s.children));
   if (s.voucherCode) q.set("voucher", s.voucherCode);
+  if (s.properties.length && s.properties.length < DEFAULT_PROPERTIES.length) q.set("props", s.properties.join(","));
   if (s.step !== "dates") q.set("step", s.step);
   if (s.roomId) q.set("cat", s.roomId);
   if (s.rateId) q.set("rate", s.rateId);
@@ -143,7 +149,9 @@ interface BookingContextValue extends BookingState {
   roomTotal: number;
   grandTotal: number;
   // actions
-  setSearch: (p: Partial<Pick<BookingState, "checkIn" | "checkOut" | "adults" | "children" | "voucherCode">>) => void;
+  setSearch: (
+    p: Partial<Pick<BookingState, "checkIn" | "checkOut" | "adults" | "children" | "voucherCode" | "properties">>,
+  ) => void;
   selectRoomRate: (room: ShapedRoom, rate: ShapedRate) => void;
   hydrateSelection: (room: ShapedRoom | null, rate: ShapedRate | null) => void;
   setAvailableRooms: (rooms: ShapedRoom[]) => void;
@@ -167,6 +175,7 @@ const defaults: BookingState = {
   adults: 2,
   children: 0,
   voucherCode: "",
+  properties: DEFAULT_PROPERTIES,
   roomId: null,
   rateId: null,
   productIds: [],
@@ -214,7 +223,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
           (p.checkIn !== undefined && p.checkIn !== s.checkIn) ||
           (p.checkOut !== undefined && p.checkOut !== s.checkOut) ||
           (p.adults !== undefined && p.adults !== s.adults) ||
-          (p.children !== undefined && p.children !== s.children);
+          (p.children !== undefined && p.children !== s.children) ||
+          (p.properties !== undefined && p.properties.join(",") !== s.properties.join(","));
         if (searchChanged) {
           setSelectedRoom(null);
           setSelectedRate(null);

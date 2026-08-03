@@ -46,6 +46,7 @@ export function Payment() {
     setUnavailable(false);
     try {
       const result = await api.createReservation({
+        property: selectedRoom.property ?? undefined,
         customer: {
           email: guest.email.trim(),
           firstName: guest.firstName.trim(),

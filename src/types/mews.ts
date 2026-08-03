@@ -20,6 +20,7 @@ export interface RoomCategory {
   NormalBedCount: number;
   ExtraBedCount: number;
   SpaceType: string;
+  Property?: string | null; // hébergement (hotel/creole/villas) — configuration/get
 }
 
 export interface Product {
@@ -50,6 +51,8 @@ export interface HotelConfig {
   Products: Product[];
   PaymentGateway: PaymentGateway | null;
   TermsAndConditionsUrl?: string | null;
+  // Hébergements proposés (Booking Engine configs) — alimente le sélecteur.
+  Properties?: { key: string; label: string }[];
 }
 
 // ── hotels/getAvailability ───────────────────────────────────────────────────
@@ -176,6 +179,7 @@ export interface ShapedRoom {
   capacity: number; // lits normaux + d'appoint
   rates: ShapedRate[]; // triés prix croissant, prix null exclus
   fromGross: number | null; // min des totaux non-null
+  property?: string | null; // hébergement (hotel/creole/villas)
 }
 
 export interface ShapedProduct {
