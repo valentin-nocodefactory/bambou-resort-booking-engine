@@ -89,7 +89,7 @@ function Footer() {
         </div>
         <div className="space-y-1.5 text-sm sm:text-right">
           <p className="inline-flex items-center gap-1.5 text-cream/60">
-            <IconLeaf className="h-4 w-4 text-creole-soft" /> Paiement sécurisé · propulsé par Mews
+            <IconLeaf className="h-4 w-4 text-creole-soft" /> Paiement sécurisé
           </p>
           <p className="text-cream/60">Développé par NocodeFactory.</p>
         </div>
