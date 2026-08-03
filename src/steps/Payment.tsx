@@ -23,6 +23,7 @@ export function Payment() {
     nightsCount,
     setCreated,
     goTo,
+    track,
   } = useBooking();
 
   const [accepted, setAccepted] = useState(false);
@@ -70,6 +71,14 @@ export function Payment() {
       });
 
       setCreated(result);
+
+      // Panier → « paiement initié ». On await (avant la redirection) pour être sûr
+      // que l'event parte. reservationGroupId fourni ici car `created` (contexte)
+      // n'est pas encore à jour à cet instant.
+      await track("paiement_initie", {
+        reservationGroupId: result.id,
+        paymentRequestId: result.paymentRequestId ?? null,
+      });
 
       if (result.paymentUrl) {
         // Voie A : redirection vers la page carte + 3DS hébergée par Mews.

@@ -179,6 +179,13 @@ export const api = {
       label: "Validation du code promo",
       why: "Vérifie la validité d'un code promotionnel ; une nouvelle recherche avec ce code débloque les tarifs privés.",
     }),
+
+  // Suivi de panier (funnel) → n8n via le Worker. Best-effort : n'échoue jamais l'UI.
+  track: (payload: unknown): Promise<{ ok: boolean }> =>
+    post<{ ok: boolean }>("track", payload, {
+      label: "Suivi panier → n8n",
+      why: "Pousse l'état du panier (statut, sélection, contact) vers n8n à chaque étape à partir des infos client, pour alimenter la base des paniers (abandonné / paiement initié / validé).",
+    }).catch(() => ({ ok: false })),
 };
 
 // Messages d'erreur lisibles (FR) à partir des codes renvoyés par les Functions.

@@ -16,6 +16,7 @@ import { onRequestPost as reservation } from "./mews/reservation";
 import { onRequestPost as reservationStatus } from "./mews/reservation-status";
 import { onRequestPost as paymentLink } from "./mews/payment-link";
 import { onRequestPost as voucher } from "./mews/voucher";
+import { onRequestPost as track } from "./mews/track";
 
 // Les handlers gardent la signature Pages ({ request, env, waitUntil }) — on les adapte ici.
 // waitUntil permet de lancer les webhooks en tâche de fond sans bloquer la réponse.
@@ -31,6 +32,7 @@ const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
   "reservation-status": { POST: h(reservationStatus) },
   "payment-link": { POST: h(paymentLink) },
   voucher: { POST: h(voucher) },
+  track: { POST: h(track) },
 };
 
 const json = (data: unknown, status: number) =>

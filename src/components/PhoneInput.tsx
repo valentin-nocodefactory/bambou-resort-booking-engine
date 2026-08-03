@@ -87,50 +87,63 @@ export function PhoneInput({
   const showValid = text.trim() !== "" && valid;
 
   return (
-    <div>
-      <div className="flex gap-2">
-        <div className="relative w-36 shrink-0">
-          <select
-            value={country}
-            onChange={(e) => {
-              setCountry(e.target.value as CountryCode);
-              apply(e.target.value as CountryCode, text);
-            }}
-            aria-label="Indicatif pays"
-            className="field-input w-full appearance-none truncate pr-7 font-medium"
-          >
-            {COUNTRIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.flag} +{dialOf(c.code)} · {c.name}
-              </option>
-            ))}
-          </select>
-          <svg
-            className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-        <div className="relative flex-1">
-          <input
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel-national"
-            className={`field-input w-full pr-9 ${
-              showInvalid ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""
-            }`}
-            placeholder={country_.example}
-            value={text}
-            onChange={(e) => apply(country, e.target.value)}
-          />
-          {showValid && (
-            <IconCheck className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500" />
-          )}
-        </div>
+    // UN SEUL champ : segment indicatif (drapeau + code) · séparateur · numéro.
+    <div
+      className={`flex items-stretch overflow-hidden rounded-xl border bg-white shadow-sm transition focus-within:ring-2 ${
+        showInvalid
+          ? "border-red-400 focus-within:border-red-400 focus-within:ring-red-200"
+          : "border-marine/15 focus-within:border-corail focus-within:ring-corail/25"
+      }`}
+    >
+      <div className="relative w-[5rem] shrink-0">
+        {/* Select natif transparent mais interactif (garde le menu déroulant natif). */}
+        <select
+          value={country}
+          onChange={(e) => {
+            setCountry(e.target.value as CountryCode);
+            apply(e.target.value as CountryCode, text);
+          }}
+          aria-label="Indicatif pays"
+          title={country_.name}
+          className="absolute inset-0 h-full w-full cursor-pointer appearance-none border-0 bg-transparent pl-4 text-transparent outline-none"
+        >
+          {COUNTRIES.map((c) => (
+            <option key={c.code} value={c.code} className="text-marine">
+              {c.flag} +{dialOf(c.code)} · {c.name}
+            </option>
+          ))}
+        </select>
+        {/* Affichage compact : drapeau + indicatif seulement. */}
+        <span className="pointer-events-none flex h-full items-center gap-1.5 pl-4 pr-5 text-sm font-medium text-marine">
+          <span className="text-base leading-none">{country_.flag}</span>
+          <span>+{dialOf(country)}</span>
+        </span>
+        <svg
+          className="pointer-events-none absolute right-1 top-1/2 h-4 w-4 -translate-y-1/2 text-marine/40"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      <span className="my-2 w-px shrink-0 bg-marine/12" aria-hidden />
+
+      <div className="relative flex-1">
+        <input
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel-national"
+          className="h-full w-full border-0 bg-transparent px-3 py-3 pr-9 text-marine outline-none placeholder:text-marine/35"
+          placeholder={country_.example}
+          value={text}
+          onChange={(e) => apply(country, e.target.value)}
+        />
+        {showValid && (
+          <IconCheck className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500" />
+        )}
       </div>
     </div>
   );

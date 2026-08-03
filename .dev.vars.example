@@ -20,6 +20,11 @@ MEWS_CHILD_AGE_CATEGORY_ID=5cd331e0-0069-4f46-a20f-b2cf00febb8f
 # et à chaque réservation payée (reservation.paid). Laisser vide = désactivé.
 # WEBHOOK_URL=https://exemple.com/mews-webhook
 
+# Webhooks (optionnels) : suivi de panier (funnel) → base des paniers, un par statut.
+# WEBHOOK_BASKET_CREATED=https://n8n.exemple.com/webhook/basket-created
+# WEBHOOK_PAYMENT_INITIATED=https://n8n.exemple.com/webhook/paiement-initiated
+# WEBHOOK_PAYMENT_VALIDATED=https://n8n.exemple.com/webhook/paiement-validated
+
 # ── Bascule DEMO (tests sans risque) ────────────────────────────────────────
 # MEWS_BASE_URL=https://api.mews-demo.com
 # MEWS_APP_BASE_URL=https://app.mews-demo.com

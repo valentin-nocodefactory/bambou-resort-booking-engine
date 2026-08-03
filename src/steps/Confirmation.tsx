@@ -9,7 +9,7 @@ import { IconArrowRight, IconCalendar, IconCheck, IconShield } from "../componen
 const MAX_POLLS = 5;
 
 export function Confirmation() {
-  const { rgid, created, checkIn, checkOut, guest, grandTotal, selectedRate, resetAll, goTo } = useBooking();
+  const { rgid, created, checkIn, checkOut, guest, grandTotal, selectedRate, resetAll, goTo, track } = useBooking();
 
   const [status, setStatus] = useState<ReservationStatusResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,6 +52,16 @@ export function Confirmation() {
       if (timer.current) clearTimeout(timer.current);
     };
   }, [groupId, loadStatus, goTo]);
+
+  // Panier → « paiement validé » (une seule fois) dès que Mews confirme le paiement.
+  const paidSent = useRef(false);
+  useEffect(() => {
+    if (status?.paid && !paidSent.current) {
+      paidSent.current = true;
+      void track("paiement_valide", { reservationGroupId: groupId ?? undefined });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status?.paid]);
 
   async function resumePayment() {
     if (!groupId) return;

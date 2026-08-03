@@ -49,8 +49,11 @@ export function Dates() {
         {/* En-tête éditorial compact */}
         <div className="max-w-2xl">
           <h1 className="font-display text-4xl leading-[1.07] text-ink text-balance sm:text-5xl">
-            Votre séjour les pieds dans l'eau, au <span className="italic text-creole">meilleur prix</span>
+            Réservez votre séjour
           </h1>
+          <p className="mt-3 text-lg leading-snug text-ink/70 sm:text-xl">
+            Hôtels &amp; villas <span className="italic text-corail">d'exception</span> en Martinique
+          </p>
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
             <RatingPill />
             <span className="inline-flex items-center gap-1.5 text-sm text-teal-deep">

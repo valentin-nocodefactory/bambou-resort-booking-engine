@@ -13,10 +13,26 @@ const STEPS: { key: Step; label: string }[] = [
 export function StepProgress() {
   const { step, goTo } = useBooking();
   const current = step === "confirmation" ? STEPS.length : STEPS.findIndex((s) => s.key === step);
+  const isConfirmation = current >= STEPS.length;
+  const currentLabel = isConfirmation ? "Confirmation" : (STEPS[current]?.label ?? "");
 
   return (
     <nav aria-label="Progression de la réservation" className="w-full">
-      <ol className="flex items-center gap-1.5 sm:gap-2">
+      {/* Mobile : titre de l'étape courante, bien lisible */}
+      <div className="flex items-center gap-2.5 sm:hidden">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-corail text-xs font-semibold text-marine">
+          {isConfirmation ? <IconCheck className="h-4 w-4" /> : current + 1}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate font-display text-lg leading-tight text-ink">{currentLabel}</p>
+          <p className="text-xs text-ink/50">
+            {isConfirmation ? "Réservation terminée" : `Étape ${current + 1} sur ${STEPS.length}`}
+          </p>
+        </div>
+      </div>
+
+      {/* Fil d'Ariane — pastilles cliquables (mobile + desktop), libellés sur desktop */}
+      <ol className="mt-2 flex items-center gap-1 sm:mt-0 sm:gap-2">
         {STEPS.map((s, i) => {
           const done = i < current;
           const active = i === current;
@@ -27,11 +43,11 @@ export function StepProgress() {
                 type="button"
                 disabled={!clickable}
                 onClick={() => clickable && goTo(s.key)}
-                className={`flex items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold transition sm:text-sm ${
+                className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-1 py-1 text-xs font-semibold transition sm:gap-2 sm:px-2.5 sm:text-sm ${
                   active
-                    ? "bg-teal-deep text-cream"
+                    ? "text-marine sm:bg-marine sm:text-cream"
                     : done
-                      ? "text-teal-deep hover:bg-turquoise/10"
+                      ? "text-marine hover:bg-corail/10"
                       : "text-ink/35"
                 } ${clickable ? "cursor-pointer" : "cursor-default"}`}
               >

@@ -14,12 +14,16 @@ export interface Env {
   MEWS_CHILD_AGE_CATEGORY_ID?: string;
   // URL de webhook (optionnelle) : reçoit les événements payment.initiated / reservation.paid.
   WEBHOOK_URL?: string;
+  // Webhooks de suivi de panier (funnel) — UN PAR STATUT (voir /api/mews/track).
+  // No-op si l'URL du statut concerné n'est pas définie.
+  WEBHOOK_BASKET_CREATED?: string; // panier créé / mis à jour (avant paiement)
+  WEBHOOK_PAYMENT_INITIATED?: string; // « Payer » cliqué (réservation créée)
+  WEBHOOK_PAYMENT_VALIDATED?: string; // paiement encaissé (confirmé par Mews)
 }
 
-// POST best-effort vers le webhook configuré (WEBHOOK_URL). No-op si absent.
+// POST best-effort d'un JSON vers une URL de webhook. No-op si l'URL est absente/invalide.
 // N'échoue JAMAIS l'appel principal (à envelopper dans ctx.waitUntil côté handler).
-export async function notify(env: Env, event: string, data: Record<string, unknown>): Promise<void> {
-  const url = env.WEBHOOK_URL;
+export async function postWebhook(url: string | undefined, payload: unknown): Promise<void> {
   if (!url || !/^https?:\/\//.test(url)) return;
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), 8_000);
@@ -27,7 +31,7 @@ export async function notify(env: Env, event: string, data: Record<string, unkno
     await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event, timestamp: new Date().toISOString(), ...data }),
+      body: JSON.stringify(payload),
       signal: ctrl.signal,
     });
   } catch {
@@ -35,6 +39,11 @@ export async function notify(env: Env, event: string, data: Record<string, unkno
   } finally {
     clearTimeout(to);
   }
+}
+
+// Webhook « paiement » (WEBHOOK_URL) : payment.initiated / reservation.paid.
+export function notify(env: Env, event: string, data: Record<string, unknown>): Promise<void> {
+  return postWebhook(env.WEBHOOK_URL, { event, timestamp: new Date().toISOString(), ...data });
 }
 
 // Catégories d'âge de l'entreprise Bambou Resort (vérifiées en live) — fallback si les

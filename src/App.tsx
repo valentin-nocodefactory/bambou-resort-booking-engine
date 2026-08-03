@@ -10,7 +10,7 @@ import { Upgrade } from "./steps/Upgrade";
 import { Extras } from "./steps/Extras";
 import { Payment } from "./steps/Payment";
 import { Confirmation } from "./steps/Confirmation";
-import { IconLeaf, IconMapPin, IconTag } from "./components/icons";
+import { IconLeaf, IconTag } from "./components/icons";
 
 const STEP_COMPONENTS: Record<Step, () => JSX.Element | null> = {
   dates: Dates,
@@ -87,13 +87,11 @@ function Footer() {
             Art de vivre caribéen, les pieds dans l'eau. Réservation en direct, au meilleur tarif.
           </p>
         </div>
-        <div className="space-y-1.5 text-sm">
-          <p className="inline-flex items-center gap-1.5">
-            <IconMapPin className="h-4 w-4 text-creole-soft" /> Le Diamant, Martinique
-          </p>
+        <div className="space-y-1.5 text-sm sm:text-right">
           <p className="inline-flex items-center gap-1.5 text-cream/60">
             <IconLeaf className="h-4 w-4 text-creole-soft" /> Paiement sécurisé · propulsé par Mews
           </p>
+          <p className="text-cream/60">Développé par NocodeFactory.</p>
         </div>
       </div>
     </footer>

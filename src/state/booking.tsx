@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -14,6 +15,33 @@ import type { HotelConfig, ReservationCreateResult, ShapedProduct, ShapedRate, S
 
 export type Step = "dates" | "results" | "guest" | "upgrade" | "extras" | "payment" | "confirmation";
 export const STEP_ORDER: Step[] = ["dates", "results", "guest", "upgrade", "extras", "payment", "confirmation"];
+
+// Statuts de panier poussés vers n8n (base des paniers).
+export type CartStatus = "panier_cree" | "paiement_initie" | "paiement_valide";
+
+// Identifiant de panier — persistant (localStorage) pour survivre à la redirection
+// paiement (Mews → /confirmation). Régénéré à chaque nouvelle recherche (resetAll).
+const CART_ID_KEY = "bambou_cart_id";
+function newCartId(): string {
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+  try {
+    localStorage.setItem(CART_ID_KEY, id);
+  } catch {
+    /* localStorage indispo (navigation privée) — id éphémère, ok */
+  }
+  return id;
+}
+function loadCartId(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem(CART_ID_KEY) || newCartId();
+  } catch {
+    return newCartId();
+  }
+}
 
 export interface Guest {
   firstName: string;
@@ -125,6 +153,9 @@ interface BookingContextValue extends BookingState {
   setCreated: (r: ReservationCreateResult | null) => void;
   goTo: (step: Step) => void;
   resetAll: () => void;
+  // suivi panier → n8n
+  cartId: string;
+  track: (status: CartStatus, extra?: Record<string, unknown>) => Promise<{ ok: boolean }>;
 }
 
 const Ctx = createContext<BookingContextValue | null>(null);
@@ -149,6 +180,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [availableRooms, setAvailableRoomsState] = useState<ShapedRoom[]>([]);
   const [guest, setGuestState] = useState<Guest>(emptyGuest);
   const [created, setCreatedState] = useState<ReservationCreateResult | null>(null);
+  const [cartId, setCartId] = useState<string>(loadCartId);
 
   const [hotel, setHotel] = useState<HotelConfig | null>(null);
   const [hotelLoading, setHotelLoading] = useState(true);
@@ -243,6 +275,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setGuestState(emptyGuest);
     setCreatedState(null);
     setState({ ...defaults });
+    setCartId(newCartId()); // nouveau panier
   }, []);
 
   // ── dérivés ────────────────────────────────────────────────────────────────
@@ -264,6 +297,53 @@ export function BookingProvider({ children }: { children: ReactNode }) {
 
   const roomTotal = selectedRate?.totalGross ?? 0;
   const grandTotal = roomTotal + productsTotal;
+
+  // ── Suivi de panier → n8n (via /api/mews/track) ──────────────────────────────
+  // Snapshot whitelisté de l'état courant du panier.
+  const buildCartPayload = (status: CartStatus): Record<string, unknown> => ({
+    cartId,
+    status,
+    step: state.step,
+    stay: {
+      checkIn: state.checkIn,
+      checkOut: state.checkOut,
+      nights: nightsCount,
+      adults: state.adults,
+      children: state.children,
+    },
+    room: selectedRoom ? { categoryId: selectedRoom.categoryId, name: selectedRoom.name } : null,
+    rate: selectedRate
+      ? { rateId: selectedRate.rateId, name: selectedRate.name, totalGross: selectedRate.totalGross }
+      : null,
+    products: selectedProducts.map((p) => ({ id: p.id, name: p.name, priceEur: p.priceEur })),
+    totals: { room: roomTotal, products: productsTotal, grand: grandTotal },
+    customer: {
+      firstName: guest.firstName,
+      lastName: guest.lastName,
+      email: guest.email,
+      telephone: guest.telephone,
+      nationalityCode: guest.nationalityCode,
+    },
+    reservationGroupId: created?.id ?? state.rgid ?? null,
+    paymentRequestId: created?.paymentRequestId ?? null,
+  });
+
+  const track: BookingContextValue["track"] = (status, extra = {}) =>
+    cartId ? api.track({ ...buildCartPayload(status), ...extra }) : Promise.resolve({ ok: false });
+
+  // Réf. toujours à jour (évite de refaire tourner l'effet à chaque rendu).
+  const trackRef = useRef(track);
+  trackRef.current = track;
+
+  // À chaque étape à partir des infos client (email saisi) et tant que non payé,
+  // on pousse le panier avec le statut « abandonné ». Il passe ensuite à
+  // paiement_initié / paiement_validé depuis Payment / Confirmation.
+  useEffect(() => {
+    if (guest.email && (state.step === "upgrade" || state.step === "extras" || state.step === "payment")) {
+      void trackRef.current("panier_cree");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.step]);
 
   const value: BookingContextValue = {
     ...state,
@@ -294,6 +374,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setCreated,
     goTo,
     resetAll,
+    cartId,
+    track,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

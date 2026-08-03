@@ -7,7 +7,6 @@ import type { AvailabilityResponse, ShapedRate, ShapedRoom } from "../types/mews
 import { RoomCard } from "../components/RoomCard";
 import { RoomDetailDrawer } from "../components/RoomDetailDrawer";
 import { InlineUpsell } from "../components/UpsellCard";
-import { DataBadge } from "../components/DataBadge";
 import { RatingPill, UrgencyBanner } from "../components/conversion";
 import { IconCalendar, IconUsers } from "../components/icons";
 
@@ -123,7 +122,6 @@ export function Results() {
             <span>Choisissez votre cocon, comparez les tarifs.</span>
           </div>
         </div>
-        <DataBadge />
       </div>
 
       {/* États */}
