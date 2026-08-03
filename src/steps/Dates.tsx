@@ -44,14 +44,7 @@ export function Dates() {
   }
 
   return (
-    <div className="relative isolate overflow-hidden">
-      {/* Atmosphère : dégradé doux tropical, pas de photo hero */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -left-32 -top-24 h-80 w-80 rounded-full bg-turquoise/15 blur-3xl" />
-        <div className="absolute right-0 top-32 h-72 w-72 rounded-full bg-creole/15 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-turquoise-vivid/10 blur-3xl" />
-      </div>
-
+    <div className="relative">
       <div className="mx-auto max-w-5xl px-5 pb-16 pt-10 sm:pt-16">
         {/* En-tête éditorial compact */}
         <div className="max-w-2xl">
@@ -61,7 +54,7 @@ export function Dates() {
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
             <RatingPill />
             <span className="inline-flex items-center gap-1.5 text-sm text-teal-deep">
-              <IconLeaf className="h-4 w-4 text-turquoise" /> Annulation gratuite · sans frais de réservation
+              <IconLeaf className="h-4 w-4 text-turquoise" /> Réservation en direct, sans frais ni commissions des plateformes
             </span>
           </div>
         </div>

@@ -32,7 +32,7 @@ export function Stars({ className = "" }: { className?: string }) {
   );
 }
 
-export function RatingPill({ score = "9,4", count = "1 248", className = "" }: { score?: string; count?: string; className?: string }) {
+export function RatingPill({ score = "4,2", count = "2 064", className = "" }: { score?: string; count?: string; className?: string }) {
   return (
     <span className={`inline-flex items-center gap-1.5 text-sm ${className}`}>
       <IconStar className="h-4 w-4 text-creole" />
@@ -44,7 +44,7 @@ export function RatingPill({ score = "9,4", count = "1 248", className = "" }: {
 
 // ── Confiance ────────────────────────────────────────────────────────────────
 const TRUST = [
-  { icon: IconCheck, label: "Annulation gratuite", sub: "jusqu'à 3 jours avant" },
+  { icon: IconCheck, label: "0 € de frais", sub: "ni commission plateforme" },
   { icon: IconTag, label: "Meilleur prix garanti", sub: "réservé en direct" },
   { icon: IconLock, label: "Paiement sécurisé", sub: "3-D Secure" },
   { icon: IconCheck, label: "Sans frais de réservation", sub: "0 commission" },

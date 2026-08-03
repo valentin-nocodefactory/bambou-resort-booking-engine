@@ -99,7 +99,7 @@ export function Payment() {
         {/* Réassurance / urgence */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <HoldTimer minutes={10} />
-          <span className="text-xs text-ink/55">Confirmation immédiate · annulation gratuite</span>
+          <span className="text-xs text-ink/55">Confirmation immédiate · 0 € de frais et commission</span>
         </div>
 
         {/* Récap final */}

@@ -99,7 +99,7 @@ export function BookingSummary() {
 
       <ul className="space-y-1.5 border-t border-ink/10 px-5 py-4 text-xs text-ink/60">
         <li className="inline-flex items-center gap-2">
-          <IconCheck className="h-3.5 w-3.5 text-emerald-600" /> Annulation gratuite jusqu'à 3 jours avant
+          <IconCheck className="h-3.5 w-3.5 text-emerald-600" /> 0 € de frais et commission
         </li>
         <li className="inline-flex items-center gap-2">
           <IconLock className="h-3.5 w-3.5 text-turquoise" /> Paiement sécurisé · 3-D Secure

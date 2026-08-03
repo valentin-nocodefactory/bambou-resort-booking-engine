@@ -25,7 +25,7 @@ export function RoomCard({
   const lowStock = room.availableRoomCount > 0 && room.availableRoomCount <= 3;
   // ⚠️ DÉMO (en dur) : « Très demandé », note & nombre d'avis — générés, pas issus de Mews.
   const hot = !lowStock && seeded(room.categoryId, 0, 2) === 0;
-  const rating = (90 + seeded(room.categoryId + "r", 0, 9)) / 10; // 9.0–9.9
+  const rating = (40 + seeded(room.categoryId + "r", 0, 9)) / 10; // 4.0–4.9 (échelle /5)
   const reviews = seeded(room.categoryId + "rc", 64, 540);
 
   return (
@@ -33,7 +33,7 @@ export function RoomCard({
       <button
         type="button"
         onClick={onDetails}
-        className="relative aspect-[4/3] w-full shrink-0 overflow-hidden sm:aspect-auto sm:w-72"
+        className="relative h-44 w-full shrink-0 overflow-hidden sm:h-auto sm:w-72"
         aria-label={`Voir les photos — ${room.name}`}
       >
         <Photo
@@ -88,7 +88,7 @@ export function RoomCard({
         </div>
 
         <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-          <IconCheck className="h-3.5 w-3.5" /> Annulation gratuite · sans frais
+          <IconCheck className="h-3.5 w-3.5" /> 0 € de frais et commission
         </span>
 
         <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-4">

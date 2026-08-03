@@ -27,7 +27,7 @@ export function UpsellCard({
       type="button"
       onClick={onToggle}
       aria-pressed={selected}
-      className={`card group flex w-full items-stretch gap-0 overflow-hidden text-left transition hover:shadow-float ${
+      className={`card group flex h-36 w-full items-stretch gap-0 overflow-hidden text-left transition hover:shadow-float ${
         selected ? "ring-2 ring-turquoise" : ""
       }`}
     >
@@ -41,7 +41,7 @@ export function UpsellCard({
       </div>
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-2">
-          <p className="font-semibold leading-snug text-ink">{product.name}</p>
+          <p className="line-clamp-2 font-semibold leading-snug text-ink">{product.name}</p>
           <span
             className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition ${
               selected ? "border-turquoise bg-turquoise text-white" : "border-ink/25 text-ink/40"

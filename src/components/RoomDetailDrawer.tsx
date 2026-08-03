@@ -153,14 +153,14 @@ export function RoomDetailDrawer({
                 </span>
               </div>
               <div className="mt-2">
-                <RatingPill score="9,3" count="312" />
+                <RatingPill score="4,6" count="312" />
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <FavoriteBadge />
                 {lowStock && <ScarcityBadge count={room.availableRoomCount} />}
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-                  <IconCheck className="h-3.5 w-3.5" /> Annulation gratuite
+                  <IconCheck className="h-3.5 w-3.5" /> 0 € de frais et commission
                 </span>
               </div>
               <div className="mt-3">
