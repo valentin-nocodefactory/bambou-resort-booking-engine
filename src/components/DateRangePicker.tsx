@@ -146,9 +146,9 @@ export function DateRangePicker({
                     const band = between
                       ? "bg-turquoise/15"
                       : isStart && previewEnd
-                        ? "bg-[linear-gradient(to_right,transparent_50%,#0E7E8C26_50%)]"
+                        ? "bg-[linear-gradient(to_right,transparent_50%,#061a2d26_50%)]"
                         : isEnd
-                          ? "bg-[linear-gradient(to_right,#0E7E8C26_50%,transparent_50%)]"
+                          ? "bg-[linear-gradient(to_right,#061a2d26_50%,transparent_50%)]"
                           : "";
                     return (
                       <div key={day} onMouseEnter={() => setHover(day)} className={`relative h-10 ${band}`}>

@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { useBooking } from "../state/booking";
 import { nights } from "../lib/format";
 import { DateRangePicker } from "../components/DateRangePicker";
-import { RatingPill, TrustRow } from "../components/conversion";
+import { RatingPill } from "../components/conversion";
 import {
   IconArrowRight,
   IconLeaf,
   IconMapPin,
   IconMinus,
+  IconPalm,
   IconPlus,
-  IconSun,
   IconUsers,
   IconWave,
 } from "../components/icons";
@@ -132,32 +132,43 @@ export function Dates() {
           {error && <p className="mt-2 px-1 text-sm font-medium text-red-600">{error}</p>}
         </form>
 
-        {/* Réassurance */}
-        <div className="mt-8 rounded-2xl border border-ink/5 bg-white/60 p-5 backdrop-blur">
-          <TrustRow />
-        </div>
-
-        {/* Pourquoi réserver en direct */}
-        <div className="mt-10 grid gap-5 sm:grid-cols-3">
-          <Perk icon={<IconWave className="h-5 w-5" />} title="Tarif officiel garanti" text="Aucun intermédiaire, aucune commission : le meilleur prix, directement auprès du resort." />
-          <Perk icon={<IconSun className="h-5 w-5" />} title="Confirmation immédiate" text="Disponibilités et prix en temps réel, réservation confirmée à l'instant." />
-          <Perk icon={<IconLeaf className="h-5 w-5" />} title="Flexibilité totale" text="Annulation gratuite jusqu'à 3 jours avant l'arrivée sur la plupart des tarifs." />
+        {/* Nos promesses — arguments de marque repris de bambouresort.com */}
+        <div className="mt-14">
+          <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-corail">
+            Art de vivre antillais
+          </p>
+          <div className="mx-auto mt-8 grid max-w-4xl gap-10 sm:grid-cols-3">
+            <PromiseCard
+              icon={<IconWave className="h-6 w-6" />}
+              title="Les pieds dans l'eau"
+              text="Un accès direct à la plage depuis nos hôtels, et une vue imprenable sur la mer dans nos villas."
+            />
+            <PromiseCard
+              icon={<IconMapPin className="h-6 w-6" />}
+              title="Un emplacement idéal"
+              text="Face à Fort-de-France et proche de l'aéroport international Aimé Césaire (20 min en voiture)."
+            />
+            <PromiseCard
+              icon={<IconPalm className="h-6 w-6" />}
+              title="Une nature d'exception"
+              text="Vivez en harmonie avec la nature dans un cadre apaisant, ressourçant et authentique."
+            />
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function Perk({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
+// Argument de marque — style « Nos promesses » du site : cercle corail fin + icône centrée.
+function PromiseCard({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
   return (
-    <div className="flex items-start gap-3">
-      <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-turquoise/10 text-turquoise">
+    <div className="flex flex-col items-center text-center">
+      <span className="grid h-16 w-16 place-items-center rounded-full border border-corail/40 text-corail">
         {icon}
       </span>
-      <div>
-        <p className="font-semibold text-ink">{title}</p>
-        <p className="mt-0.5 text-sm leading-relaxed text-ink/60">{text}</p>
-      </div>
+      <p className="mt-4 font-semibold text-marine">{title}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-marine/60">{text}</p>
     </div>
   );
 }

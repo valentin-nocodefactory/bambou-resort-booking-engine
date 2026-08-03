@@ -85,6 +85,15 @@ export const IconLeaf = (p: SVGProps<SVGSVGElement>) => (
     <path d="M5 19c0-8 5-13 14-13 0 9-5 14-13 14M5 19c2-4 5-7 9-9" />
   </svg>
 );
+export const IconPalm = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M12 21c-.4-5 .1-8.5 1.6-11.3" />
+    <path d="M13.6 9.7C11 7.4 7.7 7 4.8 8.8" />
+    <path d="M13.6 9.7c-.7-3.1.5-6.2 3.3-8" />
+    <path d="M13.6 9.7c2.9-1.1 6.2 0 8.3 2.7" />
+    <path d="M13.6 9.7c-2.7.5-5 2.4-6.4 5.3" />
+  </svg>
+);
 export const IconWave = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}>
     <path d="M2 8c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2M2 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2" />

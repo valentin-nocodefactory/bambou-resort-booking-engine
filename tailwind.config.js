@@ -4,36 +4,35 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Palette Bambou Resort (inspirée de bambouresort.com)
-        turquoise: {
-          DEFAULT: "#0E7E8C", // primaire — turquoise des Caraïbes
-          vivid: "#2BB4C6", // turquoise vif (accents lumineux)
-        },
-        teal: {
-          deep: "#093E47", // vert-canard profond — fonds sombres / hero
-        },
-        creole: {
-          DEFAULT: "#E89A3C", // jaune/orange créole — accent, bungalows
-          soft: "#F2B968",
-        },
-        sand: "#ECE5D6",
-        cream: "#F5F1E8",
-        ink: "#143230",
+        // ── Charte réelle Bambou Resort (extraite de bambouresort.com) ──────────
+        beige: { DEFAULT: "#fffbf0", deep: "#f3ecd9" }, // fond chaud + beige profond (bordures/sections)
+        corail: { DEFAULT: "#ff6f62", soft: "#ff8a7f", dark: "#e85b4f" }, // accent / CTA — le « pop » de la marque
+        marine: { DEFAULT: "#061a2d", soft: "#0e2c47" }, // bleu nuit — texte, surfaces sombres, structure
+
+        // ── Alias rétro-compat : anciens noms → charte réelle (rôles préservés) ──
+        // Les composants existants (bg-turquoise, text-creole, bg-cream…) restent
+        // automatiquement dans la charte, sans réécriture.
+        turquoise: { DEFAULT: "#061a2d", vivid: "#ff6f62" }, // primaire/liens → marine ; accent vif → corail
+        teal: { deep: "#061a2d" }, // fonds sombres / hero → marine
+        creole: { DEFAULT: "#ff6f62", soft: "#ff8a7f" }, // accent chaud → corail
+        sand: "#f3ecd9",
+        cream: "#fffbf0",
+        ink: "#061a2d",
       },
       fontFamily: {
-        display: ['"Fraunces"', "ui-serif", "Georgia", "serif"],
-        body: ['"Manrope"', "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ['"Instrument Serif"', "ui-serif", "Georgia", "serif"],
+        body: ['"Urbanist"', "ui-sans-serif", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        card: "0 10px 40px -12px rgba(9, 62, 71, 0.25)",
-        float: "0 24px 60px -20px rgba(9, 62, 71, 0.45)",
+        card: "0 10px 40px -12px rgba(6, 26, 45, 0.18)",
+        float: "0 24px 60px -20px rgba(6, 26, 45, 0.38)",
       },
       borderRadius: {
         xl2: "1.25rem",
       },
       backgroundImage: {
         "hero-fade":
-          "linear-gradient(180deg, rgba(9,62,71,0.15) 0%, rgba(9,62,71,0.55) 55%, rgba(9,62,71,0.88) 100%)",
+          "linear-gradient(180deg, rgba(6,26,45,0.15) 0%, rgba(6,26,45,0.55) 55%, rgba(6,26,45,0.9) 100%)",
       },
       keyframes: {
         "fade-in": {
