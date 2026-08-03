@@ -17,16 +17,14 @@ import {
 // Écran de recherche STANDALONE (pas de hero) — moteur de réservation seul,
 // entouré d'éléments de réassurance / conversion. Style Airbnb.
 export function Dates() {
-  const { checkIn, checkOut, adults, children, voucherCode, setSearch, goTo } = useBooking();
+  const { checkIn, checkOut, adults, children, setSearch, goTo } = useBooking();
   const [form, setForm] = useState({
     checkIn: checkIn || "",
     checkOut: checkOut || "",
     adults: adults || 2,
     children: children || 0,
-    voucher: voucherCode || "",
   });
   const [error, setError] = useState("");
-  const [showVoucher, setShowVoucher] = useState(!!voucherCode);
 
   const n = nights(form.checkIn, form.checkOut);
 
@@ -40,7 +38,7 @@ export function Dates() {
       checkOut: form.checkOut,
       adults: form.adults,
       children: form.children,
-      voucherCode: form.voucher.trim(),
+      voucherCode: "",
     });
     goTo("results");
   }
@@ -57,10 +55,7 @@ export function Dates() {
       <div className="mx-auto max-w-5xl px-5 pb-16 pt-10 sm:pt-16">
         {/* En-tête éditorial compact */}
         <div className="max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-teal-deep shadow-sm backdrop-blur">
-            <IconMapPin className="h-3.5 w-3.5 text-turquoise" /> Réservation officielle · Martinique
-          </span>
-          <h1 className="mt-4 font-display text-4xl leading-[1.07] text-ink text-balance sm:text-5xl">
+          <h1 className="font-display text-4xl leading-[1.07] text-ink text-balance sm:text-5xl">
             Votre séjour les pieds dans l'eau, au <span className="italic text-creole">meilleur prix</span>
           </h1>
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -103,29 +98,14 @@ export function Dates() {
             </button>
           </div>
 
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1">
-            <div className="text-xs text-ink/55">
-              {n > 0 ? (
-                <span>
-                  {n} nuit{n > 1 ? "s" : ""} · {form.adults + form.children} voyageur
-                  {form.adults + form.children > 1 ? "s" : ""}
-                </span>
-              ) : (
-                <span>Choisissez vos dates pour voir les meilleurs tarifs en direct.</span>
-              )}
-            </div>
-            {showVoucher ? (
-              <input
-                type="text"
-                className="w-44 rounded-full border border-ink/15 bg-white px-3 py-1.5 text-sm uppercase outline-none focus:border-turquoise"
-                placeholder="Code promo"
-                value={form.voucher}
-                onChange={(e) => setForm((f) => ({ ...f, voucher: e.target.value }))}
-              />
+          <div className="mt-2 px-1 text-xs text-ink/55">
+            {n > 0 ? (
+              <span>
+                {n} nuit{n > 1 ? "s" : ""} · {form.adults + form.children} voyageur
+                {form.adults + form.children > 1 ? "s" : ""}
+              </span>
             ) : (
-              <button type="button" onClick={() => setShowVoucher(true)} className="btn-link text-xs">
-                + Ajouter un code promo
-              </button>
+              <span>Choisissez vos dates pour voir les meilleurs tarifs en direct.</span>
             )}
           </div>
 
