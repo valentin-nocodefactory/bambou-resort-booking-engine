@@ -95,7 +95,8 @@ export function PhoneInput({
           : "border-marine/15 focus-within:border-corail focus-within:ring-corail/25"
       }`}
     >
-      <div className="relative w-[5rem] shrink-0">
+      {/* Largeur AUTO (définie par l'affichage compact) → s'adapte aux indicatifs à 3 chiffres. */}
+      <div className="relative shrink-0">
         {/* Select natif transparent mais interactif (garde le menu déroulant natif). */}
         <select
           value={country}
@@ -105,7 +106,7 @@ export function PhoneInput({
           }}
           aria-label="Indicatif pays"
           title={country_.name}
-          className="absolute inset-0 h-full w-full cursor-pointer appearance-none border-0 bg-transparent pl-4 text-transparent outline-none"
+          className="absolute inset-0 h-full w-full cursor-pointer appearance-none border-0 bg-transparent text-transparent outline-none"
         >
           {COUNTRIES.map((c) => (
             <option key={c.code} value={c.code} className="text-marine">
@@ -113,13 +114,13 @@ export function PhoneInput({
             </option>
           ))}
         </select>
-        {/* Affichage compact : drapeau + indicatif seulement. */}
-        <span className="pointer-events-none flex h-full items-center gap-1.5 pl-4 pr-5 text-sm font-medium text-marine">
+        {/* Affichage compact : drapeau + indicatif ; pr-7 réserve la place du chevron. */}
+        <span className="pointer-events-none flex h-full items-center gap-1.5 pl-4 pr-7 text-sm font-medium text-marine">
           <span className="text-base leading-none">{country_.flag}</span>
-          <span>+{dialOf(country)}</span>
+          <span className="tabular-nums">+{dialOf(country)}</span>
         </span>
         <svg
-          className="pointer-events-none absolute right-1 top-1/2 h-4 w-4 -translate-y-1/2 text-marine/40"
+          className="pointer-events-none absolute right-1.5 top-1/2 h-4 w-4 -translate-y-1/2 text-marine/40"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"

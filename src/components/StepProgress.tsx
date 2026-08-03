@@ -18,34 +18,57 @@ export function StepProgress() {
 
   return (
     <nav aria-label="Progression de la réservation" className="w-full">
-      {/* Mobile : titre de l'étape courante, bien lisible */}
-      <div className="flex items-center gap-2.5 sm:hidden">
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-corail text-xs font-semibold text-marine">
-          {isConfirmation ? <IconCheck className="h-4 w-4" /> : current + 1}
-        </span>
-        <div className="min-w-0">
-          <p className="truncate font-display text-lg leading-tight text-ink">{currentLabel}</p>
-          <p className="text-xs text-ink/50">
-            {isConfirmation ? "Réservation terminée" : `Étape ${current + 1} sur ${STEPS.length}`}
+      {/* ── Mobile : titre de l'étape + barre segmentée (segments faits = cliquables) ──
+          Épuré : un seul titre lisible + une progression claire, sans pastilles redondantes. */}
+      <div className="sm:hidden">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="truncate font-display text-xl leading-tight text-marine">{currentLabel}</p>
+          <p className="shrink-0 text-xs font-semibold tabular-nums text-marine/45">
+            {isConfirmation ? "Terminé" : `${current + 1} / ${STEPS.length}`}
           </p>
         </div>
+        <ol className="mt-2.5 flex items-center gap-1.5">
+          {STEPS.map((s, i) => {
+            const done = i < current;
+            const active = i === current;
+            return (
+              <li key={s.key} className="flex-1">
+                <button
+                  type="button"
+                  disabled={!done}
+                  onClick={() => done && goTo(s.key)}
+                  aria-current={active ? "step" : undefined}
+                  aria-label={`Étape ${i + 1} sur ${STEPS.length} : ${s.label}${done ? " — terminée, revenir" : active ? " — en cours" : ""}`}
+                  className={`flex w-full items-center py-2 ${done ? "cursor-pointer" : "cursor-default"}`}
+                >
+                  <span
+                    className={`h-1.5 w-full rounded-full transition-colors ${
+                      active ? "bg-corail" : done ? "bg-marine" : "bg-marine/15"
+                    }`}
+                  />
+                </button>
+              </li>
+            );
+          })}
+        </ol>
       </div>
 
-      {/* Fil d'Ariane — pastilles cliquables (mobile + desktop), libellés sur desktop */}
-      <ol className="mt-2 flex items-center gap-1 sm:mt-0 sm:gap-2">
+      {/* ── Desktop : fil d'Ariane complet avec libellés ── */}
+      <ol className="hidden items-center gap-2 sm:flex">
         {STEPS.map((s, i) => {
           const done = i < current;
           const active = i === current;
           const clickable = done;
           return (
-            <li key={s.key} className="flex flex-1 items-center gap-1.5 sm:gap-2">
+            <li key={s.key} className="flex flex-1 items-center gap-2">
               <button
                 type="button"
                 disabled={!clickable}
                 onClick={() => clickable && goTo(s.key)}
-                className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-1 py-1 text-xs font-semibold transition sm:gap-2 sm:px-2.5 sm:text-sm ${
+                aria-current={active ? "step" : undefined}
+                className={`flex items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-semibold transition ${
                   active
-                    ? "text-marine sm:bg-marine sm:text-cream"
+                    ? "bg-marine text-cream"
                     : done
                       ? "text-marine hover:bg-corail/10"
                       : "text-ink/35"
@@ -54,18 +77,18 @@ export function StepProgress() {
                 <span
                   className={`grid h-6 w-6 place-items-center rounded-full text-[11px] ${
                     active
-                      ? "bg-creole text-ink"
+                      ? "bg-corail text-marine"
                       : done
-                        ? "bg-turquoise text-white"
+                        ? "bg-marine text-white"
                         : "border border-ink/20 text-ink/40"
                   }`}
                 >
                   {done ? <IconCheck className="h-3.5 w-3.5" /> : i + 1}
                 </span>
-                <span className="hidden sm:inline">{s.label}</span>
+                {s.label}
               </button>
               {i < STEPS.length - 1 && (
-                <span className={`h-px flex-1 ${i < current ? "bg-turquoise/60" : "bg-ink/10"}`} />
+                <span className={`h-px flex-1 ${i < current ? "bg-marine/50" : "bg-ink/10"}`} />
               )}
             </li>
           );
