@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { eur } from "../lib/format";
+import { t, type TKey } from "../i18n";
 import { IconCheck, IconClock, IconFlame, IconHeart, IconLock, IconStar, IconTag, IconUsers } from "./icons";
 
 // ⚠️ DONNÉES DE DÉMONSTRATION (EN DUR) — leviers de conversion.
@@ -37,30 +38,30 @@ export function RatingPill({ score = "4,2", count = "2 064", className = "" }: {
     <span className={`inline-flex items-center gap-1.5 text-sm ${className}`}>
       <IconStar className="h-4 w-4 text-creole" />
       <strong className="font-semibold text-ink">{score}</strong>
-      <span className="text-ink/50">· {count} avis</span>
+      <span className="text-ink/50">{t("conv.reviewsCount", { count })}</span>
     </span>
   );
 }
 
 // ── Confiance ────────────────────────────────────────────────────────────────
 const TRUST = [
-  { icon: IconCheck, label: "0 € de frais", sub: "ni commission plateforme" },
-  { icon: IconTag, label: "Meilleur prix garanti", sub: "réservé en direct" },
-  { icon: IconLock, label: "Paiement sécurisé", sub: "3-D Secure" },
-  { icon: IconCheck, label: "Sans frais de réservation", sub: "0 commission" },
+  { icon: IconCheck, labelKey: "conv.trustNoFeesLabel", subKey: "conv.trustNoFeesSub" },
+  { icon: IconTag, labelKey: "conv.trustBestPriceLabel", subKey: "conv.trustBestPriceSub" },
+  { icon: IconLock, labelKey: "conv.trustSecurePayLabel", subKey: "conv.trustSecurePaySub" },
+  { icon: IconCheck, labelKey: "conv.trustNoBookingFeeLabel", subKey: "conv.trustNoBookingFeeSub" },
 ];
 
 export function TrustRow({ compact = false }: { compact?: boolean }) {
   return (
     <ul className={`flex flex-wrap gap-x-5 gap-y-2 ${compact ? "text-xs" : "text-sm"}`}>
-      {TRUST.map((t) => (
-        <li key={t.label} className="inline-flex items-center gap-2 text-teal-deep">
+      {TRUST.map((row) => (
+        <li key={row.labelKey} className="inline-flex items-center gap-2 text-teal-deep">
           <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-turquoise/12 text-turquoise">
-            <t.icon className="h-3.5 w-3.5" />
+            <row.icon className="h-3.5 w-3.5" />
           </span>
           <span>
-            <span className="font-semibold text-ink">{t.label}</span>
-            {!compact && <span className="block text-[11px] text-ink/45">{t.sub}</span>}
+            <span className="font-semibold text-ink">{t(row.labelKey as TKey)}</span>
+            {!compact && <span className="block text-[11px] text-ink/45">{t(row.subKey as TKey)}</span>}
           </span>
         </li>
       ))}
@@ -72,21 +73,21 @@ export function TrustRow({ compact = false }: { compact?: boolean }) {
 export function ScarcityBadge({ count }: { count: number }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-creole/15 px-2.5 py-1 text-[11px] font-semibold text-creole">
-      <IconFlame className="h-3.5 w-3.5" /> Plus que {count} {count > 1 ? "chambres" : "chambre"}
+      <IconFlame className="h-3.5 w-3.5" /> {t("conv.scarcity", { count })}
     </span>
   );
 }
 export function HotBadge() {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-creole/15 px-2.5 py-1 text-[11px] font-semibold text-creole">
-      <IconFlame className="h-3.5 w-3.5" /> Très demandé
+      <IconFlame className="h-3.5 w-3.5" /> {t("conv.hot")}
     </span>
   );
 }
 export function FavoriteBadge() {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-teal-deep shadow-card">
-      <IconHeart className="h-3.5 w-3.5 text-creole" /> Coup de cœur voyageurs
+      <IconHeart className="h-3.5 w-3.5 text-creole" /> {t("conv.favorite")}
     </span>
   );
 }
@@ -98,11 +99,11 @@ export function ViewersNudge({ seed }: { seed: string }) {
     <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink/55">
       <span className="inline-flex items-center gap-1.5">
         <IconUsers className="h-3.5 w-3.5 text-turquoise" />
-        {viewers} personnes consultent ce séjour
+        {t("conv.viewers", { count: viewers })}
       </span>
       <span className="inline-flex items-center gap-1.5">
         <IconFlame className="h-3.5 w-3.5 text-creole" />
-        réservé {booked} fois cette semaine
+        {t("conv.bookedTimes", { count: booked })}
       </span>
     </p>
   );
@@ -115,8 +116,7 @@ export function UrgencyBanner() {
         <IconFlame className="h-4 w-4" />
       </span>
       <p className="text-ink/80">
-        <strong className="font-semibold text-ink">Forte demande pour vos dates.</strong> Nos plus beaux bungalows
-        partent vite — réservez sans frais, annulez gratuitement.
+        <strong className="font-semibold text-ink">{t("conv.urgencyTitle")}</strong> {t("conv.urgencyBody")}
       </p>
     </div>
   );
@@ -138,7 +138,7 @@ export function SavingsLine({ amount }: { amount: number }) {
   if (amount <= 0) return null;
   return (
     <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
-      <IconTag className="h-4 w-4" /> Vous économisez {eur(amount)}
+      <IconTag className="h-4 w-4" /> {t("conv.savings", { amount: eur(amount) })}
     </p>
   );
 }
@@ -155,7 +155,7 @@ export function HoldTimer({ minutes = 10 }: { minutes?: number }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-turquoise/10 px-3 py-1 text-xs font-semibold text-teal-deep tabular-nums">
       <IconClock className="h-3.5 w-3.5 text-turquoise" />
-      Nous gardons votre chambre {mm}:{ss}
+      {t("conv.holdTimer", { time: `${mm}:${ss}` })}
     </span>
   );
 }

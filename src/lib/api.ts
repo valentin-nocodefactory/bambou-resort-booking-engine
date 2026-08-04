@@ -13,6 +13,7 @@ import type {
 } from "../types/mews";
 import { toUtc } from "./format";
 import { getLang, mewsLang } from "./lang";
+import { t } from "../i18n";
 import { apiLog } from "./apiLog";
 
 export class ApiError extends Error {
@@ -192,28 +193,28 @@ export const api = {
     }).catch(() => ({ ok: false })),
 };
 
-// Messages d'erreur lisibles (FR) à partir des codes renvoyés par les Functions.
+// Messages d'erreur lisibles (localisés) à partir des codes renvoyés par les Functions.
 export function errorMessage(err: unknown): string {
-  if (!(err instanceof ApiError)) return "Une erreur inattendue est survenue. Merci de réessayer.";
+  if (!(err instanceof ApiError)) return t("err.unexpected");
   switch (err.code) {
     case "network_error":
-      return "Connexion impossible. Vérifiez votre réseau et réessayez.";
+      return t("err.network");
     case "mews_timeout":
-      return "Le service de réservation met trop de temps à répondre. Réessayez dans un instant.";
+      return t("err.timeout");
     case "mews_unreachable":
-      return "Le service de réservation est momentanément indisponible.";
+      return t("err.unreachable");
     case "missing_or_invalid_dates":
-      return "Merci de sélectionner des dates valides.";
+      return t("err.dates");
     case "end_before_start":
-      return "La date de départ doit être postérieure à l'arrivée.";
+      return t("err.endBeforeStart");
     case "invalid_customer":
-      return "Merci de vérifier vos informations (nom, prénom, e-mail).";
+      return t("err.customer");
     case "no_valid_reservations":
-      return "Aucune chambre valide à réserver. Recommencez la sélection.";
+      return t("err.noReservations");
     case "exceeding_availability":
-      return "Cette chambre n'est plus disponible pour ces dates. Relancez une recherche.";
+      return t("err.exceeding");
     default:
-      if (err.status === 401) return "Service de réservation non autorisé (configuration Client). Contactez l'hôtel.";
-      return "Le service de réservation a renvoyé une erreur. Merci de réessayer.";
+      if (err.status === 401) return t("err.unauthorized");
+      return t("err.generic");
   }
 }

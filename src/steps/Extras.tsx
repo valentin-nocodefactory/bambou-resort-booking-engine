@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useBooking } from "../state/booking";
+import { t } from "../i18n";
 import { eur } from "../lib/format";
 import { groupProducts, upgradeRooms } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
@@ -35,18 +36,18 @@ export function Extras() {
 
   return (
     <StepLayout
-      title="Composez votre séjour"
-      subtitle="Ajoutez des expériences et services pour sublimer votre escapade."
+      title={t("extras.title")}
+      subtitle={t("extras.subtitle")}
       onBack={() => goTo(back)}
-      backLabel="Retour"
+      backLabel={t("extras.backLabel")}
     >
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <p className="inline-flex items-center gap-2 text-sm text-ink/60">
             <IconSparkles className="h-4 w-4 text-creole" />
             {productIds.length > 0
-              ? `${productIds.length} extra${productIds.length > 1 ? "s" : ""} sélectionné${productIds.length > 1 ? "s" : ""}`
-              : "Optionnel — passez si vous préférez l'essentiel."}
+              ? t("extras.selectedCount", { count: productIds.length })
+              : t("extras.optional")}
           </p>
           <DataBadge label="Extras · Mews" />
         </div>
@@ -59,7 +60,7 @@ export function Extras() {
                   <span className="h-5 w-1 rounded-full bg-creole" />
                   <h2 className="font-display text-lg text-teal-deep">{g.label}</h2>
                   <span className="text-xs text-ink/40">
-                    {g.items.length} option{g.items.length > 1 ? "s" : ""}
+                    {t("extras.optionCount", { count: g.items.length })}
                   </span>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -80,7 +81,7 @@ export function Extras() {
           </div>
         ) : (
           <div className="card p-8 text-center text-sm text-ink/60">
-            Aucun extra disponible pour le moment — vous pouvez continuer.
+            {t("extras.none")}
           </div>
         )}
 
@@ -88,16 +89,16 @@ export function Extras() {
         <div className="sticky bottom-0 z-20 mt-2 border-t border-ink/10 bg-cream/95 py-3 backdrop-blur">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <span className="text-xs text-ink/55">Total </span>
+              <span className="text-xs text-ink/55">{t("extras.total")}</span>
               <span className="font-display text-lg text-teal-deep">{eur(grandTotal)}</span>
-              <span className="ml-1 text-[11px] text-ink/45">taxes incl.</span>
+              <span className="ml-1 text-[11px] text-ink/45">{t("extras.taxesIncl")}</span>
             </div>
             <div className="flex items-center gap-2">
               <button type="button" onClick={() => goTo("payment")} className="btn-link hidden sm:inline-flex">
-                Passer
+                {t("extras.skip")}
               </button>
               <button type="button" onClick={() => goTo("payment")} className="btn-primary">
-                Continuer vers le paiement <IconArrowRight className="h-4 w-4" />
+                {t("extras.continueToPayment")} <IconArrowRight className="h-4 w-4" />
               </button>
             </div>
           </div>

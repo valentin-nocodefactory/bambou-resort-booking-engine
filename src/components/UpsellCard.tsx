@@ -4,6 +4,7 @@ import { chargingLabel } from "../lib/shaping";
 import type { ShapedProduct } from "../types/mews";
 import { Photo } from "./Photo";
 import { IconCheck, IconPlus, IconSparkles } from "./icons";
+import { t } from "../i18n";
 
 // Carte extra (étape Extras) — toggle d'ajout.
 export function UpsellCard({
@@ -59,7 +60,7 @@ export function UpsellCard({
             <span className="text-xs text-ink/45"> {chargingLabel(product.chargingMode)}</span>
           )}
           {lineTotal !== product.priceEur && (
-            <span className="text-xs text-ink/45"> · {eur(lineTotal)} au total</span>
+            <span className="text-xs text-ink/45"> · {eur(lineTotal)} {t("upsell.total")}</span>
           )}
         </div>
       </div>
@@ -84,10 +85,10 @@ export function InlineUpsell({
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-ink">
-          Sublimez votre séjour&nbsp;: {product.name}
+          {t("upsell.enhance", { name: product.name })}
         </p>
         <p className="text-xs text-ink/60">
-          {product.description || "Un petit plus créole pour démarrer la journée en beauté."} ·{" "}
+          {product.description || t("upsell.descFallback")} ·{" "}
           <span className="font-semibold text-teal-deep">{eur(product.priceEur)}</span>
         </p>
       </div>
@@ -98,11 +99,11 @@ export function InlineUpsell({
       >
         {added ? (
           <>
-            <IconCheck className="h-4 w-4" /> Ajouté
+            <IconCheck className="h-4 w-4" /> {t("upsell.added")}
           </>
         ) : (
           <>
-            <IconPlus className="h-4 w-4" /> Ajouter
+            <IconPlus className="h-4 w-4" /> {t("upsell.add")}
           </>
         )}
       </button>

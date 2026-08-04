@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { BookingSummary } from "./BookingSummary";
 import { IconChevron } from "./icons";
+import { t } from "../i18n";
 
 // Mise en page commune des étapes guest / extras / paiement :
 // contenu principal + récapitulatif sticky.
@@ -8,7 +9,7 @@ export function StepLayout({
   title,
   subtitle,
   onBack,
-  backLabel = "Retour",
+  backLabel = t("stepLayout.back"),
   children,
 }: {
   title: string;

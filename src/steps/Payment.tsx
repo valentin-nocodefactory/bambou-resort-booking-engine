@@ -6,6 +6,7 @@ import { StepLayout } from "../components/StepLayout";
 import { SecureBadge } from "../components/DataBadge";
 import { HoldTimer, TrustRow } from "../components/conversion";
 import { IconArrowRight, IconCheck, IconShield } from "../components/icons";
+import { t } from "../i18n";
 
 export function Payment() {
   const {
@@ -100,30 +101,30 @@ export function Payment() {
 
   return (
     <StepLayout
-      title="Paiement & confirmation"
-      subtitle={onSession ? "Réglez en ligne en toute sécurité." : "Finalisez votre réservation."}
+      title={t("payment.title")}
+      subtitle={onSession ? t("payment.subtitleOnline") : t("payment.subtitleFinalize")}
       onBack={() => goTo("extras")}
-      backLabel="Retour aux extras"
+      backLabel={t("payment.backLabel")}
     >
       <div className="space-y-5">
         {/* Réassurance / urgence */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <HoldTimer minutes={10} />
-          <span className="text-xs text-ink/55">Confirmation immédiate · 0 € de frais et commission</span>
+          <span className="text-xs text-ink/55">{t("payment.reassurance")}</span>
         </div>
 
         {/* Récap final */}
         <div className="card p-5">
-          <h2 className="font-display text-lg text-ink">Votre réservation</h2>
+          <h2 className="font-display text-lg text-ink">{t("payment.yourBooking")}</h2>
           <dl className="mt-3 space-y-2 text-sm">
-            <Recap label="Hébergement" value={selectedRoom.name} />
-            <Recap label="Tarif" value={selectedRate.name} />
+            <Recap label={t("payment.recapAccommodation")} value={selectedRoom.name} />
+            <Recap label={t("payment.recapRate")} value={selectedRate.name} />
             <Recap
-              label="Séjour"
-              value={`${fmtDate(checkIn)} → ${fmtDate(checkOut)} · ${nightsCount} nuit${nightsCount > 1 ? "s" : ""}`}
+              label={t("payment.recapStay")}
+              value={`${fmtDate(checkIn)} → ${fmtDate(checkOut)} · ${t("payment.nights", { count: nightsCount })}`}
             />
             <Recap
-              label="Voyageur"
+              label={t("payment.recapTraveler")}
               value={`${guest.firstName} ${guest.lastName}`.trim() || "—"}
             />
           </dl>
@@ -133,12 +134,12 @@ export function Payment() {
         <div className="rounded-xl2 border border-turquoise/30 bg-turquoise/5 p-5">
           <p className="inline-flex items-center gap-2 font-semibold text-teal-deep">
             <IconShield className="h-5 w-5 text-turquoise" />
-            {onSession ? "Paiement en ligne sécurisé" : "Paiement à l'arrivée"}
+            {onSession ? t("payment.methodOnlineTitle") : t("payment.methodArrivalTitle")}
           </p>
           <p className="mt-1.5 text-sm text-ink/70">
             {onSession
-              ? "Vous serez redirigé vers la page de paiement sécurisée hébergée par Mews (carte + 3-D Secure). Votre réservation est confirmée dès le paiement validé."
-              : "Aucun paiement en ligne pour ce tarif : votre réservation est enregistrée et réglée directement à l'hôtel."}
+              ? t("payment.methodOnlineDesc")
+              : t("payment.methodArrivalDesc")}
           </p>
         </div>
 
@@ -151,7 +152,7 @@ export function Payment() {
             onChange={(e) => setAccepted(e.target.checked)}
           />
           <span>
-            J'accepte les{" "}
+            {t("payment.acceptPrefix")}{" "}
             {hotel?.TermsAndConditionsUrl ? (
               <a
                 href={hotel.TermsAndConditionsUrl}
@@ -159,23 +160,22 @@ export function Payment() {
                 rel="noreferrer"
                 className="font-semibold text-turquoise underline underline-offset-2"
               >
-                conditions générales
+                {t("payment.termsLink")}
               </a>
             ) : (
-              <span className="font-semibold">conditions générales</span>
+              <span className="font-semibold">{t("payment.termsLink")}</span>
             )}{" "}
-            de vente et la politique d'annulation.
+            {t("payment.acceptSuffix")}
           </span>
         </label>
 
         {unavailable && (
           <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm">
             <p className="font-medium text-amber-800">
-              Cette chambre vient d'être réservée pour ces dates. Relancez une recherche pour voir les
-              disponibilités à jour.
+              {t("payment.unavailable")}
             </p>
             <button type="button" onClick={() => goTo("results")} className="btn-primary mt-3">
-              Modifier la recherche
+              {t("payment.editSearch")}
             </button>
           </div>
         )}
@@ -194,14 +194,14 @@ export function Payment() {
             className="btn-accent min-w-56 text-base"
           >
             {submitting ? (
-              "Traitement…"
+              t("payment.processing")
             ) : onSession ? (
               <>
-                Payer {eur(grandTotal)} <IconArrowRight className="h-4 w-4" />
+                {t("payment.pay")} {eur(grandTotal)} <IconArrowRight className="h-4 w-4" />
               </>
             ) : (
               <>
-                Confirmer la réservation <IconCheck className="h-4 w-4" />
+                {t("payment.confirmBooking")} <IconCheck className="h-4 w-4" />
               </>
             )}
           </button>

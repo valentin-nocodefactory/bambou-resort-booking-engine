@@ -5,6 +5,7 @@ import { eur, fmtDate } from "../lib/format";
 import type { ReservationStatusResult } from "../types/mews";
 import { Brand } from "../components/Brand";
 import { IconArrowRight, IconCalendar, IconCheck, IconShield } from "../components/icons";
+import { t } from "../i18n";
 
 const MAX_POLLS = 5;
 
@@ -97,13 +98,13 @@ export function Confirmation() {
           {loading ? (
             <Spinner />
           ) : paid ? (
-            <Badge tone="success" title="Réservation confirmée" sub="Votre paiement a bien été reçu." />
+            <Badge tone="success" title={t("confirmation.confirmedTitle")} sub={t("confirmation.paidSub")} />
           ) : pending ? (
-            <Badge tone="pending" title="Paiement en attente" sub="Votre réservation est enregistrée." />
+            <Badge tone="pending" title={t("confirmation.pendingTitle")} sub={t("confirmation.pendingSub")} />
           ) : failed ? (
-            <Badge tone="warn" title="Paiement non abouti" sub="Votre réservation est en attente de règlement." />
+            <Badge tone="warn" title={t("confirmation.failedTitle")} sub={t("confirmation.failedSub")} />
           ) : (
-            <Badge tone="success" title="Réservation confirmée" sub="Paiement à régler à l'arrivée." />
+            <Badge tone="success" title={t("confirmation.confirmedTitle")} sub={t("confirmation.arrivalSub")} />
           )}
         </div>
 
@@ -111,7 +112,7 @@ export function Confirmation() {
           {!loading && numbers.length > 0 && (
             <div className="rounded-xl bg-cream/70 p-4 text-center">
               <p className="text-xs font-semibold uppercase tracking-wide text-teal-deep/70">
-                {numbers.length > 1 ? "Numéros de confirmation" : "Numéro de confirmation"}
+                {t("confirmation.confirmationNumber", { count: numbers.length })}
               </p>
               <p className="mt-1 font-display text-2xl text-ink">{numbers.join(" · ")}</p>
             </div>
@@ -119,14 +120,14 @@ export function Confirmation() {
 
           <div className="space-y-2 text-sm">
             {checkIn && checkOut && (
-              <Line icon={<IconCalendar className="h-4 w-4" />} label="Séjour">
+              <Line icon={<IconCalendar className="h-4 w-4" />} label={t("confirmation.stay")}>
                 {fmtDate(checkIn)} → {fmtDate(checkOut)}
               </Line>
             )}
-            {guest.email && <Line label="E-mail du voyageur">{guest.email}</Line>}
-            {selectedRate && grandTotal > 0 && <Line label="Total">{eur(grandTotal)}</Line>}
+            {guest.email && <Line label={t("confirmation.travelerEmail")}>{guest.email}</Line>}
+            {selectedRate && grandTotal > 0 && <Line label={t("confirmation.total")}>{eur(grandTotal)}</Line>}
             {created?.totalAmount?.gross != null && !selectedRate && (
-              <Line label="Total">{eur(created.totalAmount.gross)}</Line>
+              <Line label={t("confirmation.total")}>{eur(created.totalAmount.gross)}</Line>
             )}
           </div>
 
@@ -137,12 +138,12 @@ export function Confirmation() {
               <p className="inline-flex items-center gap-2 text-sm font-medium text-teal-deep">
                 <IconShield className="h-4 w-4 text-turquoise" />
                 {pending
-                  ? "Le paiement n'est pas encore confirmé."
-                  : "Le paiement n'a pas pu être finalisé."}
+                  ? t("confirmation.pendingNote")
+                  : t("confirmation.failedNote")}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button type="button" onClick={resumePayment} disabled={resuming} className="btn-primary">
-                  {resuming ? "Redirection…" : "Reprendre le paiement"} <IconArrowRight className="h-4 w-4" />
+                  {resuming ? t("confirmation.redirecting") : t("confirmation.resumePayment")} <IconArrowRight className="h-4 w-4" />
                 </button>
                 <button
                   type="button"
@@ -152,7 +153,7 @@ export function Confirmation() {
                   }}
                   className="btn-ghost"
                 >
-                  Actualiser le statut
+                  {t("confirmation.refreshStatus")}
                 </button>
               </div>
             </div>
@@ -160,7 +161,7 @@ export function Confirmation() {
 
           {paid && (
             <p className="flex items-center justify-center gap-2 text-sm text-teal-deep">
-              <IconCheck className="h-4 w-4" /> Conservez votre numéro de confirmation pour l'enregistrement.
+              <IconCheck className="h-4 w-4" /> {t("confirmation.keepNumber")}
             </p>
           )}
 
@@ -173,14 +174,14 @@ export function Confirmation() {
               }}
               className="btn-link"
             >
-              Effectuer une nouvelle recherche
+              {t("confirmation.newSearch")}
             </button>
           </div>
         </div>
       </div>
 
       <p className="mt-6 text-center text-xs text-ink/45">
-        Bambou Resort · Martinique — au plaisir de vous accueillir les pieds dans l'eau.
+        {t("confirmation.footer")}
       </p>
     </div>
   );
@@ -190,7 +191,7 @@ function Spinner() {
   return (
     <div className="mt-5 flex flex-col items-center gap-3">
       <span className="h-8 w-8 animate-spin rounded-full border-2 border-cream/30 border-t-creole" />
-      <p className="text-sm text-cream/80">Vérification du paiement…</p>
+      <p className="text-sm text-cream/80">{t("confirmation.verifyingPayment")}</p>
     </div>
   );
 }

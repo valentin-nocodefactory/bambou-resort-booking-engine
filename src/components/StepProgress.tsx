@@ -1,30 +1,31 @@
 import { useBooking, type Step } from "../state/booking";
 import { IconCheck } from "./icons";
+import { t } from "../i18n";
 
 const STEPS: { key: Step; label: string }[] = [
-  { key: "dates", label: "Dates" },
-  { key: "results", label: "Chambre" },
-  { key: "guest", label: "Vos infos" },
-  { key: "upgrade", label: "Surclassement" },
-  { key: "extras", label: "Extras" },
-  { key: "payment", label: "Paiement" },
+  { key: "dates", label: t("stepProgress.dates") },
+  { key: "results", label: t("stepProgress.room") },
+  { key: "guest", label: t("stepProgress.yourInfo") },
+  { key: "upgrade", label: t("stepProgress.upgrade") },
+  { key: "extras", label: t("stepProgress.extras") },
+  { key: "payment", label: t("stepProgress.payment") },
 ];
 
 export function StepProgress() {
   const { step, goTo } = useBooking();
   const current = step === "confirmation" ? STEPS.length : STEPS.findIndex((s) => s.key === step);
   const isConfirmation = current >= STEPS.length;
-  const currentLabel = isConfirmation ? "Confirmation" : (STEPS[current]?.label ?? "");
+  const currentLabel = isConfirmation ? t("stepProgress.confirmation") : (STEPS[current]?.label ?? "");
 
   return (
-    <nav aria-label="Progression de la réservation" className="w-full">
+    <nav aria-label={t("stepProgress.navLabel")} className="w-full">
       {/* ── Mobile : titre de l'étape + barre segmentée (segments faits = cliquables) ──
           Épuré : un seul titre lisible + une progression claire, sans pastilles redondantes. */}
       <div className="sm:hidden">
         <div className="flex items-baseline justify-between gap-3">
           <p className="truncate font-display text-xl leading-tight text-marine">{currentLabel}</p>
           <p className="shrink-0 text-xs font-semibold tabular-nums text-marine/45">
-            {isConfirmation ? "Terminé" : `${current + 1} / ${STEPS.length}`}
+            {isConfirmation ? t("stepProgress.done") : `${current + 1} / ${STEPS.length}`}
           </p>
         </div>
         <ol className="mt-2.5 flex items-center gap-1.5">
@@ -38,7 +39,7 @@ export function StepProgress() {
                   disabled={!done}
                   onClick={() => done && goTo(s.key)}
                   aria-current={active ? "step" : undefined}
-                  aria-label={`Étape ${i + 1} sur ${STEPS.length} : ${s.label}${done ? " — terminée, revenir" : active ? " — en cours" : ""}`}
+                  aria-label={t("stepProgress.stepAria", { index: i + 1, total: STEPS.length, label: s.label, status: done ? "done" : active ? "active" : "" })}
                   className={`flex w-full items-center py-2 ${done ? "cursor-pointer" : "cursor-default"}`}
                 >
                   <span

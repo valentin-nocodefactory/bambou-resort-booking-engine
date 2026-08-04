@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { AsYouType, getCountryCallingCode, isValidPhoneNumber, parsePhoneNumber, type CountryCode } from "libphonenumber-js";
+import { t } from "../i18n";
+import { regionName } from "../lib/format";
 import { IconCheck } from "./icons";
 
 // Liste ciblée (Martinique/France en tête — marché du resort). Code ISO + drapeau +
@@ -104,13 +106,13 @@ export function PhoneInput({
             setCountry(e.target.value as CountryCode);
             apply(e.target.value as CountryCode, text);
           }}
-          aria-label="Indicatif pays"
-          title={country_.name}
+          aria-label={t("phone.countryCode")}
+          title={regionName(country_.code)}
           className="absolute inset-0 h-full w-full cursor-pointer appearance-none border-0 bg-transparent text-transparent outline-none"
         >
           {COUNTRIES.map((c) => (
             <option key={c.code} value={c.code} className="text-marine">
-              {c.flag} +{dialOf(c.code)} · {c.name}
+              {c.flag} +{dialOf(c.code)} · {regionName(c.code)}
             </option>
           ))}
         </select>

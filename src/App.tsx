@@ -34,6 +34,11 @@ function Shell() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
+  // Titre d'onglet dans la langue courante (l'index.html est statique en FR).
+  useEffect(() => {
+    document.title = t("meta.title");
+  }, []);
+
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
       <header className="sticky top-0 z-30 border-b border-ink/5 bg-cream/85 backdrop-blur">

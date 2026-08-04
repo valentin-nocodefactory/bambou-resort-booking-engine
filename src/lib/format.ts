@@ -19,6 +19,22 @@ export function loc(value: Localized | null | undefined, fallback = ""): string 
   return Object.values(value)[0] || fallback;
 }
 
+// Nom localisé d'un pays à partir de son code ISO (FR/EN via Intl.DisplayNames).
+const regionCache = new Map<string, Intl.DisplayNames>();
+export function regionName(code: string): string {
+  const loc = locale();
+  let dn = regionCache.get(loc);
+  if (!dn) {
+    dn = new Intl.DisplayNames([loc], { type: "region" });
+    regionCache.set(loc, dn);
+  }
+  try {
+    return dn.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 // Formatters Intl mémoïsés par (locale, décimales) — reconstruits si la locale change.
 const numCache = new Map<string, Intl.NumberFormat>();
 const eurFmt = (decimals: number) => {

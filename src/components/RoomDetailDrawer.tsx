@@ -6,15 +6,16 @@ import type { ShapedRate, ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
 import { FavoriteBadge, ScarcityBadge, ViewersNudge } from "./conversion";
 import { IconBed, IconCheck, IconClose, IconLeaf, IconShield, IconSun, IconUsers, IconWave } from "./icons";
+import { t } from "../i18n";
 
 // ⚠️ DÉMO (en dur) : Mews n'expose pas d'équipements structurés sur les RoomCategories ici.
 // À remplacer par de vraies données équipements en production.
 const AMENITIES = [
-  { icon: IconWave, label: "Vue lagon / jardin" },
-  { icon: IconSun, label: "Terrasse privative" },
-  { icon: IconLeaf, label: "Climatisation" },
-  { icon: IconCheck, label: "Wi-Fi gratuit" },
-];
+  { icon: IconWave, key: "roomDetail.amenityView" },
+  { icon: IconSun, key: "roomDetail.amenityTerrace" },
+  { icon: IconLeaf, key: "roomDetail.amenityAc" },
+  { icon: IconCheck, key: "roomDetail.amenityWifi" },
+] as const;
 
 // Panneau détail qui glisse depuis la DROITE — large, miniatures au-dessus de la
 // photo, détails sur 2 colonnes (infos à gauche, tarifs à droite).
@@ -85,7 +86,7 @@ export function RoomDetailDrawer({
   const lowStock = room.availableRoomCount > 0 && room.availableRoomCount <= 4;
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={`Détails — ${room.name}`}>
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={t("roomDetail.dialogAria", { name: room.name })}>
       <div
         onClick={close}
         className={`absolute inset-0 bg-ink/55 transition-opacity duration-300 ${entered ? "opacity-100" : "opacity-0"}`}
@@ -101,7 +102,7 @@ export function RoomDetailDrawer({
           <div className="relative">
             <Photo
               src={imgUrl(imageBaseUrl, images[active], 1200)}
-              alt={`${room.name} — photo ${active + 1}`}
+              alt={t("roomDetail.photoAlt", { name: room.name, n: active + 1 })}
               className="aspect-[16/9] w-full object-cover"
             />
             <span className="absolute left-3 top-3 rounded-full bg-teal-deep/85 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cream">
@@ -110,7 +111,7 @@ export function RoomDetailDrawer({
             <button
               type="button"
               onClick={close}
-              aria-label="Fermer"
+              aria-label={t("roomDetail.close")}
               className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-ink shadow-card backdrop-blur transition hover:bg-white"
             >
               <IconClose className="h-5 w-5" />
@@ -123,7 +124,7 @@ export function RoomDetailDrawer({
                       key={`${id}-${i}`}
                       type="button"
                       onClick={() => setActive(i)}
-                      aria-label={`Photo ${i + 1}`}
+                      aria-label={t("roomDetail.photoAria", { n: i + 1 })}
                       className={`h-11 w-14 shrink-0 overflow-hidden rounded-md ring-2 transition ${
                         i === active ? "ring-white" : "ring-white/40 opacity-80 hover:opacity-100"
                       }`}
@@ -144,19 +145,18 @@ export function RoomDetailDrawer({
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-teal-deep/85">
                 {room.capacity > 0 && (
                   <span className="inline-flex items-center gap-1.5">
-                    <IconUsers className="h-4 w-4 text-turquoise" /> {room.capacity} pers.
+                    <IconUsers className="h-4 w-4 text-turquoise" /> {t("roomDetail.persons", { count: room.capacity })}
                   </span>
                 )}
                 <span className="inline-flex items-center gap-1.5">
-                  <IconBed className="h-4 w-4 text-turquoise" /> {room.normalBedCount} lit{room.normalBedCount > 1 ? "s" : ""}
-                  {room.extraBedCount > 0 ? ` + ${room.extraBedCount}` : ""}
+                  <IconBed className="h-4 w-4 text-turquoise" /> {t("roomDetail.beds", { count: room.normalBedCount, extra: room.extraBedCount })}
                 </span>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <FavoriteBadge />
                 {lowStock && <ScarcityBadge count={room.availableRoomCount} />}
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-                  <IconCheck className="h-3.5 w-3.5" /> 0 € de frais et commission
+                  <IconCheck className="h-3.5 w-3.5" /> {t("roomDetail.noFees")}
                 </span>
               </div>
               <div className="mt-3">
@@ -167,11 +167,11 @@ export function RoomDetailDrawer({
                 <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-ink/75">{room.description}</p>
               )}
 
-              <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-teal-deep/60">Équipements</p>
+              <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-teal-deep/60">{t("roomDetail.amenities")}</p>
               <ul className="mt-2 grid grid-cols-2 gap-2.5">
                 {AMENITIES.map((a) => (
-                  <li key={a.label} className="inline-flex items-center gap-2 text-sm text-ink/75">
-                    <a.icon className="h-4 w-4 shrink-0 text-turquoise" /> {a.label}
+                  <li key={a.key} className="inline-flex items-center gap-2 text-sm text-ink/75">
+                    <a.icon className="h-4 w-4 shrink-0 text-turquoise" /> {t(a.key)}
                   </li>
                 ))}
               </ul>
@@ -180,8 +180,8 @@ export function RoomDetailDrawer({
             {/* Colonne droite : tarifs */}
             <div>
               <div className="flex items-center justify-between">
-                <h3 className="font-display text-lg text-teal-deep">Choisissez votre tarif</h3>
-                <span className="text-[11px] text-ink/45">{confirming ? "Confirmation…" : "Prix en direct"}</span>
+                <h3 className="font-display text-lg text-teal-deep">{t("roomDetail.chooseRate")}</h3>
+                <span className="text-[11px] text-ink/45">{confirming ? t("roomDetail.confirming") : t("roomDetail.livePrice")}</span>
               </div>
               <ul className="mt-3 space-y-3">
                 {room.rates.map((rate, i) => {
@@ -198,15 +198,15 @@ export function RoomDetailDrawer({
                             <p className="font-semibold text-ink">{rate.name}</p>
                             {best && (
                               <span className="chip bg-turquoise text-white">
-                                <IconCheck className="h-3.5 w-3.5" /> Meilleur prix
+                                <IconCheck className="h-3.5 w-3.5" /> {t("roomDetail.bestPrice")}
                               </span>
                             )}
-                            {rate.isPrivate && <span className="chip bg-creole/20 text-creole">Tarif privé</span>}
+                            {rate.isPrivate && <span className="chip bg-creole/20 text-creole">{t("roomDetail.privateRate")}</span>}
                           </div>
                           {rate.description && <p className="mt-1 text-sm leading-relaxed text-ink/60">{rate.description}</p>}
                           <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-teal-deep/70">
                             <IconShield className="h-3.5 w-3.5" />
-                            {rate.settlement.isAutomatic ? "Paiement en ligne sécurisé" : "Paiement à l'hôtel"}
+                            {rate.settlement.isAutomatic ? t("roomDetail.securePayment") : t("roomDetail.payAtHotel")}
                           </p>
                         </div>
                         <div className="shrink-0 text-right">
@@ -214,7 +214,7 @@ export function RoomDetailDrawer({
                           <p className="font-display text-2xl text-teal-deep">{eur(total)}</p>
                           {rate.perNightGross != null && (
                             <p className="text-[11px] text-ink/45">
-                              {eur(rate.perNightGross)}/nuit · {nightsCount} nuit{nightsCount > 1 ? "s" : ""}
+                              {eur(rate.perNightGross)}{t("roomDetail.perNightNights", { count: nightsCount })}
                             </p>
                           )}
                         </div>
@@ -224,7 +224,7 @@ export function RoomDetailDrawer({
                         onClick={() => onSelectRate({ ...rate, totalGross: total ?? rate.totalGross })}
                         className={`mt-3 w-full ${best ? "btn-primary" : "btn-ghost"}`}
                       >
-                        Réserver à ce tarif
+                        {t("roomDetail.bookRate")}
                       </button>
                     </li>
                   );

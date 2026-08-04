@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useBooking } from "../state/booking";
+import { t } from "../i18n";
 import { eur, imgUrl } from "../lib/format";
 import { spaceLabel, upgradeBenefits, upgradeRooms } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
@@ -34,10 +35,10 @@ export function Upgrade() {
 
   return (
     <StepLayout
-      title="Surclassez votre séjour"
-      subtitle="Pour quelques euros de plus, offrez-vous un cadre encore plus exceptionnel."
+      title={t("upgrade.title")}
+      subtitle={t("upgrade.subtitle")}
       onBack={() => goTo("guest")}
-      backLabel="Retour aux informations"
+      backLabel={t("upgrade.backLabel")}
     >
       <div className="space-y-5">
         {/* Choix courant */}
@@ -48,7 +49,7 @@ export function Upgrade() {
             className="h-14 w-16 shrink-0 rounded-lg object-cover"
           />
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-deep/60">Votre choix actuel</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-deep/60">{t("upgrade.currentChoice")}</p>
             <p className="truncate font-medium text-ink">{selectedRoom.name}</p>
             <p className="text-xs text-ink/50">{selectedRate.name}</p>
           </div>
@@ -58,14 +59,13 @@ export function Upgrade() {
         {ups.length === 0 ? (
           <div className="card p-8 text-center">
             <IconCheck className="mx-auto h-8 w-8 text-emerald-500" />
-            <p className="mt-2 font-display text-lg text-ink">Vous avez déjà l'un de nos plus beaux hébergements</p>
-            <p className="mt-1 text-sm text-ink/60">Aucun surclassement supérieur disponible pour ces dates.</p>
+            <p className="mt-2 font-display text-lg text-ink">{t("upgrade.bestAlready")}</p>
+            <p className="mt-1 text-sm text-ink/60">{t("upgrade.noneAvailable")}</p>
           </div>
         ) : (
           <>
             <p className="inline-flex items-center gap-2 text-sm font-semibold text-creole">
-              <IconSparkles className="h-4 w-4" /> {ups.length} surclassement{ups.length > 1 ? "s" : ""} disponible
-              {ups.length > 1 ? "s" : ""}
+              <IconSparkles className="h-4 w-4" /> {t("upgrade.countAvailable", { count: ups.length })}
             </p>
 
             <div className="space-y-4">
@@ -91,7 +91,7 @@ export function Upgrade() {
                         <h3 className="font-display text-xl text-ink">{room.name}</h3>
                         <div className="shrink-0 text-right">
                           <p className="font-display text-xl text-creole">+{eur(diff)}</p>
-                          <p className="text-[11px] text-ink/45">/ séjour</p>
+                          <p className="text-[11px] text-ink/45">{t("upgrade.perStay")}</p>
                         </div>
                       </div>
                       <ul className="mt-2 space-y-1.5">
@@ -103,13 +103,13 @@ export function Upgrade() {
                       </ul>
                       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-teal-deep/75">
                         <span className="inline-flex items-center gap-1">
-                          <IconUsers className="h-3.5 w-3.5 text-turquoise" /> {room.capacity} pers.
+                          <IconUsers className="h-3.5 w-3.5 text-turquoise" /> {t("upgrade.persons", { count: room.capacity })}
                         </span>
                         <span className="inline-flex items-center gap-1">
-                          <IconBed className="h-3.5 w-3.5 text-turquoise" /> {room.normalBedCount} lit{room.normalBedCount > 1 ? "s" : ""}
+                          <IconBed className="h-3.5 w-3.5 text-turquoise" /> {t("upgrade.beds", { count: room.normalBedCount })}
                           {room.extraBedCount > 0 ? ` +${room.extraBedCount}` : ""}
                         </span>
-                        <span className="text-ink/40">soit {eur(room.fromGross)} · {nightsCount} nuit{nightsCount > 1 ? "s" : ""}</span>
+                        <span className="text-ink/40">{t("upgrade.soit")} {eur(room.fromGross)} · {t("upgrade.nights", { count: nightsCount })}</span>
                       </div>
                       <div className="mt-auto pt-4">
                         {isSelected ? (
@@ -118,7 +118,7 @@ export function Upgrade() {
                             onClick={() => base.room && base.rate && selectRoomRate(base.room, base.rate)}
                             className="btn-ghost w-full"
                           >
-                            <IconCheck className="h-4 w-4" /> Surclassement sélectionné · retirer
+                            <IconCheck className="h-4 w-4" /> {t("upgrade.selectedRemove")}
                           </button>
                         ) : (
                           <button
@@ -126,7 +126,7 @@ export function Upgrade() {
                             onClick={() => selectRoomRate(room, room.rates[0])}
                             className="btn-accent w-full"
                           >
-                            Surclasser pour +{eur(diff)} <IconArrowRight className="h-4 w-4" />
+                            {t("upgrade.upgradeFor")} +{eur(diff)} <IconArrowRight className="h-4 w-4" />
                           </button>
                         )}
                       </div>
@@ -140,10 +140,10 @@ export function Upgrade() {
 
         <div className="flex flex-col-reverse items-center justify-between gap-3 pt-2 sm:flex-row">
           <button type="button" onClick={() => goTo("extras")} className="btn-link">
-            {upgraded ? "Continuer avec ce surclassement" : "Non merci, garder ma chambre"}
+            {upgraded ? t("upgrade.continueWith") : t("upgrade.noThanks")}
           </button>
           <button type="button" onClick={() => goTo("extras")} className="btn-primary w-full sm:w-auto">
-            Continuer vers les extras <IconArrowRight className="h-4 w-4" />
+            {t("upgrade.continueToExtras")} <IconArrowRight className="h-4 w-4" />
           </button>
         </div>
       </div>

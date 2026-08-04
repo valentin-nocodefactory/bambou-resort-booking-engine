@@ -3,6 +3,7 @@ import { eur, fmtDate } from "../lib/format";
 import { chargingLabel, spaceLabel } from "../lib/shaping";
 import { SavingsLine } from "./conversion";
 import { IconBed, IconCalendar, IconCheck, IconLock, IconUsers } from "./icons";
+import { t } from "../i18n";
 
 // Récapitulatif sticky : hébergement, tarif, dates, occupants, extras, total.
 export function BookingSummary() {
@@ -29,9 +30,9 @@ export function BookingSummary() {
   return (
     <aside className="card overflow-hidden">
       <div className="bg-teal-deep px-5 py-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-creole-soft">Votre séjour</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-creole-soft">{t("summary.yourStay")}</p>
         <p className="mt-0.5 font-display text-lg text-cream">
-          {selectedRoom ? selectedRoom.name : "À composer"}
+          {selectedRoom ? selectedRoom.name : t("summary.toCompose")}
         </p>
       </div>
 
@@ -41,28 +42,27 @@ export function BookingSummary() {
             {selectedRate?.name ?? "—"}
           </Row>
         )}
-        <Row icon={<IconCalendar className="h-4 w-4" />} label="Séjour">
+        <Row icon={<IconCalendar className="h-4 w-4" />} label={t("summary.stay")}>
           {checkIn && checkOut ? (
             <>
               {fmtDate(checkIn)} → {fmtDate(checkOut)}
               <span className="text-ink/50">
                 {" "}
-                · {nightsCount} nuit{nightsCount > 1 ? "s" : ""}
+                · {t("summary.nights", { count: nightsCount })}
               </span>
             </>
           ) : (
             "—"
           )}
         </Row>
-        <Row icon={<IconUsers className="h-4 w-4" />} label="Voyageurs">
-          {adults} adulte{adults > 1 ? "s" : ""}
-          {children > 0 ? `, ${children} enfant${children > 1 ? "s" : ""}` : ""}
+        <Row icon={<IconUsers className="h-4 w-4" />} label={t("summary.travelers")}>
+          {t("summary.guests", { adults, children })}
         </Row>
       </div>
 
       <div className="border-t border-ink/10 px-5 py-4 text-sm">
         {selectedRate && (
-          <Line label={`Hébergement · ${nightsCount} nuit${nightsCount > 1 ? "s" : ""}`} value={eur(roomTotal)} />
+          <Line label={t("summary.accommodation", { count: nightsCount })} value={eur(roomTotal)} />
         )}
         {selectedProducts.map((p) => (
           <Line
@@ -79,14 +79,14 @@ export function BookingSummary() {
           />
         ))}
         {!selectedRate && !selectedProducts.length && (
-          <p className="text-ink/50">Sélectionnez un hébergement pour voir le détail.</p>
+          <p className="text-ink/50">{t("summary.selectPrompt")}</p>
         )}
       </div>
 
       <div className="flex items-end justify-between border-t border-ink/10 bg-cream/60 px-5 py-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-teal-deep/70">Total</p>
-          <p className="text-[11px] text-ink/50">taxes incluses{productsTotal > 0 ? ` · dont ${eur(productsTotal)} d'extras` : ""}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-teal-deep/70">{t("summary.total")}</p>
+          <p className="text-[11px] text-ink/50">{t("summary.taxesIncluded")}{productsTotal > 0 ? t("summary.extrasNote", { amount: eur(productsTotal) }) : ""}</p>
         </div>
         <p className="font-display text-2xl text-teal-deep">{grandTotal > 0 ? eur(grandTotal) : "—"}</p>
       </div>
@@ -99,10 +99,10 @@ export function BookingSummary() {
 
       <ul className="space-y-1.5 border-t border-ink/10 px-5 py-4 text-xs text-ink/60">
         <li className="inline-flex items-center gap-2">
-          <IconCheck className="h-3.5 w-3.5 text-emerald-600" /> 0 € de frais et commission
+          <IconCheck className="h-3.5 w-3.5 text-emerald-600" /> {t("summary.noFees")}
         </li>
         <li className="inline-flex items-center gap-2">
-          <IconLock className="h-3.5 w-3.5 text-turquoise" /> Paiement sécurisé · 3-D Secure
+          <IconLock className="h-3.5 w-3.5 text-turquoise" /> {t("summary.securePayment")}
         </li>
       </ul>
     </aside>

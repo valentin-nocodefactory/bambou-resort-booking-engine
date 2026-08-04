@@ -119,17 +119,17 @@ export function Results() {
             <IconCalendar className="h-4 w-4 text-turquoise" />
             {fmtDate(checkIn)} → {fmtDate(checkOut)}
             <span className="text-ink/45">
-              · {nightsCount} nuit{nightsCount > 1 ? "s" : ""}
+              · {t("results.nights", { count: nightsCount })}
             </span>
           </span>
           <span className="inline-flex items-center gap-1.5">
             <IconUsers className="h-4 w-4 text-turquoise" />
-            {adults} adulte{adults > 1 ? "s" : ""}
-            {children > 0 ? `, ${children} enfant${children > 1 ? "s" : ""}` : ""}
+            {t("results.adults", { count: adults })}
+            {children > 0 ? `, ${t("results.children", { count: children })}` : ""}
           </span>
         </div>
         <button type="button" onClick={() => goTo("dates")} className="btn-link">
-          Modifier la recherche
+          {t("results.editSearch")}
         </button>
       </div>
 
@@ -142,11 +142,11 @@ export function Results() {
       <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl text-ink sm:text-3xl">
-            {rooms.length > 0 ? `${rooms.length} hébergement${rooms.length > 1 ? "s" : ""} disponible${rooms.length > 1 ? "s" : ""}` : "Nos hébergements"}
+            {rooms.length > 0 ? t("results.availableCount", { count: rooms.length }) : t("results.ourAccommodations")}
           </h1>
           <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink/55">
             <RatingPill />
-            <span>Choisissez votre cocon, comparez les tarifs.</span>
+            <span>{t("results.subtitle")}</span>
           </div>
         </div>
       </div>
@@ -239,7 +239,7 @@ function ErrorBox({ message, onRetry }: { message: string; onRetry: () => void }
     <div className="mt-6 rounded-xl2 border border-red-200 bg-red-50 p-6 text-center">
       <p className="font-medium text-red-700">{message}</p>
       <button type="button" onClick={onRetry} className="btn-primary mt-4">
-        Réessayer
+        {t("results.retry")}
       </button>
     </div>
   );
@@ -248,12 +248,12 @@ function ErrorBox({ message, onRetry }: { message: string; onRetry: () => void }
 function EmptyBox({ onModify }: { onModify: () => void }) {
   return (
     <div className="mt-6 rounded-xl2 border border-ink/10 bg-white p-10 text-center shadow-card">
-      <p className="font-display text-xl text-ink">Aucune disponibilité pour ces dates</p>
+      <p className="font-display text-xl text-ink">{t("results.emptyTitle")}</p>
       <p className="mt-2 text-sm text-ink/60">
-        Essayez d'autres dates ou ajustez le nombre de voyageurs — nos plus beaux bungalows partent vite.
+        {t("results.emptyBody")}
       </p>
       <button type="button" onClick={onModify} className="btn-primary mt-5">
-        Modifier la recherche
+        {t("results.editSearch")}
       </button>
     </div>
   );

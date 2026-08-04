@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useBooking, DEFAULT_PROPERTIES } from "../state/booking";
 import { nights } from "../lib/format";
+import { t, type TKey } from "../i18n";
 import { DateRangePicker } from "../components/DateRangePicker";
 import { RatingPill } from "../components/conversion";
 import {
@@ -16,11 +17,13 @@ import {
 } from "../components/icons";
 
 // Hébergements sélectionnables (libellé + accroche + photo, reprise de bambouresort.com).
-type PropertyOption = { key: string; label: string; desc: string; image: string };
+// `desc` = clé i18n résolue AU RENDU via t() (pas au niveau module, sinon figée en fr
+// avant initLang()). `label` = nom propre, non traduit.
+type PropertyOption = { key: string; label: string; desc: TKey; image: string };
 const PROPERTY_OPTIONS: PropertyOption[] = [
-  { key: "hotel", label: "Hôtel Bambou", desc: "Chambres d'hôtel, les pieds dans l'eau", image: "/img/properties/hotel.webp" },
-  { key: "creole", label: "Culture Créole", desc: "Boutique-hôtel créole", image: "/img/properties/creole.webp" },
-  { key: "villas", label: "Villas", desc: "Villas privées & luxueuses", image: "/img/properties/villas.webp" },
+  { key: "hotel", label: "Hôtel Bambou", desc: "dates.propHotelDesc", image: "/img/properties/hotel.webp" },
+  { key: "creole", label: "Culture Créole", desc: "dates.propCreoleDesc", image: "/img/properties/creole.webp" },
+  { key: "villas", label: "Villas", desc: "dates.propVillasDesc", image: "/img/properties/villas.webp" },
 ];
 
 // Écran de recherche STANDALONE (pas de hero) — moteur de réservation seul,
@@ -40,8 +43,8 @@ export function Dates() {
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.checkIn || !form.checkOut) return setError("Sélectionnez vos dates d'arrivée et de départ.");
-    if (form.checkOut <= form.checkIn) return setError("La date de départ doit être postérieure à l'arrivée.");
+    if (!form.checkIn || !form.checkOut) return setError(t("dates.errorSelectDates"));
+    if (form.checkOut <= form.checkIn) return setError(t("dates.errorCheckoutAfter"));
     setError("");
     setSearch({
       checkIn: form.checkIn,
@@ -60,15 +63,15 @@ export function Dates() {
         {/* En-tête éditorial compact */}
         <div className="max-w-2xl">
           <h1 className="font-display text-4xl leading-[1.07] text-ink text-balance sm:text-5xl">
-            Réservez votre séjour
+            {t("dates.title")}
           </h1>
           <p className="mt-3 text-lg leading-snug text-ink/70 sm:text-xl">
-            Hôtels &amp; villas d'exception en Martinique
+            {t("dates.subtitle")}
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
             <RatingPill />
             <span className="inline-flex items-center gap-1.5 text-sm text-teal-deep">
-              <IconLeaf className="h-4 w-4 text-turquoise" /> Réservation en direct, sans frais ni commissions des plateformes
+              <IconLeaf className="h-4 w-4 text-turquoise" /> {t("dates.directBooking")}
             </span>
           </div>
         </div>
@@ -99,18 +102,15 @@ export function Dates() {
 
             {/* Rechercher */}
             <button type="submit" className="btn-primary h-full min-h-[3.4rem] w-full px-6 lg:w-auto">
-              Rechercher <IconArrowRight className="h-4 w-4" />
+              {t("dates.search")} <IconArrowRight className="h-4 w-4" />
             </button>
           </div>
 
           <div className="mt-2 px-1 text-xs text-ink/55">
             {n > 0 ? (
-              <span>
-                {n} nuit{n > 1 ? "s" : ""} · {form.adults + form.children} voyageur
-                {form.adults + form.children > 1 ? "s" : ""}
-              </span>
+              <span>{t("dates.nightsGuests", { nights: n, guests: form.adults + form.children })}</span>
             ) : (
-              <span>Choisissez vos dates pour voir les meilleurs tarifs en direct.</span>
+              <span>{t("dates.pickDatesHint")}</span>
             )}
           </div>
 
@@ -120,23 +120,23 @@ export function Dates() {
         {/* Nos promesses — arguments de marque repris de bambouresort.com */}
         <div className="mt-14">
           <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-corail">
-            Art de vivre antillais
+            {t("dates.artDeVivre")}
           </p>
           <div className="mx-auto mt-8 grid max-w-4xl gap-10 sm:grid-cols-3">
             <PromiseCard
               icon={<IconWave className="h-6 w-6" />}
-              title="Les pieds dans l'eau"
-              text="Un accès direct à la plage depuis nos hôtels, et une vue imprenable sur la mer dans nos villas."
+              title={t("dates.promise1Title")}
+              text={t("dates.promise1Text")}
             />
             <PromiseCard
               icon={<IconMapPin className="h-6 w-6" />}
-              title="Un emplacement idéal"
-              text="Face à Fort-de-France et proche de l'aéroport international Aimé Césaire (20 min en voiture)."
+              title={t("dates.promise2Title")}
+              text={t("dates.promise2Text")}
             />
             <PromiseCard
               icon={<IconPalm className="h-6 w-6" />}
-              title="Une nature d'exception"
-              text="Vivez en harmonie avec la nature dans un cadre apaisant, ressourçant et authentique."
+              title={t("dates.promise3Title")}
+              text={t("dates.promise3Text")}
             />
           </div>
         </div>
@@ -181,7 +181,7 @@ function PropertiesField({
   const count = selected.length;
   const summary =
     count >= options.length
-      ? "Tous les hébergements"
+      ? t("dates.allProperties")
       : options
           .filter((o) => selected.includes(o.key))
           .map((o) => o.label)
@@ -202,14 +202,14 @@ function PropertiesField({
       >
         <IconMapPin className="h-4 w-4 shrink-0 text-turquoise" />
         <span className="min-w-0">
-          <span className="block text-[11px] font-semibold uppercase tracking-wide text-teal-deep/60">Hébergement</span>
+          <span className="block text-[11px] font-semibold uppercase tracking-wide text-teal-deep/60">{t("dates.propertyLabel")}</span>
           <span className="block truncate text-sm font-medium text-ink">{summary}</span>
         </span>
       </button>
       {open && (
         <div className="absolute left-0 z-50 mt-2 w-80 max-w-[calc(100vw-2.5rem)] animate-scale-in rounded-2xl border border-ink/10 bg-white p-1.5 shadow-float">
           <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-marine/40">
-            Vos hébergements
+            {t("dates.yourProperties")}
           </p>
           {options.map((o) => {
             const on = selected.includes(o.key);
@@ -232,7 +232,7 @@ function PropertiesField({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-marine">{o.label}</span>
-                  <span className="block truncate text-xs text-marine/55">{o.desc}</span>
+                  <span className="block truncate text-xs text-marine/55">{t(o.desc)}</span>
                 </span>
                 <span
                   className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border transition ${
@@ -280,19 +280,19 @@ function GuestsField({
       >
         <IconUsers className="h-4 w-4 shrink-0 text-turquoise" />
         <span className="min-w-0">
-          <span className="block text-[11px] font-semibold uppercase tracking-wide text-teal-deep/60">Voyageurs</span>
+          <span className="block text-[11px] font-semibold uppercase tracking-wide text-teal-deep/60">{t("dates.guests")}</span>
           <span className="block truncate text-sm font-medium text-ink">
-            {total} voyageur{total > 1 ? "s" : ""}
+            {t("dates.guestsCount", { count: total })}
           </span>
         </span>
       </button>
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-72 animate-scale-in rounded-2xl border border-ink/10 bg-white p-4 shadow-float">
-          <Stepper label="Adultes" sub="13 ans et +" value={adults} min={1} max={12} onChange={(v) => onChange(v, children)} />
+          <Stepper label={t("dates.adults")} sub={t("dates.adultsSub")} value={adults} min={1} max={12} onChange={(v) => onChange(v, children)} />
           <div className="my-3 h-px bg-ink/10" />
-          <Stepper label="Enfants" sub="0 à 12 ans" value={children} min={0} max={10} onChange={(v) => onChange(adults, v)} />
+          <Stepper label={t("dates.children")} sub={t("dates.childrenSub")} value={children} min={0} max={10} onChange={(v) => onChange(adults, v)} />
           <button type="button" onClick={() => setOpen(false)} className="btn-primary mt-4 w-full py-2 text-sm">
-            OK
+            {t("dates.guestsDone")}
           </button>
         </div>
       )}
@@ -322,11 +322,11 @@ function Stepper({
         <p className="text-xs text-ink/50">{sub}</p>
       </div>
       <div className="flex items-center gap-3">
-        <StepBtn label={`Moins de ${label.toLowerCase()}`} disabled={value <= min} onClick={() => onChange(value - 1)}>
+        <StepBtn label={t("dates.decrease", { label: label.toLowerCase() })} disabled={value <= min} onClick={() => onChange(value - 1)}>
           <IconMinus className="h-4 w-4" />
         </StepBtn>
         <span className="w-5 text-center font-semibold tabular-nums text-ink">{value}</span>
-        <StepBtn label={`Plus de ${label.toLowerCase()}`} disabled={value >= max} onClick={() => onChange(value + 1)}>
+        <StepBtn label={t("dates.increase", { label: label.toLowerCase() })} disabled={value >= max} onClick={() => onChange(value + 1)}>
           <IconPlus className="h-4 w-4" />
         </StepBtn>
       </div>

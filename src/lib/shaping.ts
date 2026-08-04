@@ -15,6 +15,8 @@ import type {
   ShapedRoom,
 } from "../types/mews";
 import { loc } from "./format";
+import { getLang } from "./lang";
+import { t } from "../i18n";
 
 const grossOf = (a: { EUR?: { GrossValue: number | null } } | undefined | null): number | null => {
   const g = a?.EUR?.GrossValue;
@@ -112,29 +114,30 @@ export function upgradeRooms(rooms: ShapedRoom[], current: ShapedRoom | null, cu
     .slice(0, 4);
 }
 
-// Bénéfices d'un surclassement vs la chambre courante (chips FR).
+// Bénéfices d'un surclassement vs la chambre courante (chips localisées).
 export function upgradeBenefits(from: ShapedRoom, to: ShapedRoom): string[] {
   const out: string[] = [];
   const SPACE_RANK: Record<string, number> = { Bed: 0, Room: 1, Suite: 2, Apartment: 3, Villa: 4 };
-  if ((SPACE_RANK[to.spaceType] ?? 1) > (SPACE_RANK[from.spaceType] ?? 1)) out.push(`Surclassement en ${spaceLabel(to.spaceType)}`);
+  if ((SPACE_RANK[to.spaceType] ?? 1) > (SPACE_RANK[from.spaceType] ?? 1))
+    out.push(t("upgradeBenefit.space", { label: spaceLabel(to.spaceType) }));
   const capDelta = to.capacity - from.capacity;
-  if (capDelta > 0) out.push(`Jusqu'à ${to.capacity} personnes (+${capDelta})`);
+  if (capDelta > 0) out.push(t("upgradeBenefit.capacity", { count: to.capacity, delta: capDelta }));
   const bedDelta = to.normalBedCount + to.extraBedCount - (from.normalBedCount + from.extraBedCount);
-  if (bedDelta > 0) out.push(`+${bedDelta} couchage${bedDelta > 1 ? "s" : ""}`);
-  if (!out.length) out.push("Plus d'espace et de confort");
+  if (bedDelta > 0) out.push(t("upgradeBenefit.beds", { count: bedDelta }));
+  if (!out.length) out.push(t("upgradeBenefit.comfort"));
   return out.slice(0, 3);
 }
 
-// Traduit FR des libellés de type d'espace Mews.
-const SPACE_LABELS: Record<string, string> = {
-  Room: "Chambre",
-  Apartment: "Appartement",
-  Villa: "Villa",
-  Bed: "Lit",
-  Dorm: "Dortoir",
-  Suite: "Suite",
+// Libellés localisés (FR/EN) des types d'espace Mews.
+const SPACE_LABELS: Record<string, { fr: string; en: string }> = {
+  Room: { fr: "Chambre", en: "Room" },
+  Apartment: { fr: "Appartement", en: "Apartment" },
+  Villa: { fr: "Villa", en: "Villa" },
+  Bed: { fr: "Lit", en: "Bed" },
+  Dorm: { fr: "Dortoir", en: "Dorm" },
+  Suite: { fr: "Suite", en: "Suite" },
 };
-export const spaceLabel = (s: string) => SPACE_LABELS[s] ?? s;
+export const spaceLabel = (s: string) => SPACE_LABELS[s]?.[getLang()] ?? s;
 
 // Produits → upsells. On retient les extras optionnels avec un prix EUR.
 export function shapeProducts(hotel: HotelConfig | null, lang = "fr-FR"): ShapedProduct[] {
@@ -202,14 +205,14 @@ export function groupProducts(products: ShapedProduct[]): { key: string; label: 
   return [...map.values()].sort((a, b) => a.order - b.order).map(({ key, label, items }) => ({ key, label, items }));
 }
 
-// Libellé FR du mode de facturation d'un produit.
-const CHARGING_LABELS: Record<string, string> = {
-  Once: "une fois",
-  PerPerson: "par personne",
-  PerNight: "par nuit",
-  PerTimeUnit: "par nuit",
-  PerPersonPerNight: "par personne / nuit",
-  PerNightPerPerson: "par personne / nuit",
-  PerPersonPerTimeUnit: "par personne / nuit",
+// Libellé localisé (FR/EN) du mode de facturation d'un produit.
+const CHARGING_LABELS: Record<string, { fr: string; en: string }> = {
+  Once: { fr: "une fois", en: "one-time" },
+  PerPerson: { fr: "par personne", en: "per person" },
+  PerNight: { fr: "par nuit", en: "per night" },
+  PerTimeUnit: { fr: "par nuit", en: "per night" },
+  PerPersonPerNight: { fr: "par personne / nuit", en: "per person / night" },
+  PerNightPerPerson: { fr: "par personne / nuit", en: "per person / night" },
+  PerPersonPerTimeUnit: { fr: "par personne / nuit", en: "per person / night" },
 };
-export const chargingLabel = (mode: string) => CHARGING_LABELS[mode] ?? "";
+export const chargingLabel = (mode: string) => CHARGING_LABELS[mode]?.[getLang()] ?? "";

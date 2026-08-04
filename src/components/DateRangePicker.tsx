@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { fmtDate, isoDay, nights } from "../lib/format";
+import { t } from "../i18n";
+import { getLang, LOCALE } from "../lib/lang";
 import { IconCalendar, IconChevron } from "./icons";
 
-const WEEKDAYS = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"];
+const WEEKDAYS_FR = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"];
+const WEEKDAYS_EN = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const pad = (n: number) => String(n).padStart(2, "0");
 const iso = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
 const monthLabel = (y: number, m: number) =>
-  new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" }).format(
+  new Intl.DateTimeFormat(LOCALE[getLang()], { month: "long", year: "numeric", timeZone: "UTC" }).format(
     new Date(Date.UTC(y, m, 1)),
   );
 
@@ -60,6 +63,7 @@ export function DateRangePicker({
   }, [open]);
 
   const n = checkIn && checkOut ? nights(checkIn, checkOut) : 0;
+  const weekdays = getLang() === "en" ? WEEKDAYS_EN : WEEKDAYS_FR;
 
   function pick(day: string) {
     if (day < minDate) return;
@@ -96,9 +100,9 @@ export function DateRangePicker({
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-stretch overflow-hidden rounded-2xl border border-ink/15 bg-white text-left transition hover:border-turquoise"
       >
-        <Segment label="Arrivée" value={checkIn ? fmtDate(checkIn) : "Quand ?"} active={open && !checkIn} icon />
+        <Segment label={t("datePicker.checkIn")} value={checkIn ? fmtDate(checkIn) : t("datePicker.when")} active={open && !checkIn} icon />
         <span className="my-2 w-px bg-ink/10" />
-        <Segment label="Départ" value={checkOut ? fmtDate(checkOut) : "Quand ?"} active={open && !!checkIn && !checkOut} />
+        <Segment label={t("datePicker.checkOut")} value={checkOut ? fmtDate(checkOut) : t("datePicker.when")} active={open && !!checkIn && !checkOut} />
       </button>
 
       {open && (
@@ -108,16 +112,16 @@ export function DateRangePicker({
               type="button"
               onClick={() => canGoPrev && shiftMonth(-1)}
               disabled={!canGoPrev}
-              aria-label="Mois précédent"
+              aria-label={t("datePicker.prevMonth")}
               className="grid h-8 w-8 place-items-center rounded-full text-teal-deep transition hover:bg-turquoise/10 disabled:opacity-25"
             >
               <IconChevron className="h-4 w-4 rotate-180" />
             </button>
-            <p className="font-display text-base capitalize text-ink">{n > 0 ? `${n} nuit${n > 1 ? "s" : ""}` : "Sélectionnez vos dates"}</p>
+            <p className="font-display text-base capitalize text-ink">{n > 0 ? t("datePicker.nights", { count: n }) : t("datePicker.selectDates")}</p>
             <button
               type="button"
               onClick={() => shiftMonth(1)}
-              aria-label="Mois suivant"
+              aria-label={t("datePicker.nextMonth")}
               className="grid h-8 w-8 place-items-center rounded-full text-teal-deep transition hover:bg-turquoise/10"
             >
               <IconChevron className="h-4 w-4" />
@@ -129,7 +133,7 @@ export function DateRangePicker({
               <div key={`${mv.y}-${mv.m}`} className={idx === 1 ? "hidden sm:block" : ""}>
                 <p className="mb-2 text-center text-sm font-semibold capitalize text-ink">{monthLabel(mv.y, mv.m)}</p>
                 <div className="grid grid-cols-7 gap-y-1 text-center">
-                  {WEEKDAYS.map((w) => (
+                  {weekdays.map((w) => (
                     <span key={w} className="pb-1 text-[11px] font-medium uppercase text-ink/35">
                       {w.charAt(0)}
                     </span>
@@ -191,10 +195,10 @@ export function DateRangePicker({
               }}
               className="text-sm font-semibold text-ink/60 underline-offset-4 hover:text-ink hover:underline"
             >
-              Effacer les dates
+              {t("datePicker.clear")}
             </button>
             <button type="button" onClick={() => setOpen(false)} className="btn-primary px-5 py-2 text-sm">
-              {checkIn && checkOut ? "Appliquer" : "Fermer"}
+              {checkIn && checkOut ? t("datePicker.apply") : t("datePicker.close")}
             </button>
           </div>
         </div>
@@ -219,7 +223,7 @@ function Segment({
       {icon && <IconCalendar className="h-4 w-4 shrink-0 text-turquoise" />}
       <span className="min-w-0">
         <span className="block text-[11px] font-semibold uppercase tracking-wide text-teal-deep/60">{label}</span>
-        <span className={`block truncate text-sm ${value.startsWith("Quand") ? "text-ink/40" : "font-medium text-ink"}`}>
+        <span className={`block truncate text-sm ${value === t("datePicker.when") ? "text-ink/40" : "font-medium text-ink"}`}>
           {value}
         </span>
       </span>
