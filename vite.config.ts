@@ -8,6 +8,13 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: false,
+    // Multi-page : le moteur de résa (index) + le back-office funnel (dashboard).
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        dashboard: "dashboard.html",
+      },
+    },
   },
   server: {
     port: 5173,
