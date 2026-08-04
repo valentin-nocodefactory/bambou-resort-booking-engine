@@ -19,6 +19,7 @@ export function Payment() {
     children,
     voucherCode,
     productIds,
+    products,
     guest,
     grandTotal,
     nightsCount,
@@ -45,6 +46,12 @@ export function Payment() {
     setSubmitting(true);
     setError(null);
     setUnavailable(false);
+    // Filet de sécurité : ne jamais envoyer un extra d'un autre hébergement que la
+    // chambre (Mews refuse → « product invalid »). En pratique déjà filtré en amont.
+    const safeProductIds = productIds.filter((id) => {
+      const p = products.find((pr) => pr.id === id);
+      return !p || !p.property || p.property === selectedRoom.property;
+    });
     try {
       const result = await api.createReservation({
         property: selectedRoom.property ?? undefined,
@@ -64,7 +71,7 @@ export function Payment() {
             rateId: selectedRate.rateId,
             adults,
             children,
-            productIds: productIds.length ? productIds : undefined,
+            productIds: safeProductIds.length ? safeProductIds : undefined,
             voucherCode: voucherCode || undefined,
             notes: guest.notes.trim() || undefined,
           },

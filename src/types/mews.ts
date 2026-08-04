@@ -33,6 +33,7 @@ export interface Product {
   AlwaysIncluded: boolean;
   Prices: Record<string, number>; // { EUR: 12.6, ... }
   ChargingMode?: string;
+  Property?: string | null; // hébergement (hotel/creole/villas) — un produit n'est réservable qu'avec une chambre de SA config
 }
 
 export interface PaymentGateway {
@@ -189,4 +190,5 @@ export interface ShapedProduct {
   priceEur: number;
   chargingMode: string;
   imageId: string | null;
+  property: string | null; // hébergement (hotel/creole/villas) auquel l'extra est rattaché
 }

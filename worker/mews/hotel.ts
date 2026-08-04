@@ -48,6 +48,7 @@ const handler: PagesFunction<Env> = async ({ env, request }) => {
           AlwaysIncluded: !!p.AlwaysIncluded,
           Prices: { EUR: p.Prices?.EUR ?? null }, // cure EUR-only (réponse brute = ~80 devises)
           ChargingMode: p.ChargingMode ?? "",
+          Property: key, // hébergement de la config d'origine → filtrage des extras côté front
         });
       }
     }

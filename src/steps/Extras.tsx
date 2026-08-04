@@ -27,8 +27,12 @@ export function Extras() {
     if (!selectedRoom || !selectedRate) goTo("results");
   }, [selectedRoom, selectedRate, goTo]);
 
-  // Regroupement des extras par catégorie.
-  const groups = useMemo(() => groupProducts(products), [products]);
+  // On n'affiche QUE les extras de l'hébergement de la chambre choisie (step 2) :
+  // un produit d'une autre config Mews est refusé à la réservation.
+  const groups = useMemo(
+    () => groupProducts(products.filter((p) => !p.property || p.property === selectedRoom?.property)),
+    [products, selectedRoom],
+  );
 
   // Retour : vers le surclassement s'il y en avait, sinon vers les infos.
   const currentTotal = selectedRate?.totalGross ?? selectedRoom?.fromGross ?? 0;

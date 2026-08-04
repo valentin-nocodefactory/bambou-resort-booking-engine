@@ -150,9 +150,14 @@ export function shapeProducts(hotel: HotelConfig | null, lang = "fr-FR"): Shaped
       priceEur: p.Prices.EUR,
       chargingMode: p.ChargingMode ?? "",
       imageId: p.ImageId,
+      property: p.Property ?? null,
     }))
-    // dédup par nom (la demo contient des doublons proches)
-    .filter((p, i, arr) => arr.findIndex((q) => q.name.toLowerCase() === p.name.toLowerCase()) === i)
+    // dédup par (hébergement + nom) : un même extra existe dans plusieurs configs avec
+    // des Id distincts → on garde une entrée PAR hébergement (sinon on mélange les configs).
+    .filter(
+      (p, i, arr) =>
+        arr.findIndex((q) => q.property === p.property && q.name.toLowerCase() === p.name.toLowerCase()) === i,
+    )
     .sort((a, b) => a.priceEur - b.priceEur);
 }
 

@@ -108,7 +108,9 @@ export function Results() {
     goTo("guest");
   }
 
-  const inlineProduct = products[0];
+  // Upsell inline : un extra de l'hébergement de la 1re chambre (sinon il serait
+  // refusé à la réservation, cf. produits rattachés à une config Mews).
+  const inlineProduct = products.find((p) => !p.property || p.property === rooms[0]?.property) ?? null;
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-8">

@@ -334,16 +334,43 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const selectRoomRate: BookingContextValue["selectRoomRate"] = useCallback((room, rate) => {
-    setSelectedRoom(room);
-    setSelectedRate(rate);
-    setState((s) => ({ ...s, roomId: room.categoryId, rateId: rate.rateId }));
-  }, []);
+  // Ne garde que les extras compatibles avec l'hébergement de la chambre : un produit
+  // d'une autre config Mews est refusé à la création (« product invalid »).
+  const validProductsFor = useCallback(
+    (ids: string[], roomProperty: string | null | undefined) =>
+      ids.filter((id) => {
+        const p = products.find((pr) => pr.id === id);
+        return !p || !p.property || !roomProperty || p.property === roomProperty;
+      }),
+    [products],
+  );
 
-  const hydrateSelection: BookingContextValue["hydrateSelection"] = useCallback((room, rate) => {
-    setSelectedRoom(room);
-    setSelectedRate(rate);
-  }, []);
+  const selectRoomRate: BookingContextValue["selectRoomRate"] = useCallback(
+    (room, rate) => {
+      setSelectedRoom(room);
+      setSelectedRate(rate);
+      setState((s) => ({
+        ...s,
+        roomId: room.categoryId,
+        rateId: rate.rateId,
+        productIds: validProductsFor(s.productIds, room.property),
+      }));
+    },
+    [validProductsFor],
+  );
+
+  const hydrateSelection: BookingContextValue["hydrateSelection"] = useCallback(
+    (room, rate) => {
+      setSelectedRoom(room);
+      setSelectedRate(rate);
+      if (room)
+        setState((s) => {
+          const kept = validProductsFor(s.productIds, room.property);
+          return kept.length === s.productIds.length ? s : { ...s, productIds: kept };
+        });
+    },
+    [validProductsFor],
+  );
 
   const setAvailableRooms: BookingContextValue["setAvailableRooms"] = useCallback(
     (rooms) => setAvailableRoomsState(rooms),
