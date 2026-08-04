@@ -60,6 +60,10 @@ const DICT = {
     fr: (p) => `${p.label} · ${p.count} disponible${Number(p.count) > 1 ? "s" : ""}`,
     en: (p) => `${p.label} · ${p.count} available`,
   },
+  "results.availableSuffix": {
+    fr: (p) => `${p.count} disponible${Number(p.count) > 1 ? "s" : ""}`,
+    en: (p) => `${p.count} available`,
+  },
 
   // ── Écran de recherche (Dates) ────────────────────────────────────────────
   "dates.title": { fr: "Réservez votre séjour", en: "Book your stay" },

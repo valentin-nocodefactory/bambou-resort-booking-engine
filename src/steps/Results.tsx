@@ -207,8 +207,11 @@ export function Results() {
                     aria-expanded={isOpen}
                     className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-cream"
                   >
-                    <span className="font-display text-lg text-ink">
-                      {t("results.propertyToggle", { label: x.label, count: x.count })}
+                    <span className="flex flex-wrap items-baseline gap-x-2">
+                      <span className="font-display text-lg text-ink">{x.label}</span>
+                      <span className="text-sm font-normal text-teal-deep/60">
+                        · {t("results.availableSuffix", { count: x.count })}
+                      </span>
                     </span>
                     <IconChevron
                       className={`h-5 w-5 shrink-0 text-teal-deep transition-transform ${isOpen ? "rotate-180" : ""}`}
