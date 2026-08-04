@@ -4,7 +4,7 @@ import { eur, imgUrl } from "../lib/format";
 import { spaceLabel } from "../lib/shaping";
 import type { ShapedRate, ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
-import { FavoriteBadge, RatingPill, ScarcityBadge, ViewersNudge } from "./conversion";
+import { FavoriteBadge, ScarcityBadge, ViewersNudge } from "./conversion";
 import { IconBed, IconCheck, IconClose, IconLeaf, IconShield, IconSun, IconUsers, IconWave } from "./icons";
 
 // ⚠️ DÉMO (en dur) : Mews n'expose pas d'équipements structurés sur les RoomCategories ici.
@@ -152,10 +152,6 @@ export function RoomDetailDrawer({
                   {room.extraBedCount > 0 ? ` + ${room.extraBedCount}` : ""}
                 </span>
               </div>
-              <div className="mt-2">
-                <RatingPill score="4,6" count="312" />
-              </div>
-
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <FavoriteBadge />
                 {lowStock && <ScarcityBadge count={room.availableRoomCount} />}

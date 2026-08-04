@@ -2,7 +2,7 @@ import { eur, imgUrl } from "../lib/format";
 import { spaceLabel } from "../lib/shaping";
 import type { ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
-import { FavoriteBadge, HotBadge, RatingPill, SavingsBadge, ScarcityBadge, ViewersNudge, seeded } from "./conversion";
+import { FavoriteBadge, HotBadge, SavingsBadge, ScarcityBadge, ViewersNudge, seeded } from "./conversion";
 import { IconArrowRight, IconBed, IconCheck, IconUsers } from "./icons";
 
 // Libellés d'hébergement (pour le badge sur la carte, quand plusieurs sont affichés).
@@ -30,17 +30,15 @@ export function RoomCard({
   const cheapest = room.rates[0];
   // RÉEL (Mews) : AvailableRoomCount → « Plus que N chambres ».
   const lowStock = room.availableRoomCount > 0 && room.availableRoomCount <= 3;
-  // ⚠️ DÉMO (en dur) : « Très demandé », note & nombre d'avis — générés, pas issus de Mews.
+  // ⚠️ DÉMO (en dur) : « Très demandé » — généré, pas issu de Mews.
   const hot = !lowStock && seeded(room.categoryId, 0, 2) === 0;
-  const rating = (40 + seeded(room.categoryId + "r", 0, 9)) / 10; // 4.0–4.9 (échelle /5)
-  const reviews = seeded(room.categoryId + "rc", 64, 540);
 
   return (
     <article className="card group flex flex-col overflow-hidden transition hover:shadow-float sm:flex-row">
       <button
         type="button"
         onClick={onDetails}
-        className="relative h-44 w-full shrink-0 overflow-hidden sm:h-auto sm:w-72"
+        className="relative aspect-[16/10] w-full shrink-0 overflow-hidden sm:aspect-auto sm:w-72"
         aria-label={`Voir les photos — ${room.name}`}
       >
         <Photo
@@ -68,7 +66,6 @@ export function RoomCard({
           <div className="min-w-0">
             <h3 className="font-display text-xl text-ink">{room.name}</h3>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-teal-deep/80">
-              <RatingPill score={rating.toFixed(1).replace(".", ",")} count={String(reviews)} className="text-xs" />
               {room.capacity > 0 && (
                 <span className="inline-flex items-center gap-1">
                   <IconUsers className="h-3.5 w-3.5 text-turquoise" /> {room.capacity} pers.
