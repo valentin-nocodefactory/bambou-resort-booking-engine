@@ -18,6 +18,7 @@ const DICT = {
   "header.home": { fr: "Accueil Bambou Resort", en: "Bambou Resort home" },
   "hotelError.msg": { fr: "Impossible de charger la configuration de l'hôtel.", en: "Couldn't load the hotel configuration." },
   "common.retry": { fr: "Réessayer", en: "Try again" },
+  "common.restoring": { fr: "Restauration de votre sélection…", en: "Restoring your selection…" },
 
   // ── Footer ───────────────────────────────────────────────────────────────
   "footer.tagline": {

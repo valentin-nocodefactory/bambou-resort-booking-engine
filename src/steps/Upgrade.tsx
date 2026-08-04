@@ -76,11 +76,11 @@ export function Upgrade() {
                 return (
                   <article
                     key={room.categoryId}
-                    className={`card flex flex-col overflow-hidden transition sm:flex-row ${
+                    className={`card flex flex-col overflow-hidden transition sm:h-72 sm:flex-row ${
                       isSelected ? "ring-2 ring-turquoise" : "hover:shadow-float"
                     }`}
                   >
-                    <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden sm:aspect-auto sm:w-56">
+                    <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden sm:aspect-auto sm:h-full sm:w-64">
                       <Photo src={imgUrl(imageBaseUrl, room.imageIds[0], 600)} alt={room.name} className="h-full w-full object-cover" />
                       <span className="absolute left-3 top-3 rounded-full bg-teal-deep/85 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-cream">
                         {spaceLabel(room.spaceType)}
@@ -88,7 +88,7 @@ export function Upgrade() {
                     </div>
                     <div className="flex flex-1 flex-col p-5">
                       <div className="flex items-start justify-between gap-3">
-                        <h3 className="font-display text-xl text-ink">{room.name}</h3>
+                        <h3 className="line-clamp-2 font-display text-xl text-ink">{room.name}</h3>
                         <div className="shrink-0 text-right">
                           <p className="font-display text-xl text-creole">+{eur(diff)}</p>
                           <p className="text-[11px] text-ink/45">{t("upgrade.perStay")}</p>

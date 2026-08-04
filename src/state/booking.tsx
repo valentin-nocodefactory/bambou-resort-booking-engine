@@ -12,7 +12,7 @@ import { api } from "../lib/api";
 import { getLang } from "../lib/lang";
 import { getUtms } from "../lib/utm";
 import { nights as countNights } from "../lib/format";
-import { shapeProducts } from "../lib/shaping";
+import { buildRooms, shapeProducts } from "../lib/shaping";
 import type { HotelConfig, ReservationCreateResult, ShapedProduct, ShapedRate, ShapedRoom } from "../types/mews";
 
 export type Step = "dates" | "results" | "guest" | "upgrade" | "extras" | "payment" | "confirmation";
@@ -109,7 +109,24 @@ function readUrl(): Partial<BookingState> {
   return out;
 }
 
-function writeUrl(s: BookingState) {
+// Infos client encodées dans l'URL (lien partageable / reprise). ⚠️ Contient des
+// données perso (e-mail, nom, téléphone) : visibles dans l'historique, les logs et
+// par toute personne ayant le lien — c'est le compromis assumé du partage de panier.
+function readGuest(): Partial<Guest> {
+  if (typeof window === "undefined") return {};
+  const q = new URLSearchParams(window.location.search);
+  const g: Partial<Guest> = {};
+  if (q.get("fn")) g.firstName = q.get("fn")!;
+  if (q.get("ln")) g.lastName = q.get("ln")!;
+  if (q.get("em")) g.email = q.get("em")!;
+  if (q.get("tel")) g.telephone = q.get("tel")!;
+  if (q.get("nat")) g.nationalityCode = q.get("nat")!;
+  if (q.get("note")) g.notes = q.get("note")!;
+  if (q.has("mk")) g.sendMarketingEmails = q.get("mk") === "1";
+  return g;
+}
+
+function writeUrl(s: BookingState, g: Guest) {
   if (typeof window === "undefined") return;
   const q = new URLSearchParams();
   if (s.checkIn) q.set("in", s.checkIn);
@@ -123,6 +140,14 @@ function writeUrl(s: BookingState) {
   if (s.rateId) q.set("rate", s.rateId);
   if (s.productIds.length) q.set("products", s.productIds.join(","));
   if (s.rgid) q.set("rgid", s.rgid);
+  // Infos client (pour restaurer la saisie sur un lien partagé).
+  if (g.firstName) q.set("fn", g.firstName);
+  if (g.lastName) q.set("ln", g.lastName);
+  if (g.email) q.set("em", g.email);
+  if (g.telephone) q.set("tel", g.telephone);
+  if (g.nationalityCode && g.nationalityCode !== "FR") q.set("nat", g.nationalityCode);
+  if (g.notes) q.set("note", g.notes);
+  if (g.sendMarketingEmails) q.set("mk", "1");
   // Préserve la langue non-défaut dans l'URL (writeUrl reconstruit les params à zéro).
   if (getLang() === "en") q.set("lang", "en");
   const qs = q.toString();
@@ -138,6 +163,8 @@ interface BookingContextValue extends BookingState {
   products: ShapedProduct[];
   hotelLoading: boolean;
   hotelError: boolean;
+  // vrai pendant la réhydratation d'un lien profond (App gèle l'étape le temps du chargement)
+  hydrating: boolean;
   reloadHotel: () => void;
   // sélection runtime (hydratée depuis les résultats)
   selectedRoom: ShapedRoom | null;
@@ -195,7 +222,15 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [selectedRoom, setSelectedRoom] = useState<ShapedRoom | null>(null);
   const [selectedRate, setSelectedRate] = useState<ShapedRate | null>(null);
   const [availableRooms, setAvailableRoomsState] = useState<ShapedRoom[]>([]);
-  const [guest, setGuestState] = useState<Guest>(emptyGuest);
+  // Réhydratation d'un lien profond partagé : vrai tant que la sélection (chambre/tarif)
+  // encodée dans l'URL n'est pas reconstruite, pour ne pas afficher (et faire rebondir)
+  // une étape > résultats avant que les données soient chargées.
+  const [hydrating, setHydrating] = useState<boolean>(() => {
+    const u = readUrl();
+    const deep = u.step === "guest" || u.step === "upgrade" || u.step === "extras" || u.step === "payment";
+    return !!(deep && u.roomId && u.checkIn && u.checkOut);
+  });
+  const [guest, setGuestState] = useState<Guest>(() => ({ ...emptyGuest, ...readGuest() }));
   const [created, setCreatedState] = useState<ReservationCreateResult | null>(null);
   const [cartId, setCartId] = useState<string>(loadCartId);
 
@@ -203,8 +238,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [hotelLoading, setHotelLoading] = useState(true);
   const [hotelError, setHotelError] = useState(false);
 
-  // garde l'URL synchronisée
-  useEffect(() => writeUrl(state), [state]);
+  // garde l'URL synchronisée (état de résa + infos client saisies)
+  useEffect(() => writeUrl(state, guest), [state, guest]);
 
   const loadHotel = useCallback(() => {
     setHotelLoading(true);
@@ -217,6 +252,53 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(loadHotel, [loadHotel]);
+
+  // Lien profond partagé (?step=upgrade&cat&rate&in&out) : on arrive sur une étape
+  // qui exige une chambre choisie, mais seule l'URL est chargée. On récupère la dispo
+  // et on reconstruit selectedRoom/selectedRate + availableRooms AVANT d'afficher
+  // l'étape (App gèle le rendu tant que `hydrating`). Ne tourne qu'une fois, au boot.
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    if (hotelError) {
+      setHydrating(false);
+      return;
+    }
+    if (!hotel) return; // attendre le catalogue (buildRooms en dépend)
+    hydratedRef.current = true;
+    const deep = ["guest", "upgrade", "extras", "payment"].includes(state.step);
+    if (!deep || selectedRoom || availableRooms.length || !state.roomId || !state.checkIn || !state.checkOut) {
+      setHydrating(false);
+      return;
+    }
+    let alive = true;
+    setHydrating(true);
+    api
+      .availability({
+        checkIn: state.checkIn,
+        checkOut: state.checkOut,
+        adults: state.adults,
+        children: state.children,
+        voucherCode: state.voucherCode,
+      })
+      .then((res) => {
+        if (!alive) return;
+        const rooms = buildRooms(res, hotel);
+        setAvailableRoomsState(rooms);
+        const room = rooms.find((r) => r.categoryId === state.roomId);
+        const rate = room?.rates.find((rt) => rt.rateId === state.rateId) ?? room?.rates[0] ?? null;
+        if (room && rate) {
+          setSelectedRoom(room);
+          setSelectedRate(rate);
+        }
+      })
+      .catch(() => void 0)
+      .finally(() => alive && setHydrating(false));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hotel, hotelError]);
 
   const products = useMemo(() => shapeProducts(hotel), [hotel]);
   const imageBaseUrl = hotel?.ImageBaseUrl ?? "";
@@ -378,6 +460,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     products,
     hotelLoading,
     hotelError,
+    hydrating,
     reloadHotel: loadHotel,
     selectedRoom,
     selectedRate,

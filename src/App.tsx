@@ -26,7 +26,7 @@ const STEP_COMPONENTS: Record<Step, () => JSX.Element | null> = {
 };
 
 function Shell() {
-  const { step, hotelError, reloadHotel, resetAll, goTo } = useBooking();
+  const { step, hotelError, reloadHotel, resetAll, goTo, hydrating } = useBooking();
   const StepView = STEP_COMPONENTS[step];
   const showProgress = ["results", "guest", "upgrade", "extras", "payment"].includes(step);
 
@@ -76,12 +76,24 @@ function Shell() {
       )}
 
       <main className="flex-1">
-        <StepView />
+        {hydrating ? <HydrateLoader /> : <StepView />}
       </main>
 
       <Footer />
       <ContactBar />
       <DevPanel />
+    </div>
+  );
+}
+
+// Écran d'attente pendant la réhydratation d'un lien profond partagé.
+function HydrateLoader() {
+  return (
+    <div className="grid min-h-[60vh] place-items-center px-5">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <span className="h-9 w-9 animate-spin rounded-full border-2 border-turquoise/25 border-t-turquoise" />
+        <p className="text-sm text-ink/60">{t("common.restoring")}</p>
+      </div>
     </div>
   );
 }

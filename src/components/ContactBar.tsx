@@ -30,20 +30,18 @@ export function ContactBar() {
     };
   }, [open]);
 
-  // URL partageable : reprend TOUS les choix (dates, hébergements, chambre, tarif,
-  // extras, langue) mais épinglée sur l'étape « résultats » → le destinataire voit
-  // la même sélection sans atterrir sur une étape qui exige des infos perso, et sans
-  // hériter d'un retour de paiement.
+  // URL partageable : reprend TOUS les choix ET l'étape courante (dates, hébergements,
+  // chambre, tarif, extras, étape, langue) → le destinataire arrive au même endroit
+  // avec la même sélection. On retire juste le retour de paiement (rgid), propre à la
+  // session de l'expéditeur.
   function shareUrl(): string {
     const url = new URL(window.location.href);
-    const step = url.searchParams.get("step");
-    if (step && step !== "dates" && step !== "results") url.searchParams.set("step", "results");
     url.searchParams.delete("rgid");
     return url.toString();
   }
 
   async function share() {
-    const url = shareUrl(); // état complet encodé dans l'URL, épinglé sur les résultats
+    const url = shareUrl(); // état complet + étape courante encodés dans l'URL
     if (navigator.share) {
       try {
         await navigator.share({ title: t("contact.shareTitle"), text: t("contact.shareText"), url });
