@@ -8,7 +8,7 @@ import { RoomCard } from "../components/RoomCard";
 import { RoomDetailDrawer } from "../components/RoomDetailDrawer";
 import { InlineUpsell } from "../components/UpsellCard";
 import { RatingPill, UrgencyBanner } from "../components/conversion";
-import { IconCalendar, IconUsers, IconPlus } from "../components/icons";
+import { IconCalendar, IconUsers, IconChevron } from "../components/icons";
 import { t } from "../i18n";
 
 export function Results() {
@@ -40,6 +40,10 @@ export function Results() {
   const [error, setError] = useState<string | null>(null);
   const [openRoom, setOpenRoom] = useState<ShapedRoom | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  // Accordéons « autres hébergements » (ouverts/fermés par clé d'hébergement).
+  const [openProps, setOpenProps] = useState<string[]>([]);
+  const toggleProp = (key: string) =>
+    setOpenProps((s) => (s.includes(key) ? s.filter((k) => k !== key) : [...s, key]));
 
   // Garde-fou : pas de dates → retour à l'écran de recherche.
   useEffect(() => {
@@ -153,23 +157,6 @@ export function Results() {
         </div>
       </div>
 
-      {/* Cross-sell : hébergements NON cochés mais dispos sur ces dates. */}
-      {!loading && !error && teasers.length > 0 && (
-        <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl2 border border-corail/25 bg-corail/[0.06] p-4">
-          <span className="text-sm font-medium text-ink/70">{t("results.alsoAvailable")} :</span>
-          {teasers.map((x) => (
-            <button
-              key={x.key}
-              type="button"
-              onClick={() => setProperties([...properties, x.key])}
-              className="inline-flex items-center gap-1.5 rounded-full border border-corail/40 bg-white px-3 py-1.5 text-sm font-semibold text-corail transition hover:bg-corail hover:text-white"
-            >
-              <IconPlus className="h-4 w-4" /> {t("results.addProperty", { count: x.count, label: x.label })}
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* États */}
       {loading && <SkeletonList />}
 
@@ -201,6 +188,50 @@ export function Results() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Autres hébergements dispos sur ces dates — accordéons, EN BAS. */}
+      {!loading && !error && teasers.length > 0 && (
+        <div className="mt-10">
+          <h2 className="font-display text-xl text-ink">{t("results.alsoAvailable")}</h2>
+          <div className="mt-3 space-y-3">
+            {teasers.map((x) => {
+              const isOpen = openProps.includes(x.key);
+              const propRooms = allRooms.filter((r) => r.property === x.key);
+              return (
+                <div key={x.key} className="overflow-hidden rounded-xl2 border border-ink/10 bg-white shadow-card">
+                  <button
+                    type="button"
+                    onClick={() => toggleProp(x.key)}
+                    aria-expanded={isOpen}
+                    className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-cream"
+                  >
+                    <span className="font-display text-lg text-ink">
+                      {t("results.propertyToggle", { label: x.label, count: x.count })}
+                    </span>
+                    <IconChevron
+                      className={`h-5 w-5 shrink-0 text-teal-deep transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="space-y-4 border-t border-ink/10 bg-cream/40 p-4">
+                      {propRooms.map((room) => (
+                        <RoomCard
+                          key={room.categoryId}
+                          room={room}
+                          imageBaseUrl={imageBaseUrl}
+                          nightsCount={nightsCount}
+                          onChoose={() => choose(room, room.rates[0])}
+                          onDetails={() => setOpenRoom(room)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

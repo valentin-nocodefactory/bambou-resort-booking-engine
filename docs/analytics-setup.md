@@ -84,8 +84,9 @@ create index if not exists carts_utm_idx         on public.carts (utm_source);
 -- Trigger : agrège chaque event dans carts (upsert).
 create or replace function public.sync_cart_from_event()
 returns trigger language plpgsql as $$
-declare p jsonb := new.payload;
-declare ts timestamptz := coalesce(new.event_at, new.received_at);
+declare
+  p jsonb := new.payload;
+  ts timestamptz := coalesce(new.event_at, new.received_at);
 begin
   insert into public.carts as c (
     cart_id, first_seen, last_seen, last_step, last_status, payment_initiated, paid, lang,

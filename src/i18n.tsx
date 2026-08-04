@@ -56,6 +56,10 @@ const DICT = {
     fr: (p) => `Voir ${p.count} ${p.label}`,
     en: (p) => `See ${p.count} ${p.label}`,
   },
+  "results.propertyToggle": {
+    fr: (p) => `${p.label} · ${p.count} disponible${Number(p.count) > 1 ? "s" : ""}`,
+    en: (p) => `${p.label} · ${p.count} available`,
+  },
 
   // ── Écran de recherche (Dates) ────────────────────────────────────────────
   "dates.title": { fr: "Réservez votre séjour", en: "Book your stay" },
