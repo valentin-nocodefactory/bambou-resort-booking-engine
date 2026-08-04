@@ -4,4 +4,5 @@
 //
 // À remplir : Supabase → Project Settings → API → « anon public ».
 export const SUPABASE_URL = "https://wrakgyuiihxlcaxinckm.supabase.co";
-export const SUPABASE_ANON_KEY = "REMPLACE_PAR_TA_CLE_ANON_PUBLIC";
+export const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndyYWtneXVpaWh4bGNheGluY2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MzAxNjQsImV4cCI6MjEwMTQwNjE2NH0.UTNSPUh40XWfUbEfz2YL78IUn02FG8kXSauiOgtVahs";
