@@ -65,7 +65,7 @@ export function Dates() {
             Réservez votre séjour
           </h1>
           <p className="mt-3 text-lg leading-snug text-ink/70 sm:text-xl">
-            Hôtels &amp; villas <span className="italic text-corail">d'exception</span> en Martinique
+            Hôtels &amp; villas <span className="italic">d'exception</span> en Martinique
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
             <RatingPill />
