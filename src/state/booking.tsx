@@ -19,7 +19,12 @@ export type Step = "dates" | "results" | "guest" | "upgrade" | "extras" | "payme
 export const STEP_ORDER: Step[] = ["dates", "results", "guest", "upgrade", "extras", "payment", "confirmation"];
 
 // Statuts de panier poussés vers n8n (base des paniers).
-export type CartStatus = "panier_cree" | "paiement_initie" | "paiement_valide";
+// Events de suivi (funnel) → n8n → Supabase.
+//  • etape           : une étape atteinte (dates → confirmation), le `step` précise laquelle
+//  • paiement_initie : « Payer » cliqué (réservation créée + demande de paiement Mews)
+//  • paiement_valide : paiement encaissé (confirmé par Mews)
+// « Paiement non abouti » = paiement_initie SANS paiement_valide (dérivé côté Supabase).
+export type CartStatus = "etape" | "paiement_initie" | "paiement_valide";
 
 // Identifiant de panier — persistant (localStorage) pour survivre à la redirection
 // paiement (Mews → /confirmation). Régénéré à chaque nouvelle recherche (resetAll).
@@ -443,13 +448,12 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const trackRef = useRef(track);
   trackRef.current = track;
 
-  // À chaque étape à partir des infos client (email saisi) et tant que non payé,
-  // on pousse le panier avec le statut « abandonné ». Il passe ensuite à
-  // paiement_initié / paiement_validé depuis Payment / Confirmation.
+  // Funnel : on pousse un event « etape » à CHAQUE changement d'étape (dès `dates`,
+  // même sans e-mail) → n8n → Supabase. Permet de mesurer le drop-off complet,
+  // les paniers abandonnés et les sources (UTM) à chaque niveau. paiement_initie /
+  // paiement_valide sont émis en plus depuis Payment / Confirmation.
   useEffect(() => {
-    if (guest.email && (state.step === "upgrade" || state.step === "extras" || state.step === "payment")) {
-      void trackRef.current("panier_cree");
-    }
+    void trackRef.current("etape");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.step]);
 

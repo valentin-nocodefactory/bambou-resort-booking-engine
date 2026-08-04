@@ -1,12 +1,7 @@
 import { readJson, bad, json, postWebhook, type Env } from "./_lib";
 
-// Statuts de panier (funnel) → un webhook n8n par statut (config Cloudflare).
-// cf. front src/state/booking.tsx.
-const WEBHOOK_ENV: Record<string, keyof Env> = {
-  panier_cree: "WEBHOOK_BASKET_CREATED",
-  paiement_initie: "WEBHOOK_PAYMENT_INITIATED",
-  paiement_valide: "WEBHOOK_PAYMENT_VALIDATED",
-};
+// Events du funnel acceptés (cf. front src/state/booking.tsx).
+const VALID_EVENTS = new Set(["etape", "paiement_initie", "paiement_valide"]);
 
 const str = (v: unknown, max = 200): string | null => (typeof v === "string" && v ? v.slice(0, max) : null);
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
@@ -24,18 +19,17 @@ const utmObject = (v: unknown): Record<string, string> | null => {
   return Object.keys(out).length ? out : null;
 };
 
-// /api/mews/track — SUIVI DE PANIER. Le front pousse l'état du panier à chaque
-// étape (à partir des infos client). On reconstruit un payload whitelisté (jamais
-// de forward brut, aucun secret) et on le relaie vers n8n (CART_WEBHOOK_URL) en
-// tâche de fond. No-op si CART_WEBHOOK_URL n'est pas défini.
+// /api/mews/track — SUIVI FUNNEL. Le front pousse l'état du panier à CHAQUE étape.
+// On reconstruit un payload whitelisté (jamais de forward brut, aucun secret) et on
+// le relaie vers n8n → Supabase (WEBHOOK_EVENTS), en tâche de fond. No-op si non défini.
 export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const b = await readJson<Record<string, any>>(request);
   if (!str(b.cartId, 80)) return bad("missing_cart_id");
-  if (typeof b.status !== "string" || !(b.status in WEBHOOK_ENV)) return bad("invalid_status");
+  if (typeof b.status !== "string" || !VALID_EVENTS.has(b.status)) return bad("invalid_status");
 
   const s = b.stay && typeof b.stay === "object" ? b.stay : {};
   const payload = {
-    event: `cart.${b.status}`, // cart.panier_abandonne | cart.paiement_initie | cart.paiement_valide
+    event: `cart.${b.status}`, // cart.etape | cart.paiement_initie | cart.paiement_valide
     status: b.status,
     timestamp: new Date().toISOString(),
     cartId: str(b.cartId, 80),
@@ -82,6 +76,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
     utm: utmObject(b.utm),
   };
 
-  waitUntil(postWebhook(env[WEBHOOK_ENV[b.status]] as string | undefined, payload));
+  // Flux analytics unique → n8n → Supabase (tous les events du funnel).
+  waitUntil(postWebhook(env.WEBHOOK_EVENTS, payload));
   return json({ ok: true });
 };

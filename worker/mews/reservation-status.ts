@@ -1,4 +1,4 @@
-import { mewsJson, readJson, bad, json, notify, type Env } from "./_lib";
+import { mewsJson, readJson, bad, json, type Env } from "./_lib";
 
 interface Body {
   reservationGroupId?: string;
@@ -7,7 +7,7 @@ interface Body {
 // reservationGroups/get — vérifie le paiement au retour de la page Payment Request.
 // States PaymentRequests : Pending | Completed | Canceled | Expired
 // States Payments        : Pending | Verifying | Charged | Canceled | Failed
-export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
+export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const b = await readJson<Body>(request);
   if (typeof b.reservationGroupId !== "string" || !b.reservationGroupId) return bad("missing_reservation_group_id");
 
@@ -32,19 +32,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
 
   const reservations = (d.Reservations ?? []).map((r: any) => ({ number: r.Number }));
 
-  // Webhook « réservation payée ». Se déclenche quand le front (écran confirmation)
-  // sonde le statut et voit le paiement encaissé. ⚠️ Le consommateur doit dédupliquer
-  // par reservationGroupId (peut se répéter si l'utilisateur recharge la page).
-  if (paid) {
-    waitUntil(
-      notify(env, "reservation.paid", {
-        reservationGroupId: d.Id,
-        confirmationNumbers: reservations.map((r: any) => r.number).filter(Boolean),
-        payments,
-      }),
-    );
-  }
-
+  // Le suivi « paiement validé » part du front (track → WEBHOOK_EVENTS) à la confirmation.
   return json({
     id: d.Id,
     paid,

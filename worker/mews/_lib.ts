@@ -12,13 +12,9 @@ export interface Env {
   MEWS_CONFIG_ID: string;
   MEWS_ADULT_AGE_CATEGORY_ID?: string;
   MEWS_CHILD_AGE_CATEGORY_ID?: string;
-  // URL de webhook (optionnelle) : reçoit les événements payment.initiated / reservation.paid.
-  WEBHOOK_URL?: string;
-  // Webhooks de suivi de panier (funnel) — UN PAR STATUT (voir /api/mews/track).
-  // No-op si l'URL du statut concerné n'est pas définie.
-  WEBHOOK_BASKET_CREATED?: string; // panier créé / mis à jour (avant paiement)
-  WEBHOOK_PAYMENT_INITIATED?: string; // « Payer » cliqué (réservation créée)
-  WEBHOOK_PAYMENT_VALIDATED?: string; // paiement encaissé (confirmé par Mews)
+  // ★ UNIQUE endpoint de suivi → n8n → Supabase : reçoit TOUS les events du funnel
+  // (chaque étape + paiement initié/validé). C'est LE endpoint du back-office.
+  WEBHOOK_EVENTS?: string;
 }
 
 // POST best-effort d'un JSON vers une URL de webhook. No-op si l'URL est absente/invalide.
@@ -39,11 +35,6 @@ export async function postWebhook(url: string | undefined, payload: unknown): Pr
   } finally {
     clearTimeout(to);
   }
-}
-
-// Webhook « paiement » (WEBHOOK_URL) : payment.initiated / reservation.paid.
-export function notify(env: Env, event: string, data: Record<string, unknown>): Promise<void> {
-  return postWebhook(env.WEBHOOK_URL, { event, timestamp: new Date().toISOString(), ...data });
 }
 
 // Catégories d'âge de l'entreprise Bambou Resort (vérifiées en live) — fallback si les

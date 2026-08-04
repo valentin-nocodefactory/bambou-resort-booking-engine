@@ -1,4 +1,4 @@
-import { mewsJson, readJson, bad, json, isIsoDate, clampInt, eurAmount, notify, propertyByKey, mewsLang, type Env } from "./_lib";
+import { mewsJson, readJson, bad, json, isIsoDate, clampInt, eurAmount, propertyByKey, mewsLang, type Env } from "./_lib";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -67,7 +67,7 @@ function cleanCustomer(c: InCustomer | undefined) {
 // reservationGroups/create — ÉCRIT dans Mews. On reconstruit entièrement le payload
 // à partir de champs whitelistés ; jamais de forward du body brut. Renvoie au front
 // une réponse curée (Id, PaymentRequestId, numéros de confirmation, total EUR).
-export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
+export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const b = await readJson<Body>(request);
 
   const Customer = cleanCustomer(b.customer);
@@ -133,27 +133,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
       ? buildPaymentUrl(env.MEWS_APP_BASE_URL, d.PaymentRequestId, returnUrl, d.Id, LanguageCode)
       : null;
 
-  // Webhook « paiement initié » (fiable : côté serveur, dès la création + demande de paiement).
-  if (d.PaymentRequestId) {
-    waitUntil(
-      notify(env, "payment.initiated", {
-        reservationGroupId: d.Id,
-        paymentRequestId: d.PaymentRequestId,
-        paymentUrl,
-        customer: { email: Customer.Email, firstName: Customer.FirstName, lastName: Customer.LastName },
-        totalAmount: eurAmount(d.TotalAmount),
-        reservations: (d.Reservations ?? []).map((r: any) => ({
-          number: r.Number,
-          roomCategoryId: r.RoomCategoryId,
-          rateId: r.RateId,
-          startUtc: r.StartUtc,
-          endUtc: r.EndUtc,
-          adultCount: r.AdultCount,
-          childCount: r.ChildCount,
-        })),
-      }),
-    );
-  }
+  // Le suivi « paiement initié » part du front (track → WEBHOOK_EVENTS) avec le
+  // reservationGroupId → n8n valide ensuite le paiement via Mews. Pas de webhook serveur.
 
   return json({
     id: d.Id,
