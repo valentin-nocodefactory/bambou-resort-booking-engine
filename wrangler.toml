@@ -21,3 +21,10 @@ MEWS_CONFIG_ID = "43ec5bf8-09e2-4ae8-83d2-b39900e86b9b"
 # Catégories d'âge réelles de l'entreprise (vérifiées en live).
 MEWS_ADULT_AGE_CATEGORY_ID = "3b9bdb28-d9e1-4fac-904f-b2cf00febb8f"
 MEWS_CHILD_AGE_CATEGORY_ID = "5cd331e0-0069-4f46-a20f-b2cf00febb8f"
+
+# Webhooks de suivi de panier → n8n (un par statut). ⚠️ Repo public : ces URLs sont
+# visibles. Pour les garder privées, les définir plutôt en Secret côté dashboard
+# Cloudflare et les retirer d'ici. (paiement-initiated = chemin lisible, PAS l'UUID.)
+WEBHOOK_BASKET_CREATED = "https://n8n.srv842183.hstgr.cloud/webhook/basket-created"
+WEBHOOK_PAYMENT_INITIATED = "https://n8n.srv842183.hstgr.cloud/webhook/paiement-initiated"
+WEBHOOK_PAYMENT_VALIDATED = "https://n8n.srv842183.hstgr.cloud/webhook/paiement-validated"
