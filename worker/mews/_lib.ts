@@ -174,6 +174,15 @@ export function occupancyData(env: Env, adults: number, children = 0) {
 export const isIsoDate = (s: unknown): s is string =>
   typeof s === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(s);
 
+// Normalise une entrée de langue (clé `fr|en` OU code `fr-FR|en-GB|en-US`) vers un
+// LanguageCode Mews valide. Défaut strict : fr-FR. Utilisé par tous les endpoints
+// qui renvoient du contenu localisé (config, dispo, pricing) et par la création
+// (langue de la page de paiement + e-mails Mews).
+export const mewsLang = (v: unknown): "fr-FR" | "en-GB" => {
+  const s = String(v ?? "").toLowerCase();
+  return s === "en" || s === "en-gb" || s === "en-us" ? "en-GB" : "fr-FR";
+};
+
 export const clampInt = (v: unknown, min: number, max: number, dflt: number): number => {
   const n = typeof v === "number" ? v : parseInt(String(v ?? ""), 10);
   if (!Number.isFinite(n)) return dflt;

@@ -1,4 +1,4 @@
-import { mewsJson, readJson, bad, json, isIsoDate, clampInt, eurAmount, notify, propertyByKey, type Env } from "./_lib";
+import { mewsJson, readJson, bad, json, isIsoDate, clampInt, eurAmount, notify, propertyByKey, mewsLang, type Env } from "./_lib";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -30,15 +30,26 @@ interface Body {
   // URL absolue de retour (origine + chemin) fournie par le front — sert à
   // construire la redirection Payment Request (Voie A). Jamais l'app base url côté front.
   returnUrl?: string;
+  // Langue (fr-FR | en-GB) : fixe la langue de la page de paiement Mews + e-mails.
+  languageCode?: string;
 }
 
 // Construit l'URL de la page de paiement hébergée par Mews (Voie A).
-// returnUrl encodé en Base64 (exigé par Mews).
-function buildPaymentUrl(appBaseUrl: string, paymentRequestId: string, returnUrl: string, rgid: string): string {
+// returnUrl encodé en Base64 (exigé par Mews). `language` = indice de langue sur la
+// page hébergée (best-effort ; le levier principal reste LanguageCode à la création).
+function buildPaymentUrl(
+  appBaseUrl: string,
+  paymentRequestId: string,
+  returnUrl: string,
+  rgid: string,
+  language: string,
+): string {
   const sep = returnUrl.includes("?") ? "&" : "?";
   const finalReturn = `${returnUrl}${sep}rgid=${rgid}`;
   const b64 = btoa(finalReturn);
-  return `${appBaseUrl}/navigator/payment-requests/detail/${paymentRequestId}?returnUrl=${encodeURIComponent(b64)}`;
+  return `${appBaseUrl}/navigator/payment-requests/detail/${paymentRequestId}?returnUrl=${encodeURIComponent(
+    b64,
+  )}&language=${encodeURIComponent(language)}`;
 }
 
 function cleanCustomer(c: InCustomer | undefined) {
@@ -88,11 +99,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
   if (!Reservations.length) return bad("no_valid_reservations");
 
   const Booker = cleanCustomer(b.booker);
+  const LanguageCode = mewsLang(b.languageCode);
 
   const res = await mewsJson<any>(env, "reservationGroups/create", {
     // Config de l'hébergement choisi (Bambou/Créole/Villas) ; défaut = config primaire.
     ConfigurationId: propertyByKey(b.property)?.configId ?? env.MEWS_CONFIG_ID,
     HotelId: env.MEWS_HOTEL_ID,
+    // Fixe la langue de la page de paiement hébergée + des e-mails de confirmation Mews.
+    LanguageCode,
     Customer,
     ...(Booker ? { Booker } : {}),
     Reservations,
@@ -116,7 +130,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
   const returnUrl = typeof b.returnUrl === "string" && /^https?:\/\//.test(b.returnUrl) ? b.returnUrl : null;
   const paymentUrl =
     d.PaymentRequestId && returnUrl
-      ? buildPaymentUrl(env.MEWS_APP_BASE_URL, d.PaymentRequestId, returnUrl, d.Id)
+      ? buildPaymentUrl(env.MEWS_APP_BASE_URL, d.PaymentRequestId, returnUrl, d.Id, LanguageCode)
       : null;
 
   // Webhook « paiement initié » (fiable : côté serveur, dès la création + demande de paiement).

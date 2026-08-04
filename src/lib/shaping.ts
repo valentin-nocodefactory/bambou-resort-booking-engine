@@ -77,10 +77,14 @@ export function buildRooms(avail: AvailabilityResponse, hotel: HotelConfig | nul
     const fromGross = payableRates[0]?.totalGross ?? null;
 
     const cat = categoryById.get(rca.RoomCategoryId);
+    // Catégorie renvoyée par getAvailability mais ABSENTE du catalogue configuration/get
+    // (catégorie masquée / edge Mews) → aucune donnée présentable (nom, photo,
+    // hébergement) → on l'ignore plutôt que d'afficher une carte « Hébergement » vide.
+    if (!cat) continue;
     rooms.push({
       categoryId: rca.RoomCategoryId,
-      name: loc(cat?.Name, "Hébergement"),
-      description: loc(cat?.Description ?? null, ""),
+      name: loc(cat.Name, "Hébergement"),
+      description: loc(cat.Description ?? null, ""),
       imageIds: cat?.ImageIds ?? [],
       normalBedCount: cat?.NormalBedCount ?? 0,
       extraBedCount: cat?.ExtraBedCount ?? 0,

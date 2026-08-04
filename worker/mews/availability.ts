@@ -8,6 +8,7 @@ import {
   PROPERTIES,
   isIsoDate,
   clampInt,
+  mewsLang,
   type Env,
 } from "./_lib";
 
@@ -18,6 +19,7 @@ interface Body {
   children?: number;
   properties?: string[]; // clés d'hébergements (hotel/creole/villas). Vide/absent = tous.
   voucherCode?: string;
+  languageCode?: string; // fr-FR | en-GB — localise noms/descriptions de chambres & tarifs.
 }
 
 // hotels/getAvailability — dispo + prix EUR, interrogée PAR hébergement sélectionné
@@ -42,6 +44,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!selected.length) return json(empty);
 
   const voucher = typeof b.voucherCode === "string" && b.voucherCode ? b.voucherCode : undefined;
+  const LanguageCode = mewsLang(b.languageCode);
 
   const results = await Promise.all(
     selected.map((prop) =>
@@ -51,6 +54,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         StartUtc: b.startUtc,
         EndUtc: b.endUtc,
         CurrencyCode: "EUR",
+        LanguageCode,
         OccupancyData: occupancyForProperty(prop, adults, children),
         ...(voucher ? { VoucherCode: voucher } : {}),
       }),

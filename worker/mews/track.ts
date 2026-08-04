@@ -11,6 +11,19 @@ const WEBHOOK_ENV: Record<string, keyof Env> = {
 const str = (v: unknown, max = 200): string | null => (typeof v === "string" && v ? v.slice(0, max) : null);
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
+// Attribution marketing : whitelist stricte des clés connues (jamais de forward brut).
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "fbclid"];
+const utmObject = (v: unknown): Record<string, string> | null => {
+  if (!v || typeof v !== "object") return null;
+  const src = v as Record<string, unknown>;
+  const out: Record<string, string> = {};
+  for (const k of UTM_KEYS) {
+    const val = str(src[k], 200);
+    if (val) out[k] = val;
+  }
+  return Object.keys(out).length ? out : null;
+};
+
 // /api/mews/track — SUIVI DE PANIER. Le front pousse l'état du panier à chaque
 // étape (à partir des infos client). On reconstruit un payload whitelisté (jamais
 // de forward brut, aucun secret) et on le relaie vers n8n (CART_WEBHOOK_URL) en
@@ -63,8 +76,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
     // (POST /api/mews/reservation-status { reservationGroupId }).
     reservationGroupId: str(b.reservationGroupId, 60),
     paymentRequestId: str(b.paymentRequestId, 60),
+    // Langue de la session (fr|en).
+    lang: str(b.lang, 5),
+    // Attribution marketing (utm_*, gclid, fbclid) capturée à l'arrivée. Whitelist stricte.
+    utm: utmObject(b.utm),
   };
 
-  waitUntil(postWebhook(env[WEBHOOK_ENV[b.status]], payload));
+  waitUntil(postWebhook(env[WEBHOOK_ENV[b.status]] as string | undefined, payload));
   return json({ ok: true });
 };

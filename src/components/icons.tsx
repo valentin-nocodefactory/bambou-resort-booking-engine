@@ -144,3 +144,28 @@ export const IconSun = (p: SVGProps<SVGSVGElement>) => (
     <path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" />
   </svg>
 );
+export const IconPhone = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M4 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L14 12l5 2v4a2 2 0 0 1-2 2A15 15 0 0 1 2 5a2 2 0 0 1 2-2" />
+  </svg>
+);
+export const IconMail = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <rect x="2.5" y="4.5" width="19" height="15" rx="2.5" />
+    <path d="M3 6.5l9 6 9-6" />
+  </svg>
+);
+export const IconShare = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <circle cx="18" cy="5" r="2.6" />
+    <circle cx="6" cy="12" r="2.6" />
+    <circle cx="18" cy="19" r="2.6" />
+    <path d="M8.3 10.8l7.4-4.3M8.3 13.2l7.4 4.3" />
+  </svg>
+);
+export const IconCopy = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <rect x="9" y="9" width="12" height="12" rx="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+);

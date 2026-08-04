@@ -1,4 +1,4 @@
-import { mewsJson, json, PROPERTIES, propertyByConfig, type Env } from "./_lib";
+import { mewsJson, json, mewsLang, PROPERTIES, propertyByConfig, type Env } from "./_lib";
 
 const locStr = (v: unknown): string | null =>
   typeof v === "string" ? v : v && typeof v === "object" ? ((v as any)["fr-FR"] ?? (v as any)["en-GB"] ?? Object.values(v as any)[0] ?? null) : null;
@@ -8,11 +8,12 @@ const locStr = (v: unknown): string | null =>
 //  • RoomCategories de TOUS les hébergements, chacune taguée `Property` (clé),
 //  • Products fusionnés (dédup par Id), ImageBaseUrl, CGV, liste des hébergements.
 // Caché 5 min (public) — la config bouge rarement. Aucun input front.
-const handler: PagesFunction<Env> = async ({ env }) => {
+const handler: PagesFunction<Env> = async ({ env, request }) => {
+  const lang = mewsLang(new URL(request.url).searchParams.get("lang"));
   const res = await mewsJson<any>(env, "configuration/get", {
     Ids: PROPERTIES.map((p) => p.configId),
     PrimaryId: env.MEWS_CONFIG_ID, // Hôtel Bambou = primaire
-    LanguageCode: "fr-FR",
+    LanguageCode: lang,
   });
   if (!res.ok || !res.data) return json({ error: "config_failed", status: res.status }, 502);
   const d = res.data;

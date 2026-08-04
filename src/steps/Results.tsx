@@ -8,7 +8,8 @@ import { RoomCard } from "../components/RoomCard";
 import { RoomDetailDrawer } from "../components/RoomDetailDrawer";
 import { InlineUpsell } from "../components/UpsellCard";
 import { RatingPill, UrgencyBanner } from "../components/conversion";
-import { IconCalendar, IconUsers } from "../components/icons";
+import { IconCalendar, IconUsers, IconPlus } from "../components/icons";
+import { t } from "../i18n";
 
 export function Results() {
   const {
@@ -28,6 +29,7 @@ export function Results() {
     selectRoomRate,
     hydrateSelection,
     setAvailableRooms,
+    setProperties,
     toggleProduct,
     productIds,
     goTo,
@@ -44,35 +46,59 @@ export function Results() {
     if (!checkIn || !checkOut) goTo("dates");
   }, [checkIn, checkOut, goTo]);
 
+  // On interroge TOUS les hébergements (pas de filtre `properties` côté requête) :
+  // le filtre est appliqué à l'affichage, ce qui permet de compter les hébergements
+  // NON cochés dispos et de les proposer en teaser (bascule instantanée, sans refetch).
   useEffect(() => {
     let alive = true;
     setLoading(true);
     setError(null);
     api
-      .availability({ checkIn, checkOut, adults, children, voucherCode, properties })
+      .availability({ checkIn, checkOut, adults, children, voucherCode })
       .then((res) => alive && setData(res))
       .catch((e) => alive && setError(errorMessage(e)))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [checkIn, checkOut, adults, children, voucherCode, properties, reloadKey]);
+  }, [checkIn, checkOut, adults, children, voucherCode, reloadKey]);
 
-  const rooms = useMemo(() => (data ? buildRooms(data, hotel) : []), [data, hotel]);
+  // Toutes les chambres dispos (tous hébergements), taguées par `property`.
+  const allRooms = useMemo(() => (data ? buildRooms(data, hotel) : []), [data, hotel]);
 
-  // Publie la liste pour l'étape de surclassement (upsell chambre après Guest).
+  // Filtre d'affichage : hébergements cochés (une chambre sans property reste visible).
+  const rooms = useMemo(
+    () => allRooms.filter((r) => !r.property || properties.includes(r.property)),
+    [allRooms, properties],
+  );
+
+  // Teaser : hébergements NON cochés mais dispos sur ces dates (nom + nombre).
+  const teasers = useMemo(() => {
+    const labels: { key: string; label: string }[] = hotel?.Properties ?? [];
+    return labels
+      .filter((p) => !properties.includes(p.key))
+      .map((p) => ({ ...p, count: allRooms.filter((r) => r.property === p.key).length }))
+      .filter((p) => p.count > 0);
+  }, [hotel, properties, allRooms]);
+
+  // Publie la liste visible pour l'étape de surclassement (upsell chambre après Guest).
   useEffect(() => {
     if (rooms.length) setAvailableRooms(rooms);
   }, [rooms, setAvailableRooms]);
 
-  // Réhydrate la sélection depuis l'URL (lien partagé / retour arrière).
+  // Réhydrate la sélection depuis l'URL (lien partagé / retour arrière) — depuis
+  // TOUTES les chambres, même si l'hébergement de la chambre n'est pas coché.
   useEffect(() => {
-    if (!selectedRoom && roomId && rooms.length) {
-      const room = rooms.find((r) => r.categoryId === roomId);
+    if (!selectedRoom && roomId && allRooms.length) {
+      const room = allRooms.find((r) => r.categoryId === roomId);
       const rate = room?.rates.find((rt) => rt.rateId === rateId) ?? room?.rates[0] ?? null;
-      if (room && rate) hydrateSelection(room, rate);
+      if (room && rate) {
+        hydrateSelection(room, rate);
+        // Le lien partageait une chambre d'un hébergement décoché → on l'affiche.
+        if (room.property && !properties.includes(room.property)) setProperties([...properties, room.property]);
+      }
     }
-  }, [rooms, roomId, rateId, selectedRoom, hydrateSelection]);
+  }, [allRooms, roomId, rateId, selectedRoom, hydrateSelection, properties, setProperties]);
 
   const search = { checkIn, checkOut, adults, children };
 
@@ -124,6 +150,23 @@ export function Results() {
           </div>
         </div>
       </div>
+
+      {/* Cross-sell : hébergements NON cochés mais dispos sur ces dates. */}
+      {!loading && !error && teasers.length > 0 && (
+        <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl2 border border-corail/25 bg-corail/[0.06] p-4">
+          <span className="text-sm font-medium text-ink/70">{t("results.alsoAvailable")} :</span>
+          {teasers.map((x) => (
+            <button
+              key={x.key}
+              type="button"
+              onClick={() => setProperties([...properties, x.key])}
+              className="inline-flex items-center gap-1.5 rounded-full border border-corail/40 bg-white px-3 py-1.5 text-sm font-semibold text-corail transition hover:bg-corail hover:text-white"
+            >
+              <IconPlus className="h-4 w-4" /> {t("results.addProperty", { count: x.count, label: x.label })}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* États */}
       {loading && <SkeletonList />}

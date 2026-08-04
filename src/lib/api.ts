@@ -12,6 +12,7 @@ import type {
   ReservationStatusResult,
 } from "../types/mews";
 import { toUtc } from "./format";
+import { getLang, mewsLang } from "./lang";
 import { apiLog } from "./apiLog";
 
 export class ApiError extends Error {
@@ -103,9 +104,9 @@ export interface ReservationLine {
 
 export const api = {
   hotel: () =>
-    call<HotelConfig>("hotel", undefined, {
+    call<HotelConfig>(`hotel?lang=${getLang()}`, undefined, {
       label: "Configuration de l'hôtel",
-      why: "Charge la config de l'établissement (catégories de chambres, photos, produits/extras, devise, conditions, passerelle de paiement). Appelé une seule fois au démarrage. Mis en cache 5 min côté serveur.",
+      why: "Charge la config de l'établissement (catégories de chambres, photos, produits/extras, devise, conditions, passerelle de paiement) dans la langue courante. Appelé une seule fois au démarrage. Mis en cache 5 min côté serveur.",
     }),
 
   availability: (p: SearchParams) =>
@@ -116,6 +117,7 @@ export const api = {
         endUtc: toUtc(p.checkOut),
         adults: p.adults,
         children: p.children,
+        languageCode: mewsLang(),
         ...(p.voucherCode ? { voucherCode: p.voucherCode } : {}),
         ...(p.properties?.length ? { properties: p.properties } : {}),
       },
@@ -142,6 +144,7 @@ export const api = {
         roomCategoryId: p.roomCategoryId,
         adults: p.adults,
         children: p.children,
+        languageCode: mewsLang(),
         ...(p.productIds?.length ? { productIds: p.productIds } : {}),
         ...(p.voucherCode ? { voucherCode: p.voucherCode } : {}),
       },
@@ -158,7 +161,7 @@ export const api = {
     reservations: ReservationLine[];
     returnUrl?: string;
   }) =>
-    post<ReservationCreateResult>("reservation", payload, {
+    post<ReservationCreateResult>("reservation", { ...payload, languageCode: mewsLang() }, {
       label: "Création de la réservation",
       why: "Écrit la réservation dans Mews (reservationGroups/create) et prépare le paiement : Mews renvoie un PaymentRequestId, le serveur construit l'URL de paiement sécurisée (Voie A).",
     }),

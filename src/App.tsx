@@ -3,6 +3,7 @@ import { BookingProvider, useBooking, type Step } from "./state/booking";
 import { Brand } from "./components/Brand";
 import { StepProgress } from "./components/StepProgress";
 import { DevPanel } from "./components/DevPanel";
+import { ContactBar } from "./components/ContactBar";
 import { Dates } from "./steps/Dates";
 import { Results } from "./steps/Results";
 import { Guest } from "./steps/Guest";
@@ -11,6 +12,8 @@ import { Extras } from "./steps/Extras";
 import { Payment } from "./steps/Payment";
 import { Confirmation } from "./steps/Confirmation";
 import { IconLeaf, IconTag } from "./components/icons";
+import { t } from "./i18n";
+import { getLang, setLangAndReload, type Lang } from "./lib/lang";
 
 const STEP_COMPONENTS: Record<Step, () => JSX.Element | null> = {
   dates: Dates,
@@ -42,7 +45,7 @@ function Shell() {
               goTo("dates");
             }}
             className="self-start"
-            aria-label="Accueil Bambou Resort"
+            aria-label={t("header.home")}
           >
             <Brand className="text-teal-deep" />
           </button>
@@ -52,7 +55,7 @@ function Shell() {
             </div>
           ) : (
             <span className="hidden items-center gap-1.5 text-sm font-medium text-teal-deep sm:inline-flex">
-              <IconTag className="h-4 w-4 text-turquoise" /> Meilleur prix garanti en direct
+              <IconTag className="h-4 w-4 text-turquoise" /> {t("header.bestPrice")}
             </span>
           )}
         </div>
@@ -60,9 +63,9 @@ function Shell() {
 
       {hotelError && (
         <div className="bg-amber-50 px-5 py-2 text-center text-sm text-amber-800">
-          Impossible de charger la configuration de l'hôtel.{" "}
+          {t("hotelError.msg")}{" "}
           <button type="button" onClick={reloadHotel} className="font-semibold underline">
-            Réessayer
+            {t("common.retry")}
           </button>
         </div>
       )}
@@ -72,6 +75,7 @@ function Shell() {
       </main>
 
       <Footer />
+      <ContactBar />
       <DevPanel />
     </div>
   );
@@ -83,18 +87,46 @@ function Footer() {
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <Brand className="text-cream" />
-          <p className="mt-2 max-w-sm text-sm text-cream/60">
-            Art de vivre caribéen, les pieds dans l'eau. Réservation en direct, au meilleur tarif.
-          </p>
+          <p className="mt-2 max-w-sm text-sm text-cream/60">{t("footer.tagline")}</p>
         </div>
-        <div className="space-y-1.5 text-sm sm:text-right">
+        <div className="space-y-2.5 text-sm sm:text-right">
+          <LangSwitcher />
           <p className="inline-flex items-center gap-1.5 text-cream/60">
-            <IconLeaf className="h-4 w-4 text-creole-soft" /> Paiement sécurisé
+            <IconLeaf className="h-4 w-4 text-creole-soft" /> {t("footer.securePayment")}
           </p>
-          <p className="text-cream/60">Développé par NocodeFactory.</p>
+          <p className="text-cream/60">{t("footer.developedBy")}</p>
         </div>
       </div>
     </footer>
+  );
+}
+
+// Sélecteur de langue FR / EN : met à jour ?lang= et recharge (re-localise UI + Mews).
+function LangSwitcher() {
+  const active = getLang();
+  const opts: { code: Lang; label: string }[] = [
+    { code: "fr", label: "FR" },
+    { code: "en", label: "EN" },
+  ];
+  return (
+    <div className="flex items-center gap-1.5 sm:justify-end" role="group" aria-label={t("footer.language")}>
+      {opts.map((o) => {
+        const on = o.code === active;
+        return (
+          <button
+            key={o.code}
+            type="button"
+            onClick={() => setLangAndReload(o.code)}
+            aria-pressed={on}
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+              on ? "bg-cream text-teal-deep" : "text-cream/60 hover:bg-cream/10 hover:text-cream"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

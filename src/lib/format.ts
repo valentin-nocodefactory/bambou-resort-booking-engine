@@ -1,26 +1,40 @@
 import type { Localized } from "../types/mews";
+import { getLang, LOCALE } from "./lang";
 
-// Sélection de langue localisée : fr-FR || en-GB || en-US || 1ère clé dispo.
+// Locale Intl courante (fr-FR | en-GB). La langue est fixe par chargement de page.
+const locale = () => LOCALE[getLang()];
+
+// Sélection de la valeur localisée selon la langue active : la langue courante
+// d'abord, puis repli sur l'autre, puis 1ère clé dispo.
 export function loc(value: Localized | null | undefined, fallback = ""): string {
   if (!value) return fallback;
-  return (
-    value["fr-FR"] ||
-    value["fr"] ||
-    value["en-GB"] ||
-    value["en-US"] ||
-    value["en"] ||
-    Object.values(value)[0] ||
-    fallback
-  );
+  const order =
+    getLang() === "en"
+      ? ["en-GB", "en-US", "en", "fr-FR", "fr"]
+      : ["fr-FR", "fr", "en-GB", "en-US", "en"];
+  for (const k of order) {
+    const v = value[k];
+    if (v) return v;
+  }
+  return Object.values(value)[0] || fallback;
 }
 
-const eurFmt = (decimals: number) =>
-  new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
+// Formatters Intl mémoïsés par (locale, décimales) — reconstruits si la locale change.
+const numCache = new Map<string, Intl.NumberFormat>();
+const eurFmt = (decimals: number) => {
+  const key = `${locale()}:${decimals}`;
+  let f = numCache.get(key);
+  if (!f) {
+    f = new Intl.NumberFormat(locale(), {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+    numCache.set(key, f);
+  }
+  return f;
+};
 
 // Prix EUR. Par défaut : 0 décimale si entier (« à partir de 126 € »), sinon 2.
 export function eur(value: number | null | undefined, opts?: { decimals?: 0 | 2 }): string {
@@ -43,26 +57,28 @@ export function nights(start: string, end: string): number {
   return Math.max(0, Math.round((b - a) / 86_400_000));
 }
 
-const dateFmt = new Intl.DateTimeFormat("fr-FR", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  timeZone: "UTC",
-});
-const dateFmtLong = new Intl.DateTimeFormat("fr-FR", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  timeZone: "UTC",
-});
+const dateCache = new Map<string, Intl.DateTimeFormat>();
+const dateFmtFor = (opts: Intl.DateTimeFormatOptions, tag: string) => {
+  const key = `${locale()}:${tag}`;
+  let f = dateCache.get(key);
+  if (!f) {
+    f = new Intl.DateTimeFormat(locale(), { ...opts, timeZone: "UTC" });
+    dateCache.set(key, f);
+  }
+  return f;
+};
 
 export function fmtDate(date: string): string {
   const t = Date.parse(toUtc(date));
-  return Number.isNaN(t) ? date : dateFmt.format(new Date(t));
+  return Number.isNaN(t)
+    ? date
+    : dateFmtFor({ day: "numeric", month: "short", year: "numeric" }, "short").format(new Date(t));
 }
 export function fmtDateLong(date: string): string {
   const t = Date.parse(toUtc(date));
-  return Number.isNaN(t) ? date : dateFmtLong.format(new Date(t));
+  return Number.isNaN(t)
+    ? date
+    : dateFmtFor({ weekday: "long", day: "numeric", month: "long" }, "long").format(new Date(t));
 }
 
 // URL d'image Mews : `${ImageBaseUrl}/{imageId}?width=…`. Renvoie null si pas d'id.

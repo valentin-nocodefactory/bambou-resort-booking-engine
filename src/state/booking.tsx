@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from "react";
 import { api } from "../lib/api";
+import { getLang } from "../lib/lang";
+import { getUtms } from "../lib/utm";
 import { nights as countNights } from "../lib/format";
 import { shapeProducts } from "../lib/shaping";
 import type { HotelConfig, ReservationCreateResult, ShapedProduct, ShapedRate, ShapedRoom } from "../types/mews";
@@ -121,6 +123,8 @@ function writeUrl(s: BookingState) {
   if (s.rateId) q.set("rate", s.rateId);
   if (s.productIds.length) q.set("products", s.productIds.join(","));
   if (s.rgid) q.set("rgid", s.rgid);
+  // Préserve la langue non-défaut dans l'URL (writeUrl reconstruit les params à zéro).
+  if (getLang() === "en") q.set("lang", "en");
   const qs = q.toString();
   const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
   window.history.replaceState(null, "", url);
@@ -155,6 +159,10 @@ interface BookingContextValue extends BookingState {
   selectRoomRate: (room: ShapedRoom, rate: ShapedRate) => void;
   hydrateSelection: (room: ShapedRoom | null, rate: ShapedRate | null) => void;
   setAvailableRooms: (rooms: ShapedRoom[]) => void;
+  // Filtre d'affichage des hébergements (page résultats) : change `properties`
+  // SANS invalider la recherche/sélection (contrairement à setSearch) → bascule
+  // instantanée quand on ajoute un hébergement depuis un teaser.
+  setProperties: (keys: string[]) => void;
   clearSelection: () => void;
   toggleProduct: (id: string) => void;
   setGuest: (p: Partial<Guest>) => void;
@@ -255,6 +263,11 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const setProperties: BookingContextValue["setProperties"] = useCallback(
+    (keys) => patch({ properties: keys }),
+    [patch],
+  );
+
   const clearSelection = useCallback(() => {
     setSelectedRoom(null);
     setSelectedRate(null);
@@ -336,6 +349,9 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     },
     reservationGroupId: created?.id ?? state.rgid ?? null,
     paymentRequestId: created?.paymentRequestId ?? null,
+    // Attribution marketing capturée à l'arrivée (utm_*, gclid, fbclid) + langue.
+    utm: getUtms(),
+    lang: getLang(),
   });
 
   const track: BookingContextValue["track"] = (status, extra = {}) =>
@@ -378,6 +394,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     selectRoomRate,
     hydrateSelection,
     setAvailableRooms,
+    setProperties,
     clearSelection,
     toggleProduct,
     setGuest,
