@@ -1,28 +1,26 @@
-import { useEffect, useRef, useState, type ComponentType, type SVGProps } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useBooking, DEFAULT_PROPERTIES } from "../state/booking";
 import { nights } from "../lib/format";
 import { DateRangePicker } from "../components/DateRangePicker";
 import { RatingPill } from "../components/conversion";
 import {
   IconArrowRight,
-  IconBed,
   IconCheck,
   IconLeaf,
   IconMapPin,
   IconMinus,
   IconPalm,
   IconPlus,
-  IconSparkles,
   IconUsers,
   IconWave,
 } from "../components/icons";
 
-// Hébergements sélectionnables (libellés + accroche + icône). Le serveur whiteliste les clés.
-type PropertyOption = { key: string; label: string; desc: string; icon: ComponentType<SVGProps<SVGSVGElement>> };
+// Hébergements sélectionnables (libellé + accroche + photo, reprise de bambouresort.com).
+type PropertyOption = { key: string; label: string; desc: string; image: string };
 const PROPERTY_OPTIONS: PropertyOption[] = [
-  { key: "hotel", label: "Hôtel Bambou", desc: "Chambres d'hôtel, les pieds dans l'eau", icon: IconBed },
-  { key: "creole", label: "Culture Créole", desc: "Boutique-hôtel créole", icon: IconLeaf },
-  { key: "villas", label: "Villas", desc: "Villas privées & luxueuses", icon: IconSparkles },
+  { key: "hotel", label: "Hôtel Bambou", desc: "Chambres d'hôtel, les pieds dans l'eau", image: "/img/properties/hotel.webp" },
+  { key: "creole", label: "Culture Créole", desc: "Boutique-hôtel créole", image: "/img/properties/creole.webp" },
+  { key: "villas", label: "Villas", desc: "Villas privées & luxueuses", image: "/img/properties/villas.webp" },
 ];
 
 // Écran de recherche STANDALONE (pas de hero) — moteur de réservation seul,
@@ -65,7 +63,7 @@ export function Dates() {
             Réservez votre séjour
           </h1>
           <p className="mt-3 text-lg leading-snug text-ink/70 sm:text-xl">
-            Hôtels &amp; villas <span className="italic">d'exception</span> en Martinique
+            Hôtels &amp; villas d'exception en Martinique
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
             <RatingPill />
@@ -184,9 +182,10 @@ function PropertiesField({
   const summary =
     count >= options.length
       ? "Tous les hébergements"
-      : count === 1
-        ? (options.find((o) => o.key === selected[0])?.label ?? "1 hébergement")
-        : `${count} hébergements`;
+      : options
+          .filter((o) => selected.includes(o.key))
+          .map((o) => o.label)
+          .join(", ");
 
   function toggle(key: string) {
     const has = selected.includes(key);
@@ -214,23 +213,22 @@ function PropertiesField({
           </p>
           {options.map((o) => {
             const on = selected.includes(o.key);
-            const Icon = o.icon;
             return (
               <button
                 key={o.key}
                 type="button"
                 onClick={() => toggle(o.key)}
                 aria-pressed={on}
-                className={`flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition ${
+                className={`flex w-full items-center gap-3 rounded-xl p-2 text-left transition ${
                   on ? "bg-corail/10" : "hover:bg-cream"
                 }`}
               >
                 <span
-                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition ${
-                    on ? "bg-corail text-white" : "bg-marine/[0.06] text-marine"
+                  className={`h-12 w-12 shrink-0 overflow-hidden rounded-xl ring-2 transition ${
+                    on ? "ring-corail" : "ring-black/5"
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
+                  <img src={o.image} alt="" className="h-full w-full object-cover" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-marine">{o.label}</span>

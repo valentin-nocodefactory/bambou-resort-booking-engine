@@ -151,7 +151,13 @@ export function DateRangePicker({
                           ? "bg-[linear-gradient(to_right,#061a2d26_50%,transparent_50%)]"
                           : "";
                     return (
-                      <div key={day} onMouseEnter={() => setHover(day)} className={`relative h-10 ${band}`}>
+                      <div key={day} onMouseEnter={() => setHover(day)} className="relative h-10">
+                        {band && (
+                          <span
+                            className={`pointer-events-none absolute inset-x-0 top-1/2 h-9 -translate-y-1/2 ${band}`}
+                            aria-hidden
+                          />
+                        )}
                         <button
                           type="button"
                           disabled={disabled}

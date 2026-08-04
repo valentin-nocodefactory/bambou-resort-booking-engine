@@ -34,7 +34,7 @@ export function RoomCard({
   const hot = !lowStock && seeded(room.categoryId, 0, 2) === 0;
 
   return (
-    <article className="card group flex flex-col overflow-hidden transition hover:shadow-float sm:flex-row">
+    <article className="card group flex flex-col overflow-hidden transition hover:shadow-float sm:h-80 sm:flex-row">
       <button
         type="button"
         onClick={onDetails}
@@ -64,7 +64,7 @@ export function RoomCard({
       <div className="flex flex-1 flex-col p-5">
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1.5">
           <div className="min-w-0">
-            <h3 className="font-display text-xl text-ink">{room.name}</h3>
+            <h3 className="line-clamp-2 font-display text-xl text-ink">{room.name}</h3>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-teal-deep/80">
               {room.capacity > 0 && (
                 <span className="inline-flex items-center gap-1">
