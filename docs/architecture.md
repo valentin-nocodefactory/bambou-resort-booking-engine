@@ -16,6 +16,7 @@
 6. [Pipeline analytics](#6-pipeline-analytics)
 7. [Voulu, ou bug ?](#7-voulu-ou-bug-)
 8. [Donnée réelle vs démo](#8-donnée-réelle-mews-vs-démo-en-dur)
+9. [Outils, emplacements & comptes](#9-outils-emplacements--comptes)
 
 ---
 
@@ -182,6 +183,57 @@ Plusieurs éléments de réassurance sont **générés**, pas issus de Mews. À 
 | « Réservé N fois cette semaine » | 🟣 Démo | Généré. Preuve sociale d'illustration. |
 | « Coup de cœur voyageurs » / « Très demandé » | 🟣 Démo | Badges d'illustration (règle simple / graine), pas un signal Mews. |
 | Minuteur « Nous gardons votre chambre 10 min » | 🟣 Démo | Visuel d'urgence ; aucune réservation temporaire réelle côté Mews. |
+
+---
+
+## 9. Outils, emplacements & comptes
+
+> ⚠️ Ce tableau liste **où** vivent les choses, **jamais les secrets** (le repo est public).
+> Les valeurs sensibles restent dans Cloudflare (secrets), `.dev.vars` (local) et les
+> credentials n8n — voir « Où vivent les secrets » plus bas.
+
+| Outil | Rôle | Où (console) | Compte |
+|---|---|---|---|
+| **GitHub** | Code source | [github.com/valentin-nocodefactory/bambou-resort-booking-engine](https://github.com/valentin-nocodefactory/bambou-resort-booking-engine) | `valentin-nocodefactory` |
+| **Cloudflare Workers** | Hébergement + déploiement | dash.cloudflare.com → Worker `bambou-resort-booking-engine` | compte `valentin7732` (sous-domaine `*.valentin7732.workers.dev`) |
+| **Mews** | PMS / dispo / prix / paiement | [app.mews.com](https://app.mews.com) (Commander) · `api.mews.com` (Distributor v1) | compte Mews de l'hôtel Bambou (3 configurations) |
+| **n8n** | Automatisation / suivi funnel | [n8n.srv842183.hstgr.cloud](https://n8n.srv842183.hstgr.cloud) (auto-hébergé Hostinger, `srv842183`) | instance n8n du projet |
+| **Supabase** | Base de données + Auth + API | [supabase.com/dashboard/project/wrakgyuiihxlcaxinckm](https://supabase.com/dashboard/project/wrakgyuiihxlcaxinckm) | projet `wrakgyuiihxlcaxinckm` |
+| **Site vitrine** | Charte (polices, couleurs, photos, contact) | [bambouresort.com](https://www.bambouresort.com) (Webflow) | — |
+| **NocodeFactory** | Développement | crédit footer | — |
+
+### URLs clés
+
+| Quoi | URL |
+|---|---|
+| Moteur de réservation (prod) | `https://bambou-resort-booking-engine.valentin7732.workers.dev` |
+| Dashboard back-office | `…workers.dev/dashboard` |
+| Endpoint suivi → n8n | `https://n8n.srv842183.hstgr.cloud/webhook/booking-event` |
+| API Supabase (REST auto) | `https://wrakgyuiihxlcaxinckm.supabase.co/rest/v1/…` |
+
+### Déploiement
+
+Aucun déploiement manuel : **push sur `main` → Cloudflare Workers Builds** rebuild et
+déploie automatiquement (front + Worker sur la même origine, ~1 min). Le dashboard est une
+2ᵉ page du même build (`/dashboard`).
+
+### Où vivent les secrets (jamais dans le repo)
+
+| Secret | Rôle | Emplacement |
+|---|---|---|
+| `MEWS_CLIENT` | Jeton Distributor Mews | `.dev.vars` (local) **+** Secret Cloudflare (prod) |
+| Supabase `service_role` | Accès total à la base (contourne le RLS) | **Uniquement** dans les credentials n8n |
+| Supabase `anon` (publique) | Lecture front via RLS + Auth | `src/dashboard/config.ts` (publique par design) |
+| IDs Mews publics + `WEBHOOK_EVENTS` | Non secrets (hotel/config/catégories d'âge) | `wrangler.toml` → `[vars]` |
+
+> 🔑 **À faire** : la clé `service_role` a été exposée une fois → la **régénérer** dans
+> Supabase (Settings → API) et remettre la nouvelle dans n8n.
+
+### Contact réception (affiché dans le moteur)
+
+Téléphone `+33 7 68 30 83 96` · e-mail `reservation@hotelbambou.fr`
+(alternatives : `hbreception@outlook.fr`, `hello@hotelbambou.fr`). Modifiable en un seul
+endroit : `src/components/ContactBar.tsx`.
 
 ---
 
