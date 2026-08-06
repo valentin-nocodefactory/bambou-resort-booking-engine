@@ -31,7 +31,14 @@ type Cart = {
   payment_request_id: string | null;
 };
 type FunnelRow = { step: string; carts: number };
-type EventRow = { id: number; status: string; step: string | null; event_at: string | null; received_at: string };
+type EventRow = {
+  id: number;
+  status: string;
+  step: string | null;
+  event_at: string | null;
+  received_at: string;
+  payload: { totals?: { grand?: number | null } | null } | null;
+};
 
 const CART_COLS =
   "cart_id,first_seen,last_seen,last_step,last_status,payment_initiated,paid,lang," +
@@ -247,14 +254,14 @@ function Panel({ email }: { email: string }) {
     let alive = true;
     supabase
       .from("booking_events")
-      .select("id,status,step,event_at,received_at")
+      .select("id,status,step,event_at,received_at,payload")
       .eq("cart_id", openCart.cart_id)
       .order("received_at", { ascending: true })
       .limit(500)
       .then(({ data, error }) => {
         if (!alive) return;
         if (error) setEventsErr(error.message);
-        else setEvents((data ?? []) as EventRow[]);
+        else setEvents((data ?? []) as unknown as EventRow[]);
       });
     return () => {
       alive = false;
@@ -555,6 +562,23 @@ function CartDrawer({
         )
       : null;
 
+  // Total courant + impact (delta €) de chaque étape, lu dans le payload.
+  const timeline = (() => {
+    let running = 0;
+    let seen = false;
+    return (events ?? []).map((e) => {
+      const raw = e.payload?.totals?.grand;
+      const t = typeof raw === "number" ? raw : null;
+      let delta = 0;
+      if (t != null) {
+        delta = t - running;
+        running = t;
+        seen = true;
+      }
+      return { e, total: seen ? running : null, delta };
+    });
+  })();
+
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={`Panier — ${name}`}>
       <div
@@ -638,10 +662,10 @@ function CartDrawer({
             {!error && events?.length === 0 && <p className="mt-3 text-sm text-ink/45">Aucun événement enregistré.</p>}
 
             {events && events.length > 0 && (
-              <ol className="mt-4">
-                {events.map((e, i) => {
+              <ol className="mt-4 max-h-[42vh] overflow-y-auto pr-1">
+                {timeline.map(({ e, total, delta }, i) => {
                   const m = eventMeta(e.status, e.step);
-                  const last = i === events.length - 1;
+                  const last = i === timeline.length - 1;
                   return (
                     <li key={e.id} className="relative flex gap-3 pb-4">
                       {!last && <span className="absolute left-[5px] top-3 h-full w-px bg-ink/12" aria-hidden></span>}
@@ -651,6 +675,19 @@ function CartDrawer({
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-ink">{m.label}</p>
                         <p className="text-xs tabular-nums text-ink/45">{fmtClock(e.event_at || e.received_at)}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        {delta !== 0 && (
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${
+                              delta > 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {delta > 0 ? "+" : "−"}
+                            {eur(Math.abs(delta))}
+                          </span>
+                        )}
+                        {total != null && <p className="mt-0.5 text-[11px] tabular-nums text-ink/45">{eur(total)}</p>}
                       </div>
                     </li>
                   );
