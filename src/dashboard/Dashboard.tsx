@@ -13,16 +13,31 @@ type Cart = {
   paid: boolean;
   lang: string | null;
   utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  check_in: string | null;
+  check_out: string | null;
   nights: number | null;
   adults: number | null;
+  children: number | null;
   room_name: string | null;
   rate_name: string | null;
   total_grand: number | null;
   currency: string | null;
   customer_email: string | null;
   customer_name: string | null;
+  customer_phone: string | null;
+  reservation_group_id: string | null;
+  payment_request_id: string | null;
 };
 type FunnelRow = { step: string; carts: number };
+type EventRow = { id: number; status: string; step: string | null; event_at: string | null; received_at: string };
+
+const CART_COLS =
+  "cart_id,first_seen,last_seen,last_step,last_status,payment_initiated,paid,lang," +
+  "utm_source,utm_medium,utm_campaign,check_in,check_out,nights,adults,children," +
+  "room_name,rate_name,total_grand,currency,customer_email,customer_name,customer_phone," +
+  "reservation_group_id,payment_request_id";
 
 // Étapes du tunnel, dans l'ordre.
 const STEPS: { key: string; label: string }[] = [
@@ -53,6 +68,26 @@ function timeAgo(iso: string): string {
   if (s < 3600) return `il y a ${Math.floor(s / 60)} min`;
   if (s < 86400) return `il y a ${Math.floor(s / 3600)} h`;
   return `il y a ${Math.floor(s / 86400)} j`;
+}
+
+const STEP_LABEL = new Map(STEPS.map((s) => [s.key, s.label]));
+const stepLabel = (key: string | null) => (key ? STEP_LABEL.get(key) ?? key : "—");
+const statusColor = (c: { paid: boolean; payment_initiated: boolean }) =>
+  c.paid ? "bg-emerald-400" : c.payment_initiated ? "bg-amber-400" : "bg-ink/20";
+const fmtDay = (iso: string) =>
+  new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(new Date(`${iso}T00:00:00`));
+const fmtRange = (ci: string, co: string | null) => (co ? `${fmtDay(ci)} → ${fmtDay(co)}` : fmtDay(ci));
+const fmtClock = (iso: string) =>
+  new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(iso));
+const fmtDateTime = (iso: string) =>
+  new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(
+    new Date(iso),
+  );
+// Libellé + couleur d'un événement de la timeline.
+function eventMeta(status: string, step: string | null): { label: string; dot: string } {
+  if (status === "paiement_valide") return { label: "Paiement validé", dot: "bg-emerald-500" };
+  if (status === "paiement_initie") return { label: "Paiement lancé", dot: "bg-amber-500" };
+  return { label: `Étape · ${stepLabel(step)}`, dot: "bg-turquoise" };
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -167,6 +202,11 @@ function Panel({ email }: { email: string }) {
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const rangeRef = useRef(range);
   rangeRef.current = range;
+  // Recherche + drawer de détail (historique de comportement d'un panier).
+  const [query, setQuery] = useState("");
+  const [openCart, setOpenCart] = useState<Cart | null>(null);
+  const [events, setEvents] = useState<EventRow[] | null>(null);
+  const [eventsErr, setEventsErr] = useState<string | null>(null);
 
   const sinceIso = useCallback(() => {
     const days = RANGES.find((r) => r.key === rangeRef.current)?.days ?? null;
@@ -176,13 +216,7 @@ function Panel({ email }: { email: string }) {
   const load = useCallback(async () => {
     setError(null);
     const since = sinceIso();
-    let cartsQ = supabase
-      .from("carts")
-      .select(
-        "cart_id,first_seen,last_seen,last_step,last_status,payment_initiated,paid,lang,utm_source,nights,adults,room_name,rate_name,total_grand,currency,customer_email,customer_name",
-      )
-      .order("last_seen", { ascending: false })
-      .limit(5000);
+    let cartsQ = supabase.from("carts").select(CART_COLS).order("last_seen", { ascending: false }).limit(5000);
     if (since) cartsQ = cartsQ.gte("first_seen", since);
 
     const [cartsRes, funnelRes] = await Promise.all([
@@ -191,7 +225,7 @@ function Panel({ email }: { email: string }) {
     ]);
 
     if (cartsRes.error) setError(cartsRes.error.message);
-    else setCarts((cartsRes.data ?? []) as Cart[]);
+    else setCarts((cartsRes.data ?? []) as unknown as Cart[]);
     if (!funnelRes.error) setFunnel((funnelRes.data ?? []) as FunnelRow[]);
     setUpdatedAt(new Date());
     setLoading(false);
@@ -204,6 +238,37 @@ function Panel({ email }: { email: string }) {
     const id = setInterval(load, 20_000);
     return () => clearInterval(id);
   }, [load, range]);
+
+  // Timeline d'un panier (booking_events) — chargée à l'ouverture du drawer.
+  useEffect(() => {
+    if (!openCart) return;
+    setEvents(null);
+    setEventsErr(null);
+    let alive = true;
+    supabase
+      .from("booking_events")
+      .select("id,status,step,event_at,received_at")
+      .eq("cart_id", openCart.cart_id)
+      .order("received_at", { ascending: true })
+      .limit(500)
+      .then(({ data, error }) => {
+        if (!alive) return;
+        if (error) setEventsErr(error.message);
+        else setEvents((data ?? []) as EventRow[]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [openCart]);
+
+  // Liste filtrée par la recherche (nom / e-mail / chambre).
+  const filteredCarts = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return carts;
+    return carts.filter((c) =>
+      [c.customer_name, c.customer_email, c.room_name, c.utm_source].some((v) => v?.toLowerCase().includes(q)),
+    );
+  }, [carts, query]);
 
   // ── Agrégats calculés depuis `carts` ──
   const kpi = useMemo(() => {
@@ -327,7 +392,7 @@ function Panel({ email }: { email: string }) {
           </div>
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="space-y-6">
           {/* Sources */}
           <section className="card p-5">
             <h2 className="font-display text-lg text-ink">Sources d'acquisition</h2>
@@ -362,28 +427,59 @@ function Panel({ email }: { email: string }) {
             </table>
           </section>
 
-          {/* Derniers paniers */}
+          {/* Paniers — liste enrichie, recherchable, cliquable */}
           <section className="card p-5">
-            <h2 className="font-display text-lg text-ink">Derniers paniers</h2>
-            <div className="mt-3 space-y-2">
-              {carts.slice(0, 12).map((c) => (
-                <div key={c.cart_id} className="flex items-center justify-between gap-3 border-t border-ink/5 py-2 text-sm">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-ink">{c.customer_email || c.customer_name || "Anonyme"}</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-display text-lg text-ink">
+                Paniers <span className="text-sm font-normal text-ink/45">· {filteredCarts.length}</span>
+              </h2>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Rechercher (nom, e-mail, chambre…)"
+                className="field-input w-full max-w-xs text-sm"
+              />
+            </div>
+            <p className="mt-1 text-xs text-ink/45">Clique un panier pour voir son historique de comportement.</p>
+            <div className="mt-3 max-h-[560px] divide-y divide-ink/5 overflow-y-auto">
+              {filteredCarts.map((c) => (
+                <button
+                  key={c.cart_id}
+                  onClick={() => setOpenCart(c)}
+                  className="group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left transition hover:bg-cream/70"
+                >
+                  <span className={`h-9 w-1 shrink-0 rounded-full ${statusColor(c)}`} aria-hidden></span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink">
+                      {c.customer_name || c.customer_email || "Anonyme"}
+                    </p>
                     <p className="truncate text-xs text-ink/50">
-                      {c.room_name || "—"} · {timeAgo(c.last_seen)} · {c.utm_source || "Direct"}
+                      {c.room_name || "—"}
+                      {c.check_in ? ` · ${fmtRange(c.check_in, c.check_out)}` : ""} · {c.utm_source || "Direct"}
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {c.total_grand ? <span className="text-ink/70">{eur(c.total_grand)}</span> : null}
-                    <StatusBadge cart={c} />
+                  <div className="hidden shrink-0 text-right sm:block">
+                    <p className="text-sm font-semibold tabular-nums text-ink">{c.total_grand ? eur(c.total_grand) : "—"}</p>
+                    <p className="text-[11px] text-ink/45">
+                      {stepLabel(c.last_step)} · {timeAgo(c.last_seen)}
+                    </p>
                   </div>
-                </div>
+                  <StatusBadge cart={c} />
+                  <span className="shrink-0 text-lg text-ink/25 transition group-hover:translate-x-0.5 group-hover:text-ink/45">›</span>
+                </button>
               ))}
-              {carts.length === 0 && <p className="text-sm text-ink/45">Aucun panier sur cette période.</p>}
+              {filteredCarts.length === 0 && (
+                <p className="py-4 text-sm text-ink/45">
+                  {carts.length ? "Aucun panier ne correspond à la recherche." : "Aucun panier sur cette période."}
+                </p>
+              )}
             </div>
           </section>
         </div>
+
+        {openCart && (
+          <CartDrawer cart={openCart} events={events} error={eventsErr} onClose={() => setOpenCart(null)} />
+        )}
       </main>
     </div>
   );
@@ -413,5 +509,172 @@ function StatusBadge({ cart }: { cart: Cart }) {
     : cart.payment_initiated
       ? ["Non abouti", "bg-amber-100 text-amber-700"]
       : ["Abandonné", "bg-ink/10 text-ink/60"];
-  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>{label}</span>;
+  return <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>{label}</span>;
+}
+
+// ── Drawer : fiche panier + timeline de comportement ────────────────────────
+function CartDrawer({
+  cart,
+  events,
+  error,
+  onClose,
+}: {
+  cart: Cart;
+  events: EventRow[] | null;
+  error: string | null;
+  onClose: () => void;
+}) {
+  const [entered, setEntered] = useState(false);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setEntered(true));
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setEntered(false);
+        setTimeout(onClose, 240);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+  const close = () => {
+    setEntered(false);
+    setTimeout(onClose, 240);
+  };
+
+  const name = cart.customer_name || cart.customer_email || "Panier anonyme";
+  const durationMin =
+    events && events.length > 1
+      ? Math.round(
+          (new Date(events[events.length - 1].received_at).getTime() - new Date(events[0].received_at).getTime()) /
+            60000,
+        )
+      : null;
+
+  return (
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={`Panier — ${name}`}>
+      <div
+        onClick={close}
+        className={`absolute inset-0 bg-ink/50 transition-opacity duration-300 ${entered ? "opacity-100" : "opacity-0"}`}
+      ></div>
+      <div
+        className={`absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-cream shadow-float transition-transform duration-300 ease-out ${
+          entered ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3 bg-teal-deep px-5 py-4 text-cream">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cream/60">Panier</p>
+            <h2 className="truncate font-display text-xl">{name}</h2>
+            {cart.customer_email && cart.customer_name && (
+              <p className="truncate text-xs text-cream/70">{cart.customer_email}</p>
+            )}
+          </div>
+          <button
+            onClick={close}
+            aria-label="Fermer"
+            className="-mr-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-cream/70 transition hover:bg-cream/10 hover:text-cream"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5">
+          <div className="mb-4">
+            <StatusBadge cart={cart} />
+          </div>
+
+          <dl className="grid grid-cols-1 gap-y-2.5 text-sm">
+            <Fact
+              label="Séjour"
+              value={
+                cart.check_in
+                  ? `${fmtRange(cart.check_in, cart.check_out)}${cart.nights ? ` · ${cart.nights} nuit${cart.nights > 1 ? "s" : ""}` : ""}`
+                  : "—"
+              }
+            />
+            <Fact
+              label="Voyageurs"
+              value={
+                cart.adults
+                  ? `${cart.adults} adulte${cart.adults > 1 ? "s" : ""}${cart.children ? `, ${cart.children} enfant${cart.children > 1 ? "s" : ""}` : ""}`
+                  : "—"
+              }
+            />
+            <Fact label="Chambre" value={cart.room_name || "—"} />
+            <Fact label="Tarif" value={cart.rate_name || "—"} />
+            <Fact label="Total" value={cart.total_grand ? eur(cart.total_grand) : "—"} strong />
+            <Fact
+              label="Source"
+              value={[cart.utm_source || "Direct", cart.utm_medium, cart.utm_campaign].filter(Boolean).join(" · ")}
+            />
+            <Fact label="Langue" value={cart.lang ? cart.lang.toUpperCase() : "—"} />
+            <Fact label="Contact" value={[cart.customer_email, cart.customer_phone].filter(Boolean).join(" · ") || "—"} />
+            <Fact label="Vu" value={`${fmtDateTime(cart.first_seen)} → ${timeAgo(cart.last_seen)}`} />
+            {cart.reservation_group_id && <Fact label="Résa Mews" value={cart.reservation_group_id} mono />}
+          </dl>
+
+          <div className="mt-6">
+            <div className="flex items-baseline justify-between">
+              <h3 className="font-display text-lg text-ink">Comportement</h3>
+              {durationMin != null && (
+                <span className="text-xs text-ink/45">
+                  {durationMin === 0 ? "< 1 min" : `${durationMin} min`} sur le site
+                </span>
+              )}
+            </div>
+
+            {error && (
+              <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+                Impossible de charger l'historique. Ajoute la policy de lecture sur <code>booking_events</code> (voir
+                setup).
+              </div>
+            )}
+            {!error && events === null && <p className="mt-3 text-sm text-ink/45">Chargement…</p>}
+            {!error && events?.length === 0 && <p className="mt-3 text-sm text-ink/45">Aucun événement enregistré.</p>}
+
+            {events && events.length > 0 && (
+              <ol className="mt-4">
+                {events.map((e, i) => {
+                  const m = eventMeta(e.status, e.step);
+                  const last = i === events.length - 1;
+                  return (
+                    <li key={e.id} className="relative flex gap-3 pb-4">
+                      {!last && <span className="absolute left-[5px] top-3 h-full w-px bg-ink/12" aria-hidden></span>}
+                      <span
+                        className={`relative z-10 mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${m.dot} ring-4 ring-cream`}
+                      ></span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-ink">{m.label}</p>
+                        <p className="text-xs tabular-nums text-ink/45">{fmtClock(e.event_at || e.received_at)}</p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Fact({ label, value, strong, mono }: { label: string; value: string; strong?: boolean; mono?: boolean }) {
+  return (
+    <div className="flex justify-between gap-4 border-b border-ink/5 pb-2">
+      <dt className="shrink-0 text-ink/50">{label}</dt>
+      <dd
+        className={`min-w-0 truncate text-right ${
+          strong ? "font-display text-base text-teal-deep" : mono ? "font-mono text-xs text-ink/70" : "font-medium text-ink"
+        }`}
+      >
+        {value}
+      </dd>
+    </div>
+  );
 }
