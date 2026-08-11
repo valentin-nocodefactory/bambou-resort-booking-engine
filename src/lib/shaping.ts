@@ -213,11 +213,12 @@ export function cheapestDrinkProduct(products: ShapedProduct[], property: string
 }
 
 // Repas déjà « inclus » à l'Hôtel Bambou : la demi-pension y comprend le petit-déjeuner
-// ET le dîner → ces extras sont redondants et MASQUÉS quand la chambre choisie appartient
-// à l'Hôtel Bambou. Exception : le petit-déjeuner FLOTTANT (expérience premium) reste
-// proposé. Le déjeuner / pension complète (midi) N'est PAS inclus → conservé. Culture
-// Créole & Villas (demi-pension NON incluse) montrent tous les extras.
-const MEAL_KEEP = /flottant|floating/i; // exception : toujours gardé même à l'Hôtel
+// ET le dîner → ces extras STANDARD sont redondants et MASQUÉS quand la chambre choisie
+// appartient à l'Hôtel Bambou. Exceptions GARDÉES (expériences premium, pas un simple
+// repas) : petit-déjeuner FLOTTANT en mer et dîner SUR LA PLAGE. Le déjeuner / pension
+// complète (midi) N'est PAS inclus → conservé. Culture Créole & Villas (demi-pension NON
+// incluse) montrent tous les extras.
+const MEAL_KEEP = /flottant|floating|plage|beach/i; // expériences premium : gardées même à l'Hôtel
 const BREAKFAST_OR_DINNER = /petit.?d[ée]j|breakfast|fr[üu]hst[üu]ck|d[îi]ner|dinner/i;
 
 export function isHotelIncludedMeal(p: ShapedProduct): boolean {
