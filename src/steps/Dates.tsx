@@ -29,12 +29,13 @@ const PROPERTY_OPTIONS: PropertyOption[] = [
 // Écran de recherche STANDALONE (pas de hero) — moteur de réservation seul,
 // entouré d'éléments de réassurance / conversion. Style Airbnb.
 export function Dates() {
-  const { checkIn, checkOut, adults, children, properties, setSearch, goTo } = useBooking();
+  const { checkIn, checkOut, adults, children, infants, properties, setSearch, goTo } = useBooking();
   const [form, setForm] = useState({
     checkIn: checkIn || "",
     checkOut: checkOut || "",
     adults: adults || 2,
     children: children || 0,
+    infants: infants || 0,
     properties: properties?.length ? properties : DEFAULT_PROPERTIES,
   });
   const [error, setError] = useState("");
@@ -51,6 +52,7 @@ export function Dates() {
       checkOut: form.checkOut,
       adults: form.adults,
       children: form.children,
+      infants: form.infants,
       voucherCode: "",
       properties: form.properties,
     });
@@ -97,7 +99,8 @@ export function Dates() {
             <GuestsField
               adults={form.adults}
               children={form.children}
-              onChange={(a, c) => setForm((f) => ({ ...f, adults: a, children: c }))}
+              infants={form.infants}
+              onChange={(a, c, i) => setForm((f) => ({ ...f, adults: a, children: c, infants: i }))}
             />
 
             {/* Rechercher */}
@@ -251,18 +254,22 @@ function PropertiesField({
 }
 
 // Sélecteur de voyageurs (popover avec compteurs).
+// 3 catégories : Adultes (13+), Enfants (4-12, comptés), Bébés en berceau (–4 ans,
+// gratuits ET NON décomptés → affichés à part + note « kit bébé »).
 function GuestsField({
   adults,
   children,
+  infants,
   onChange,
 }: {
   adults: number;
   children: number;
-  onChange: (adults: number, children: number) => void;
+  infants: number;
+  onChange: (adults: number, children: number, infants: number) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const total = adults + children;
+  const total = adults + children; // bébés non décomptés → hors total « voyageurs »
 
   useEffect(() => {
     if (!open) return;
@@ -283,14 +290,25 @@ function GuestsField({
           <span className="block text-[11px] font-semibold uppercase tracking-wide text-teal-deep/60">{t("dates.guests")}</span>
           <span className="block truncate text-sm font-medium text-ink">
             {t("dates.guestsCount", { count: total })}
+            {infants > 0 ? ` · ${t("dates.babiesShort", { count: infants })}` : ""}
           </span>
         </span>
       </button>
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-72 animate-scale-in rounded-2xl border border-ink/10 bg-white p-4 shadow-float">
-          <Stepper label={t("dates.adults")} sub={t("dates.adultsSub")} value={adults} min={1} max={12} onChange={(v) => onChange(v, children)} />
+        <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2.5rem)] animate-scale-in rounded-2xl border border-ink/10 bg-white p-4 shadow-float">
+          <Stepper label={t("dates.adults")} sub={t("dates.adultsSub")} value={adults} min={1} max={12} onChange={(v) => onChange(v, children, infants)} />
           <div className="my-3 h-px bg-ink/10" />
-          <Stepper label={t("dates.children")} sub={t("dates.childrenSub")} value={children} min={0} max={10} onChange={(v) => onChange(adults, v)} />
+          <Stepper label={t("dates.children")} sub={t("dates.childrenSub")} value={children} min={0} max={10} onChange={(v) => onChange(adults, v, infants)} />
+          <div className="my-3 h-px bg-ink/10" />
+          <Stepper label={t("dates.babies")} sub={t("dates.babiesSub")} value={infants} min={0} max={6} onChange={(v) => onChange(adults, children, v)} />
+          {infants > 0 && (
+            <div className="mt-3 rounded-xl border border-turquoise/30 bg-turquoise/5 p-3">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-teal-deep">
+                <span aria-hidden>👶</span> {t("dates.babyKitTitle")}
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-marine/70">{t("dates.babyKitNote")}</p>
+            </div>
+          )}
           <button type="button" onClick={() => setOpen(false)} className="btn-primary mt-4 w-full py-2 text-sm">
             {t("dates.guestsDone")}
           </button>

@@ -79,6 +79,7 @@ interface BookingState {
   checkOut: string;
   adults: number;
   children: number;
+  infants: number; // bébés en berceau (0-3) — gratuits ET non décomptés de l'occupation
   voucherCode: string;
   properties: string[]; // hébergements cochés (hotel/creole/villas)
   roomId: string | null;
@@ -102,6 +103,7 @@ function readUrl(): Partial<BookingState> {
   if (q.get("out")) out.checkOut = q.get("out")!;
   if (q.has("adults")) out.adults = num("adults", 2);
   if (q.has("children")) out.children = num("children", 0);
+  if (q.has("babies")) out.infants = num("babies", 0);
   if (q.get("voucher")) out.voucherCode = q.get("voucher")!;
   if (q.get("props")) out.properties = q.get("props")!.split(",").filter(Boolean);
   if (q.get("cat")) out.roomId = q.get("cat");
@@ -138,6 +140,7 @@ function writeUrl(s: BookingState, g: Guest) {
   if (s.checkOut) q.set("out", s.checkOut);
   q.set("adults", String(s.adults));
   if (s.children) q.set("children", String(s.children));
+  if (s.infants) q.set("babies", String(s.infants));
   if (s.voucherCode) q.set("voucher", s.voucherCode);
   if (s.properties.length && s.properties.length < DEFAULT_PROPERTIES.length) q.set("props", s.properties.join(","));
   if (s.step !== "dates") q.set("step", s.step);
@@ -186,7 +189,9 @@ interface BookingContextValue extends BookingState {
   grandTotal: number;
   // actions
   setSearch: (
-    p: Partial<Pick<BookingState, "checkIn" | "checkOut" | "adults" | "children" | "voucherCode" | "properties">>,
+    p: Partial<
+      Pick<BookingState, "checkIn" | "checkOut" | "adults" | "children" | "infants" | "voucherCode" | "properties">
+    >,
   ) => void;
   selectRoomRate: (room: ShapedRoom, rate: ShapedRate) => void;
   hydrateSelection: (room: ShapedRoom | null, rate: ShapedRate | null) => void;
@@ -214,6 +219,7 @@ const defaults: BookingState = {
   checkOut: "",
   adults: 2,
   children: 0,
+  infants: 0,
   voucherCode: "",
   properties: DEFAULT_PROPERTIES,
   roomId: null,
@@ -284,6 +290,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         checkOut: state.checkOut,
         adults: state.adults,
         children: state.children,
+        infants: state.infants,
         voucherCode: state.voucherCode,
       })
       .then((res) => {
@@ -319,6 +326,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
           (p.checkOut !== undefined && p.checkOut !== s.checkOut) ||
           (p.adults !== undefined && p.adults !== s.adults) ||
           (p.children !== undefined && p.children !== s.children) ||
+          (p.infants !== undefined && p.infants !== s.infants) ||
           (p.properties !== undefined && p.properties.join(",") !== s.properties.join(","));
         if (searchChanged) {
           setSelectedRoom(null);
@@ -447,6 +455,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       nights: nightsCount,
       adults: state.adults,
       children: state.children,
+      infants: state.infants,
     },
     room: selectedRoom ? { categoryId: selectedRoom.categoryId, name: selectedRoom.name } : null,
     rate: selectedRate

@@ -17,9 +17,19 @@ interface InReservation {
   rateId?: string;
   adults?: number;
   children?: number;
+  infants?: number; // bébés en berceau — non décomptés (pas de champ Mews) → consignés en note
   productIds?: string[];
   voucherCode?: string;
   notes?: string;
+}
+
+// Bébé en berceau : aucun champ « InfantCount » dans reservationGroups/create (Mews ne
+// compte AdultCount + ChildCount que). On consigne donc le bébé en note lisible pour la
+// réception, dans la langue de la réservation.
+function babyNote(count: number, lang: "fr-FR" | "en-GB"): string {
+  return lang === "en-GB"
+    ? `${count} baby/babies in a cot — free, not counted in occupancy (baby kit requested)`
+    : `${count} bébé(s) en berceau — gratuit, non décompté (kit bébé demandé)`;
 }
 interface Body {
   customer?: InCustomer;
@@ -73,6 +83,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const Customer = cleanCustomer(b.customer);
   if (!Customer) return bad("invalid_customer");
 
+  // Langue de la réservation : page de paiement + e-mails Mews + notes auto-générées.
+  const LanguageCode = mewsLang(b.languageCode);
+
   const Reservations = (Array.isArray(b.reservations) ? b.reservations : [])
     .filter(
       (r) =>
@@ -83,23 +96,30 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         isIsoDate(r.endUtc) &&
         (r.endUtc as string) > (r.startUtc as string),
     )
-    .map((r) => ({
-      RoomCategoryId: r.roomCategoryId,
-      StartUtc: r.startUtc,
-      EndUtc: r.endUtc,
-      RateId: r.rateId,
-      AdultCount: clampInt(r.adults, 1, 30, 2),
-      ChildCount: clampInt(r.children, 0, 20, 0),
-      ...(Array.isArray(r.productIds) && r.productIds.length
-        ? { ProductIds: r.productIds.filter((x) => typeof x === "string") }
-        : {}),
-      ...(r.voucherCode ? { VoucherCode: String(r.voucherCode) } : {}),
-      ...(r.notes ? { Notes: String(r.notes).slice(0, 1000) } : {}),
-    }));
+    .map((r) => {
+      // Bébés en berceau : non décomptés (jamais dans AdultCount/ChildCount) → note résa.
+      const infants = clampInt(r.infants, 0, 10, 0);
+      const Notes = [r.notes ? String(r.notes) : "", infants > 0 ? babyNote(infants, LanguageCode) : ""]
+        .filter(Boolean)
+        .join(" · ")
+        .slice(0, 1000);
+      return {
+        RoomCategoryId: r.roomCategoryId,
+        StartUtc: r.startUtc,
+        EndUtc: r.endUtc,
+        RateId: r.rateId,
+        AdultCount: clampInt(r.adults, 1, 30, 2),
+        ChildCount: clampInt(r.children, 0, 20, 0),
+        ...(Array.isArray(r.productIds) && r.productIds.length
+          ? { ProductIds: r.productIds.filter((x) => typeof x === "string") }
+          : {}),
+        ...(r.voucherCode ? { VoucherCode: String(r.voucherCode) } : {}),
+        ...(Notes ? { Notes } : {}),
+      };
+    });
   if (!Reservations.length) return bad("no_valid_reservations");
 
   const Booker = cleanCustomer(b.booker);
-  const LanguageCode = mewsLang(b.languageCode);
 
   const res = await mewsJson<any>(env, "reservationGroups/create", {
     // Config de l'hébergement choisi (Bambou/Créole/Villas) ; défaut = config primaire.

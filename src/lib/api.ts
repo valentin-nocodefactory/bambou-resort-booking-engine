@@ -78,6 +78,7 @@ export interface SearchParams {
   checkOut: string;
   adults: number;
   children: number;
+  infants: number; // bébés en berceau — gratuits + non décomptés
   voucherCode?: string;
   properties?: string[]; // hébergements cochés (hotel/creole/villas)
 }
@@ -98,6 +99,7 @@ export interface ReservationLine {
   rateId: string;
   adults: number;
   children: number;
+  infants?: number; // bébés en berceau — non décomptés, consignés en note à la résa
   productIds?: string[];
   voucherCode?: string;
   notes?: string;
@@ -118,6 +120,7 @@ export const api = {
         endUtc: toUtc(p.checkOut),
         adults: p.adults,
         children: p.children,
+        infants: p.infants,
         languageCode: mewsLang(),
         ...(p.voucherCode ? { voucherCode: p.voucherCode } : {}),
         ...(p.properties?.length ? { properties: p.properties } : {}),

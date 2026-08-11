@@ -17,6 +17,7 @@ interface Body {
   endUtc?: string;
   adults?: number;
   children?: number;
+  infants?: number; // bébés en berceau — gratuits ET non décomptés (cf. occupancyForProperty)
   properties?: string[]; // clés d'hébergements (hotel/creole/villas). Vide/absent = tous.
   voucherCode?: string;
   languageCode?: string; // fr-FR | en-GB — localise noms/descriptions de chambres & tarifs.
@@ -32,6 +33,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
   const adults = clampInt(b.adults, 1, 30, 2);
   const children = clampInt(b.children, 0, 20, 0);
+  // Bébés en berceau : gratuits ET non décomptés → ne filtrent AUCUN hébergement (à la
+  // différence des enfants). Là où une catégorie Mews existe (Hôtel), le bébé est envoyé
+  // sans décrémenter la dispo ; ailleurs il est simplement ignoré ici (note à la résa).
+  const infants = clampInt(b.infants, 0, 10, 0);
 
   // Hébergements demandés (whitelist stricte). Vide/absent → tous.
   const requested =
@@ -55,7 +60,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         EndUtc: b.endUtc,
         CurrencyCode: "EUR",
         LanguageCode,
-        OccupancyData: occupancyForProperty(prop, adults, children),
+        OccupancyData: occupancyForProperty(prop, adults, children, infants),
         ...(voucher ? { VoucherCode: voucher } : {}),
       }),
     ),

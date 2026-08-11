@@ -20,6 +20,7 @@ export function Results() {
     checkOut,
     adults,
     children,
+    infants,
     voucherCode,
     properties,
     nightsCount,
@@ -58,14 +59,14 @@ export function Results() {
     setLoading(true);
     setError(null);
     api
-      .availability({ checkIn, checkOut, adults, children, voucherCode })
+      .availability({ checkIn, checkOut, adults, children, infants, voucherCode })
       .then((res) => alive && setData(res))
       .catch((e) => alive && setError(errorMessage(e)))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [checkIn, checkOut, adults, children, voucherCode, reloadKey]);
+  }, [checkIn, checkOut, adults, children, infants, voucherCode, reloadKey]);
 
   // Toutes les chambres dispos (tous hébergements), taguées par `property`.
   const allRooms = useMemo(() => (data ? buildRooms(data, hotel) : []), [data, hotel]);
@@ -132,6 +133,7 @@ export function Results() {
             <IconUsers className="h-4 w-4 text-turquoise" />
             {t("results.adults", { count: adults })}
             {children > 0 ? `, ${t("results.children", { count: children })}` : ""}
+            {infants > 0 ? `, ${t("results.infants", { count: infants })}` : ""}
           </span>
         </div>
         <button type="button" onClick={() => goTo("dates")} className="btn-link">
