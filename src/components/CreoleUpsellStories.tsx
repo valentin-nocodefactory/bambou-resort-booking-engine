@@ -63,8 +63,10 @@ export function CreoleUpsellStories() {
         <p className="mt-0.5 text-xs text-ink/55">{t("creoleUp.subtitle")}</p>
       </div>
 
-      {/* Rangée scrollable de cartes verticales (stories). */}
-      <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
+      {/* Rangée scrollable de cartes verticales (stories). px/py = marge de sécurité pour
+          que l'anneau de sélection et l'ombre au hover ne soient PAS rognés par le scroll
+          (overflow-x force le clip vertical) ; -mx compense l'alignement (StepLayout px-5). */}
+      <div className="-mx-2 flex gap-3 overflow-x-auto px-2 py-3">
         {offers.map((o) => {
           const on = isOn(o);
           return (

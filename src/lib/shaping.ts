@@ -135,7 +135,14 @@ export function buildRooms(avail: AvailabilityResponse, hotel: HotelConfig | nul
 export function upgradeRooms(rooms: ShapedRoom[], current: ShapedRoom | null, currentTotal: number): ShapedRoom[] {
   if (!current) return [];
   return rooms
-    .filter((r) => r.categoryId !== current.categoryId && r.fromGross != null && r.fromGross > currentTotal + 0.5)
+    .filter(
+      (r) =>
+        r.categoryId !== current.categoryId &&
+        // Surclassement DANS le même groupe (Hôtel Bambou / Culture Créole / Villas) — pas de croisement.
+        r.property === current.property &&
+        r.fromGross != null &&
+        r.fromGross > currentTotal + 0.5,
+    )
     .sort((a, b) => (a.fromGross ?? 0) - (b.fromGross ?? 0))
     .slice(0, 4);
 }
