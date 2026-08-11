@@ -12,7 +12,7 @@ import { api } from "../lib/api";
 import { getLang } from "../lib/lang";
 import { getUtms } from "../lib/utm";
 import { nights as countNights } from "../lib/format";
-import { buildRooms, shapeProducts, cheapestDrinkProduct } from "../lib/shaping";
+import { buildRooms, shapeProducts, cheapestDrinkProduct, mandatoryReveillon, isReveillonProduct } from "../lib/shaping";
 import type { HotelConfig, ReservationCreateResult, ShapedProduct, ShapedRate, ShapedRoom } from "../types/mews";
 
 export type Step = "dates" | "results" | "guest" | "upgrade" | "extras" | "payment" | "confirmation";
@@ -448,11 +448,18 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     const u = readUrl();
     const g = readGuest();
     // Visite fraîche : aucune sélection ni info encodée dans l'URL → on peut pré-remplir.
+    // (Un lien restauré avec ?nat=… déjà présent n'est PAS écrasé.)
     const fresh = !u.roomId && !u.rgid && (!u.step || u.step === "dates") && !g.nationalityCode;
-    if (!fresh) return;
     let alive = true;
+    // On appelle toujours /geo (léger, no-store) pour tracer le pays détecté en debug.
     void api.geo().then((r) => {
-      if (!alive || !r.country) return;
+      // eslint-disable-next-line no-console
+      console.log(
+        `[geo] pays détecté (IP): ${r.country ?? "—"} · visite fraîche: ${fresh} · nationalité en cours: ${
+          g.nationalityCode || "FR (défaut)"
+        }`,
+      );
+      if (!alive || !fresh || !r.country) return;
       // Indicatif : on n'écrase pas un choix explicite (uniquement si encore défaut FR).
       setGuestState((gg) => (gg.nationalityCode === "FR" ? { ...gg, nationalityCode: r.country as string } : gg));
       if (r.country === "US" || r.country === "CA") {
@@ -475,6 +482,28 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     naDrinkDoneRef.current = true;
     setState((s) => (s.productIds.includes(drink.id) ? s : { ...s, productIds: [...s.productIds, drink.id] }));
   }, [selectedRoom, products]);
+
+  // Réveillons OBLIGATOIRES : Noël (nuit du 24/12) et Saint-Sylvestre (nuit du 31/12)
+  // sont auto-inclus & non décochables si le séjour couvre la soirée, et retirés sinon.
+  // Rattachés à l'hébergement de la chambre choisie → réconcilié à chaque changement.
+  useEffect(() => {
+    if (!products.length) return;
+    const prop = selectedRoom?.property ?? null;
+    const forced = [
+      mandatoryReveillon(products, prop, "noel", state.checkIn, state.checkOut),
+      mandatoryReveillon(products, prop, "sylvestre", state.checkIn, state.checkOut),
+    ]
+      .filter((p): p is ShapedProduct => !!p)
+      .map((p) => p.id);
+    const allReveillonIds = products.filter(isReveillonProduct).map((p) => p.id);
+    setState((s) => {
+      // Retire tout réveillon NON forcé (dates/hébergement KO) ; ajoute les forcés manquants.
+      const kept = s.productIds.filter((id) => !allReveillonIds.includes(id) || forced.includes(id));
+      const merged = [...kept, ...forced.filter((id) => !kept.includes(id))];
+      const same = merged.length === s.productIds.length && merged.every((id, i) => id === s.productIds[i]);
+      return same ? s : { ...s, productIds: merged };
+    });
+  }, [products, selectedRoom, state.checkIn, state.checkOut]);
 
   // ── dérivés ────────────────────────────────────────────────────────────────
   const nightsCount = useMemo(

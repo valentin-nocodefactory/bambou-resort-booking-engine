@@ -227,6 +227,42 @@ export function isHotelIncludedMeal(p: ShapedProduct): boolean {
   return BREAKFAST_OR_DINNER.test(hay);
 }
 
+// ── Réveillons obligatoires selon les dates ─────────────────────────────────
+// Le réveillon de Noël (soir du 24/12) et de la Saint-Sylvestre (soir du 31/12) ne sont
+// proposés que si le séjour couvre la nuit concernée — et alors ils sont AUTO-inclus &
+// non décochables. Hors de ces dates : masqués et retirés. Rattachés à un hébergement.
+const REVEILLON_NOEL = /r[ée]veillon.*no[eë]l/i;
+const REVEILLON_SYLVESTRE = /r[ée]veillon.*sylvestre/i;
+export const isReveillonProduct = (p: ShapedProduct): boolean =>
+  REVEILLON_NOEL.test(p.name) || REVEILLON_SYLVESTRE.test(p.name);
+
+// La nuit du (mois/jour) est-elle passée sur place ? Vrai si cette date fait partie des
+// nuits du séjour [checkIn, checkOut) — c.-à-d. qu'on est présent CE soir-là.
+export function stayCoversNight(checkIn: string, checkOut: string, month: number, day: number): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}/.test(checkIn) || !/^\d{4}-\d{2}-\d{2}/.test(checkOut)) return false;
+  const end = new Date(`${checkOut}T00:00:00`);
+  const d = new Date(`${checkIn}T00:00:00`);
+  for (let i = 0; i < 400 && d < end; i++) {
+    if (d.getMonth() + 1 === month && d.getDate() === day) return true;
+    d.setDate(d.getDate() + 1);
+  }
+  return false;
+}
+
+// Produit réveillon OBLIGATOIRE pour ce séjour + hébergement, ou null si les dates ne
+// couvrent pas la soirée (24/12 pour Noël, 31/12 pour la Saint-Sylvestre).
+export function mandatoryReveillon(
+  products: ShapedProduct[],
+  property: string | null,
+  kind: "noel" | "sylvestre",
+  checkIn: string,
+  checkOut: string,
+): ShapedProduct | null {
+  if (!stayCoversNight(checkIn, checkOut, 12, kind === "noel" ? 24 : 31)) return null;
+  const re = kind === "noel" ? REVEILLON_NOEL : REVEILLON_SYLVESTRE;
+  return products.find((p) => (!p.property || p.property === property) && re.test(p.name)) ?? null;
+}
+
 export function productCategory(p: ShapedProduct): { key: string; label: string; order: number } {
   const hay = `${p.name} ${p.description}`;
   for (let i = 0; i < PRODUCT_CATEGORIES.length; i++) {
