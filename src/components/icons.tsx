@@ -37,6 +37,15 @@ export const IconCheck = (p: SVGProps<SVGSVGElement>) => (
     <path d="m5 13 4 4L19 7" />
   </svg>
 );
+// Cloche de service (dôme qui couvre l'assiette) — pour le dîner.
+export const IconCloche = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M3 18h18" />
+    <path d="M5 18a7 7 0 0 1 14 0" />
+    <path d="M12 11V8.5" />
+    <circle cx="12" cy="7.3" r="1.1" />
+  </svg>
+);
 export const IconArrowRight = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}>
     <path d="M5 12h14M13 6l6 6-6 6" />

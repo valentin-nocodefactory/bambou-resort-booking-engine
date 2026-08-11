@@ -3,7 +3,7 @@ import { spaceLabel } from "../lib/shaping";
 import type { ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
 import { FavoriteBadge, HotBadge, SavingsBadge, ScarcityBadge, ViewersNudge, seeded } from "./conversion";
-import { IconArrowRight, IconBed, IconCheck, IconUsers } from "./icons";
+import { IconArrowRight, IconBed, IconCheck, IconCloche, IconUsers } from "./icons";
 import { t } from "../i18n";
 
 // Libellés d'hébergement (pour le badge sur la carte, quand plusieurs sont affichés).
@@ -102,7 +102,7 @@ export function RoomCard({
                 <span aria-hidden>🥐</span> {t("roomCard.breakfastIncl")}
               </span>
               <span className="inline-flex w-fit items-center gap-1 rounded-full bg-turquoise/10 px-2.5 py-1 text-[11px] font-semibold text-teal-deep">
-                <span aria-hidden>🔔</span> {t("roomCard.dinnerIncl")}
+                <IconCloche className="h-3.5 w-3.5" /> {t("roomCard.dinnerIncl")}
               </span>
             </>
           )}

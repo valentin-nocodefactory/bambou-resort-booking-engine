@@ -23,6 +23,20 @@ const grossOf = (a: { EUR?: { GrossValue: number | null } } | undefined | null):
   return typeof g === "number" ? g : null;
 };
 
+// Taxe de séjour incluse dans le tarif = ligne(s) à TVA 0 % du breakdown Mews (vérifié :
+// Hôtel 1,20 € / Créole 1,70 € par adulte/nuit). TVA 0 % → gross = net. Renvoyée telle
+// quelle par Mews (jamais « en dur ») pour l'occupation recherchée. null si absente.
+function taxeSejourGross(amount: unknown): number | null {
+  const items = (
+    amount as { EUR?: { Breakdown?: { Items?: { TaxRateCode?: string; NetValue?: number; TaxValue?: number }[] } } } | null
+  )?.EUR?.Breakdown?.Items;
+  if (!Array.isArray(items)) return null;
+  const gross = items
+    .filter((i) => typeof i?.TaxRateCode === "string" && /-0%$/.test(i.TaxRateCode))
+    .reduce((s, i) => s + (i.NetValue ?? 0) + (i.TaxValue ?? 0), 0);
+  return gross > 0 ? +gross.toFixed(2) : null;
+}
+
 // Tarifs NON réservables depuis ce booking engine (ex. « Tarif Partenaires Actif
 // (CSE,COS,Asso.) », réservé à un canal dédié) → exclus des résultats.
 const EXCLUDED_RATE = /\bcse\b|partenaire|\bcos\b/i;
@@ -37,7 +51,10 @@ export function buildRooms(avail: AvailabilityResponse, hotel: HotelConfig | nul
 
   for (const rca of avail.RoomCategoryAvailabilities) {
     // Meilleur prix par tarif (min sur toutes les occupations renvoyées).
-    const byRate = new Map<string, { total: number | null; perNight: number | null; max: number | null }>();
+    const byRate = new Map<
+      string,
+      { total: number | null; perNight: number | null; max: number | null; citySejour: number | null }
+    >();
 
     for (const occ of rca.RoomOccupancyAvailabilities ?? []) {
       for (const p of occ.Pricing ?? []) {
@@ -45,9 +62,10 @@ export function buildRooms(avail: AvailabilityResponse, hotel: HotelConfig | nul
         if (total == null) continue; // ⚠️ ignorer les GrossValue null
         const perNight = grossOf(p.Price?.AverageAmountPerNight);
         const max = grossOf(p.MaxPrice?.TotalAmount);
+        const citySejour = taxeSejourGross(p.Price?.TotalAmount);
         const prev = byRate.get(p.RateId);
         if (!prev || (prev.total != null && total < prev.total)) {
-          byRate.set(p.RateId, { total, perNight, max });
+          byRate.set(p.RateId, { total, perNight, max, citySejour });
         }
       }
     }
@@ -68,6 +86,7 @@ export function buildRooms(avail: AvailabilityResponse, hotel: HotelConfig | nul
         perNightGross: price.perNight,
         // n'afficher le prix barré que s'il est strictement supérieur au prix réel
         maxGross: price.max != null && price.total != null && price.max > price.total ? price.max : null,
+        citySejour: price.citySejour,
         settlement: {
           type: group?.SettlementType ?? "Automatic",
           action: group?.SettlementAction ?? "ChargeCreditCard",

@@ -165,6 +165,9 @@ export interface ShapedRate {
   totalGross: number | null;
   perNightGross: number | null;
   maxGross: number | null; // prix barré (avant remise) si présent
+  // Taxe de séjour incluse dans le tarif (ligne TVA 0 % renvoyée par Mews), pour
+  // l'occupation recherchée. null si aucune. Sert à détailler le prix sur le récap.
+  citySejour: number | null;
   settlement: { type: string; action: string; isAutomatic: boolean };
 }
 
