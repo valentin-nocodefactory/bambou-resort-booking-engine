@@ -91,9 +91,22 @@ export function RoomCard({
           <ViewersNudge seed={room.categoryId} />
         </div>
 
-        <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-          <IconCheck className="h-3.5 w-3.5" /> {t("roomCard.noFees")}
-        </span>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+            <IconCheck className="h-3.5 w-3.5" /> {t("roomCard.noFees")}
+          </span>
+          {/* Hôtel Bambou : demi-pension incluse dans le tarif. */}
+          {room.property === "hotel" && (
+            <>
+              <span className="inline-flex w-fit items-center gap-1 rounded-full bg-turquoise/10 px-2.5 py-1 text-[11px] font-semibold text-teal-deep">
+                <IconCheck className="h-3.5 w-3.5" /> {t("roomCard.breakfastIncl")}
+              </span>
+              <span className="inline-flex w-fit items-center gap-1 rounded-full bg-turquoise/10 px-2.5 py-1 text-[11px] font-semibold text-teal-deep">
+                <IconCheck className="h-3.5 w-3.5" /> {t("roomCard.dinnerIncl")}
+              </span>
+            </>
+          )}
+        </div>
 
         <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-4">
           <div>

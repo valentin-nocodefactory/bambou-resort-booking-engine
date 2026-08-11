@@ -4,6 +4,7 @@ import { ApiError, api, errorMessage } from "../lib/api";
 import { eur, fmtDate, toUtc } from "../lib/format";
 import { StepLayout } from "../components/StepLayout";
 import { SecureBadge } from "../components/DataBadge";
+import { StayBreakdown } from "../components/StayBreakdown";
 import { HoldTimer, TrustRow } from "../components/conversion";
 import { IconArrowRight, IconCheck, IconShield } from "../components/icons";
 import { t } from "../i18n";
@@ -137,6 +138,14 @@ export function Payment() {
               value={`${guest.firstName} ${guest.lastName}`.trim() || "—"}
             />
           </dl>
+
+          {/* Détail du prix : hébergement + demi-pension incluse + taxe de séjour (Hôtel). */}
+          <div className="mt-4 border-t border-ink/10 pt-4">
+            <p className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-ink/50">
+              {t("payment.priceDetail")}
+            </p>
+            <StayBreakdown />
+          </div>
         </div>
 
         {/* Mode de règlement */}
