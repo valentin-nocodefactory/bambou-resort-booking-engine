@@ -99,10 +99,10 @@ export function RoomCard({
           {room.property === "hotel" && (
             <>
               <span className="inline-flex w-fit items-center gap-1 rounded-full bg-turquoise/10 px-2.5 py-1 text-[11px] font-semibold text-teal-deep">
-                <IconCheck className="h-3.5 w-3.5" /> {t("roomCard.breakfastIncl")}
+                <span aria-hidden>🥐</span> {t("roomCard.breakfastIncl")}
               </span>
               <span className="inline-flex w-fit items-center gap-1 rounded-full bg-turquoise/10 px-2.5 py-1 text-[11px] font-semibold text-teal-deep">
-                <IconCheck className="h-3.5 w-3.5" /> {t("roomCard.dinnerIncl")}
+                <span aria-hidden>🔔</span> {t("roomCard.dinnerIncl")}
               </span>
             </>
           )}

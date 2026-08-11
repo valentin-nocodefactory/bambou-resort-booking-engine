@@ -21,8 +21,8 @@ export function StayBreakdown() {
       <Row label={t("breakdown.accommodation", { nights: nightsCount })} value={eur(accommodation)} />
       {isHotel && (
         <>
-          <Row label={t("breakdown.breakfast", { count: nightsCount })} note={t("breakdown.included")} />
-          <Row label={t("breakdown.dinner", { count: nightsCount })} note={t("breakdown.included")} />
+          <Row label={`🥐 ${t("breakdown.breakfast", { count: nightsCount })}`} note={t("breakdown.included")} />
+          <Row label={`🔔 ${t("breakdown.dinner", { count: nightsCount })}`} note={t("breakdown.included")} />
         </>
       )}
       {selectedProducts.map((p) => (
