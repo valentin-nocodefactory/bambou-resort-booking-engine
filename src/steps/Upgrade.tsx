@@ -4,6 +4,7 @@ import { t } from "../i18n";
 import { eur, imgUrl } from "../lib/format";
 import { spaceLabel, upgradeBenefits, upgradeRooms } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
+import { CreoleUpsellStories } from "../components/CreoleUpsellStories";
 import { Photo } from "../components/Photo";
 import { IconArrowRight, IconBed, IconCheck, IconSparkles, IconUsers } from "../components/icons";
 
@@ -55,6 +56,9 @@ export function Upgrade() {
           </div>
           <p className="shrink-0 font-display text-lg text-teal-deep">{eur(selectedRate.totalGross)}</p>
         </div>
+
+        {/* Upsells « stories » Culture Créole (repas + pack romantique) — se pré-cochent à Extras. */}
+        <CreoleUpsellStories />
 
         {ups.length === 0 ? (
           <div className="card p-8 text-center">
