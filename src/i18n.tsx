@@ -123,6 +123,7 @@ const DICT = {
   "guest.err.lastName": { fr: "Nom requis.", en: "Last name required." },
   "guest.err.email": { fr: "E-mail invalide.", en: "Invalid email." },
   "guest.err.telephone": { fr: "Numéro de téléphone invalide.", en: "Invalid phone number." },
+  "guest.err.telephoneRequired": { fr: "Numéro de téléphone requis.", en: "Phone number required." },
   "guest.title": { fr: "Vos informations", en: "Your details" },
   "guest.subtitle": { fr: "Le voyageur principal de la réservation.", en: "The main guest for the booking." },
   "guest.backLabel": { fr: "Retour aux chambres", en: "Back to rooms" },

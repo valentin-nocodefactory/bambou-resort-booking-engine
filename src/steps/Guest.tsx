@@ -25,7 +25,9 @@ export function Guest() {
     if (!guest.firstName.trim()) errs.firstName = t("guest.err.firstName");
     if (!guest.lastName.trim()) errs.lastName = t("guest.err.lastName");
     if (!EMAIL_RE.test(guest.email.trim())) errs.email = t("guest.err.email");
+    // Téléphone OBLIGATOIRE (Culture Créole l'exige côté Mews ; requis partout par choix).
     if (!phoneValid) errs.telephone = t("guest.err.telephone");
+    else if (!guest.telephone.trim()) errs.telephone = t("guest.err.telephoneRequired");
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
     // Propose le surclassement seulement s'il existe des chambres supérieures.
@@ -72,7 +74,7 @@ export function Guest() {
               onChange={(e) => setGuest({ email: e.target.value })}
             />
           </Field>
-          <Field label={t("guest.phone")} error={errors.telephone}>
+          <Field label={t("guest.phone")} error={errors.telephone} required>
             <Suspense fallback={<div className="field-input animate-pulse text-ink/30">…</div>}>
               <PhoneInput
                 value={guest.telephone}
