@@ -4,6 +4,7 @@ import { eur, imgUrl } from "../lib/format";
 import { spaceLabel } from "../lib/shaping";
 import type { ShapedRate, ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
+import { RoomTagsPanel } from "./RoomTags";
 import { FavoriteBadge, ScarcityBadge, ViewersNudge } from "./conversion";
 import { IconBed, IconCheck, IconClose, IconLeaf, IconShield, IconSun, IconUsers, IconWave } from "./icons";
 import { t } from "../i18n";
@@ -158,6 +159,11 @@ export function RoomDetailDrawer({
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
                   <IconCheck className="h-3.5 w-3.5" /> {t("roomDetail.noFees")}
                 </span>
+              </div>
+
+              {/* Tags bénéfice (Vue mer / Sans vis-à-vis / 1er étage) + repas inclus (Hôtel). */}
+              <div className="mt-3">
+                <RoomTagsPanel room={room} />
               </div>
               <div className="mt-3">
                 <ViewersNudge seed={room.categoryId} />

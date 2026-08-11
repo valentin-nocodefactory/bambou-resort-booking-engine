@@ -172,15 +172,18 @@ const SPACE_LABELS: Record<string, { fr: string; en: string }> = {
 };
 export const spaceLabel = (s: string) => SPACE_LABELS[s]?.[getLang()] ?? s;
 
-// Tags « bénéfice client » d'une chambre, DÉRIVÉS de son nom + sa description Mews
-// (jamais en dur) : Panorama/vue mer, Sérénité/sans vis-à-vis, Harmonie/1er étage.
-// Renvoie des clés → l'UI mappe libellé (i18n) + picto.
-export function roomBenefits(room: { name: string; description: string }): string[] {
-  const hay = `${room.name} ${room.description}`;
+// Tags « bénéfice client » d'une chambre — RÈGLE EN DUR, basée sur le NOM de la chambre
+// UNIQUEMENT (on n'en invente pas d'autres) :
+//   • nom contient « Panorama »  → Vue mer        (picto vagues)
+//   • nom contient « Sérénité »  → Sans vis-à-vis  (picto feuille)
+//   • nom contient « Harmonie »  → 1er étage       (picto escalier)
+// Renvoie des clés → l'UI mappe libellé (i18n) + picto SVG.
+export function roomBenefits(room: { name: string }): string[] {
+  const name = room.name;
   const out: string[] = [];
-  if (/vue\s*mer/i.test(hay)) out.push("sea");
-  if (/s[ée]r[ée]nit[ée]/i.test(room.name) || /sans\s*vis-?[àa]-?vis|intimit[ée]/i.test(hay)) out.push("quiet");
-  if (/harmonie/i.test(room.name) || /1er\s*[ée]tage|[àa]\s*l['’][ée]tage/i.test(room.name)) out.push("floor");
+  if (/panorama/i.test(name)) out.push("sea");
+  if (/s[ée]r[ée]nit[ée]/i.test(name)) out.push("quiet");
+  if (/harmonie/i.test(name)) out.push("floor");
   return out;
 }
 

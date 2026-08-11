@@ -116,6 +116,12 @@ export const IconWave = (p: SVGProps<SVGSVGElement>) => (
     <path d="M2 8c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2M2 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 4 2" />
   </svg>
 );
+// Escalier (montée) — pour le bénéfice « 1er étage ».
+export const IconStairs = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M3 20h5v-5h5v-5h5v-5h3" />
+  </svg>
+);
 export const IconStar = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)} fill="currentColor" stroke="none">
     <path d="M12 3.2l2.5 5.1 5.6.8-4 4 1 5.6-5.1-2.7L7.4 18.7l1-5.6-4-4 5.6-.8L12 3.2Z" />
