@@ -86,6 +86,16 @@ export function Results() {
       .filter((p) => p.count > 0);
   }, [hotel, properties, allRooms]);
 
+  // Aucun logement dispo dans les hébergements cochés → on ouvre AUTOMATIQUEMENT les
+  // accordéons « aussi disponibles sur vos dates » (les seuls résultats à montrer).
+  // Déps = longueurs (primitives) → ne se ré-exécute pas à chaque rendu, donc ne rouvre
+  // pas si l'utilisateur en referme un.
+  useEffect(() => {
+    if (!loading && rooms.length === 0 && teasers.length > 0) {
+      setOpenProps(teasers.map((tz) => tz.key));
+    }
+  }, [loading, rooms.length, teasers.length]);
+
   // Publie la liste visible pour l'étape de surclassement (upsell chambre après Guest).
   useEffect(() => {
     if (rooms.length) setAvailableRooms(rooms);

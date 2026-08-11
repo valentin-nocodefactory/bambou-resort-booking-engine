@@ -46,6 +46,14 @@ export const IconCloche = (p: SVGProps<SVGSVGElement>) => (
     <circle cx="12" cy="7.3" r="1.1" />
   </svg>
 );
+// Croissant (croissant = « crescent ») — crescent galbé + 2 nervures obliques. Style
+// trait, cohérent avec la cloche du dîner.
+export const IconCroissant = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M4 15C4 9.5 7.5 7 12 7s8 2.5 8 8c-3-2.2-5-3-8-3s-5 .8-8 3Z" />
+    <path d="m8 12.4 1.1-2.1M16 12.4l-1.1-2.1" />
+  </svg>
+);
 export const IconArrowRight = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}>
     <path d="M5 12h14M13 6l6 6-6 6" />

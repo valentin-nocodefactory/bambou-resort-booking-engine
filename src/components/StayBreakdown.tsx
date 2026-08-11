@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useBooking, productLineTotal } from "../state/booking";
 import { eur } from "../lib/format";
-import { IconCloche } from "./icons";
+import { IconCloche, IconCroissant } from "./icons";
 import { t } from "../i18n";
 
 // Détail du prix (récap). Pour l'Hôtel Bambou (demi-pension incluse) : hébergement +
@@ -24,7 +24,7 @@ export function StayBreakdown() {
       {isHotel && (
         <>
           <Row
-            icon={<span aria-hidden>🥐</span>}
+            icon={<IconCroissant className="h-4 w-4" />}
             label={t("breakdown.breakfast", { count: nightsCount })}
             note={t("breakdown.included")}
           />

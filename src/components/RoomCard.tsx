@@ -1,16 +1,23 @@
 import { eur, imgUrl } from "../lib/format";
-import { spaceLabel } from "../lib/shaping";
+import { spaceLabel, roomBenefits } from "../lib/shaping";
 import type { ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
 import { FavoriteBadge, HotBadge, SavingsBadge, ScarcityBadge, ViewersNudge, seeded } from "./conversion";
-import { IconArrowRight, IconBed, IconCheck, IconCloche, IconUsers } from "./icons";
-import { t } from "../i18n";
+import { IconArrowRight, IconBed, IconCheck, IconCloche, IconCroissant, IconUsers } from "./icons";
+import { t, type TKey } from "../i18n";
 
 // Libellés d'hébergement (pour le badge sur la carte, quand plusieurs sont affichés).
 const PROPERTY_LABELS: Record<string, string> = {
   hotel: "Hôtel Bambou",
   creole: "Culture Créole",
   villas: "Villas",
+};
+
+// Tags « bénéfice client » (dérivés du nom/description Mews, cf. roomBenefits) : picto + libellé.
+const BENEFITS: Record<string, { emoji: string; key: TKey }> = {
+  sea: { emoji: "🌊", key: "benefit.sea" },
+  quiet: { emoji: "🍃", key: "benefit.quiet" },
+  floor: { emoji: "🪟", key: "benefit.floor" },
 };
 
 export function RoomCard({
@@ -29,6 +36,8 @@ export function RoomCard({
   onDetails: () => void;
 }) {
   const cheapest = room.rates[0];
+  // Tags bénéfice (vue mer / sans vis-à-vis / 1er étage) dérivés de la fiche Mews.
+  const benefits = room.property === "hotel" ? roomBenefits(room) : [];
   // RÉEL (Mews) : AvailableRoomCount → « Plus que N chambres ».
   const lowStock = room.availableRoomCount > 0 && room.availableRoomCount <= 3;
   // ⚠️ DÉMO (en dur) : « Très demandé » — généré, pas issu de Mews.
@@ -87,6 +96,19 @@ export function RoomCard({
           {room.description || t("roomCard.descFallback")}
         </p>
 
+        {benefits.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {benefits.map((b) => (
+              <span
+                key={b}
+                className="inline-flex items-center gap-1 rounded-full bg-corail/10 px-2.5 py-1 text-[11px] font-semibold text-corail"
+              >
+                <span aria-hidden>{BENEFITS[b]?.emoji}</span> {BENEFITS[b] ? t(BENEFITS[b].key) : b}
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className="mt-2.5">
           <ViewersNudge seed={room.categoryId} />
         </div>
@@ -99,7 +121,7 @@ export function RoomCard({
           {room.property === "hotel" && (
             <>
               <span className="inline-flex w-fit items-center gap-1 rounded-full bg-turquoise/10 px-2.5 py-1 text-[11px] font-semibold text-teal-deep">
-                <span aria-hidden>🥐</span> {t("roomCard.breakfastIncl")}
+                <IconCroissant className="h-3.5 w-3.5" /> {t("roomCard.breakfastIncl")}
               </span>
               <span className="inline-flex w-fit items-center gap-1 rounded-full bg-turquoise/10 px-2.5 py-1 text-[11px] font-semibold text-teal-deep">
                 <IconCloche className="h-3.5 w-3.5" /> {t("roomCard.dinnerIncl")}

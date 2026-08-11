@@ -165,6 +165,18 @@ const SPACE_LABELS: Record<string, { fr: string; en: string }> = {
 };
 export const spaceLabel = (s: string) => SPACE_LABELS[s]?.[getLang()] ?? s;
 
+// Tags « bénéfice client » d'une chambre, DÉRIVÉS de son nom + sa description Mews
+// (jamais en dur) : Panorama/vue mer, Sérénité/sans vis-à-vis, Harmonie/1er étage.
+// Renvoie des clés → l'UI mappe libellé (i18n) + picto.
+export function roomBenefits(room: { name: string; description: string }): string[] {
+  const hay = `${room.name} ${room.description}`;
+  const out: string[] = [];
+  if (/vue\s*mer/i.test(hay)) out.push("sea");
+  if (/s[ée]r[ée]nit[ée]/i.test(room.name) || /sans\s*vis-?[àa]-?vis|intimit[ée]/i.test(hay)) out.push("quiet");
+  if (/harmonie/i.test(room.name) || /1er\s*[ée]tage|[àa]\s*l['’][ée]tage/i.test(room.name)) out.push("floor");
+  return out;
+}
+
 // Produits → upsells. On retient les extras optionnels avec un prix EUR.
 export function shapeProducts(hotel: HotelConfig | null, lang = "fr-FR"): ShapedProduct[] {
   if (!hotel?.Products) return [];
