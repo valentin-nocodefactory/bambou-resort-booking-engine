@@ -213,6 +213,12 @@ const DICT = {
   "confirmation.resumePayment": { fr: "Reprendre le paiement", en: "Resume payment" },
   "confirmation.refreshStatus": { fr: "Actualiser le statut", en: "Refresh status" },
   "confirmation.keepNumber": { fr: "Conservez votre numéro de confirmation pour l'enregistrement.", en: "Keep your confirmation number for check-in." },
+  "confirmation.shuttleTitle": { fr: "Transfert aéroport", en: "Airport transfer" },
+  "confirmation.shuttleBody": {
+    fr: "Réservez dès maintenant votre navette depuis l'aéroport Aimé Césaire.",
+    en: "Book your shuttle from Aimé Césaire airport now.",
+  },
+  "confirmation.shuttleCta": { fr: "Réserver ma navette", en: "Book my shuttle" },
   "confirmation.newSearch": { fr: "Effectuer une nouvelle recherche", en: "Start a new search" },
   "confirmation.footer": { fr: "Bambou Resort · Martinique — au plaisir de vous accueillir les pieds dans l'eau.", en: "Bambou Resort · Martinique — we can't wait to welcome you, steps from the water." },
   "confirmation.verifyingPayment": { fr: "Vérification du paiement…", en: "Verifying payment…" },

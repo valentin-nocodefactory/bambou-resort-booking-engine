@@ -108,6 +108,10 @@ export function Guest() {
               value={guest.nationalityCode}
               onChange={(e) => setGuest({ nationalityCode: e.target.value })}
             >
+              {/* Pays détecté par IP hors de la liste courte → ajouté pour rester sélectionnable. */}
+              {!NATIONALITIES.some(([code]) => code === guest.nationalityCode) && (
+                <option value={guest.nationalityCode}>{regionName(guest.nationalityCode)}</option>
+              )}
               {NATIONALITIES.map(([code]) => (
                 <option key={code} value={code}>
                   {regionName(code)}

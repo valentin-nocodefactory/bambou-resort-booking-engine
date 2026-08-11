@@ -12,7 +12,7 @@ import { api } from "../lib/api";
 import { getLang } from "../lib/lang";
 import { getUtms } from "../lib/utm";
 import { nights as countNights } from "../lib/format";
-import { buildRooms, shapeProducts } from "../lib/shaping";
+import { buildRooms, shapeProducts, cheapestDrinkProduct } from "../lib/shaping";
 import type { HotelConfig, ReservationCreateResult, ShapedProduct, ShapedRate, ShapedRoom } from "../types/mews";
 
 export type Step = "dates" | "results" | "guest" | "upgrade" | "extras" | "payment" | "confirmation";
@@ -434,6 +434,47 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setState({ ...defaults });
     setCartId(newCartId()); // nouveau panier
   }, []);
+
+  // ── Géolocalisation IP (best-effort) ─────────────────────────────────────────
+  // Sur une visite FRAÎCHE (pas un lien partagé/restauré), pré-remplit l'indicatif
+  // téléphonique (nationalité) selon le pays de l'IP. Visiteurs US/Canada : précoche la
+  // navette aéroport + pré-sélectionne le forfait boisson 1er prix de l'hébergement choisi.
+  const geoDoneRef = useRef(false);
+  const naPresetRef = useRef(false); // visiteur US/CA → presets à appliquer
+  const naDrinkDoneRef = useRef(false); // forfait boisson déjà pré-sélectionné (une fois)
+  useEffect(() => {
+    if (geoDoneRef.current) return;
+    geoDoneRef.current = true;
+    const u = readUrl();
+    const g = readGuest();
+    // Visite fraîche : aucune sélection ni info encodée dans l'URL → on peut pré-remplir.
+    const fresh = !u.roomId && !u.rgid && (!u.step || u.step === "dates") && !g.nationalityCode;
+    if (!fresh) return;
+    let alive = true;
+    void api.geo().then((r) => {
+      if (!alive || !r.country) return;
+      // Indicatif : on n'écrase pas un choix explicite (uniquement si encore défaut FR).
+      setGuestState((gg) => (gg.nationalityCode === "FR" ? { ...gg, nationalityCode: r.country as string } : gg));
+      if (r.country === "US" || r.country === "CA") {
+        naPresetRef.current = true;
+        patch({ airportTransfer: true });
+      }
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Preset boisson US/CA : dès qu'une chambre est choisie ET le catalogue chargé, ajoute
+  // le forfait boisson 1er prix de son hébergement (une seule fois — pas de réécrasement).
+  useEffect(() => {
+    if (!naPresetRef.current || naDrinkDoneRef.current || !selectedRoom || !products.length) return;
+    const drink = cheapestDrinkProduct(products, selectedRoom.property ?? null);
+    if (!drink) return;
+    naDrinkDoneRef.current = true;
+    setState((s) => (s.productIds.includes(drink.id) ? s : { ...s, productIds: [...s.productIds, drink.id] }));
+  }, [selectedRoom, products]);
 
   // ── dérivés ────────────────────────────────────────────────────────────────
   const nightsCount = useMemo(

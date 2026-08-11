@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useBooking } from "../state/booking";
 import { t } from "../i18n";
 import { eur } from "../lib/format";
-import { groupProducts, upgradeRooms } from "../lib/shaping";
+import { groupProducts, upgradeRooms, isHotelIncludedMeal } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
 import { UpsellCard } from "../components/UpsellCard";
 import { DataBadge } from "../components/DataBadge";
@@ -30,11 +30,16 @@ export function Extras() {
   }, [selectedRoom, selectedRate, goTo]);
 
   // On n'affiche QUE les extras de l'hébergement de la chambre choisie (step 2) :
-  // un produit d'une autre config Mews est refusé à la réservation.
-  const groups = useMemo(
-    () => groupProducts(products.filter((p) => !p.property || p.property === selectedRoom?.property)),
-    [products, selectedRoom],
-  );
+  // un produit d'une autre config Mews est refusé à la réservation. De plus, à l'Hôtel
+  // Bambou (demi-pension incluse), on masque les extras petit-déjeuner / dîner redondants
+  // — sauf le petit-déjeuner flottant. Culture Créole & Villas montrent tout.
+  const groups = useMemo(() => {
+    const isHotel = selectedRoom?.property === "hotel";
+    const visible = products.filter(
+      (p) => (!p.property || p.property === selectedRoom?.property) && !(isHotel && isHotelIncludedMeal(p)),
+    );
+    return groupProducts(visible);
+  }, [products, selectedRoom]);
 
   // Retour : vers le surclassement s'il y en avait, sinon vers les infos.
   const currentTotal = selectedRate?.totalGross ?? selectedRoom?.fromGross ?? 0;

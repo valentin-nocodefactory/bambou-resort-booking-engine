@@ -188,6 +188,14 @@ export const api = {
       why: "Vérifie la validité d'un code promotionnel ; une nouvelle recherche avec ce code débloque les tarifs privés.",
     }),
 
+  // Détection best-effort du pays via l'IP (Cloudflare). Pré-remplit l'indicatif
+  // téléphonique + presets US/CA. Ne stocke rien ; échoue silencieusement.
+  geo: () =>
+    call<{ country: string | null }>("geo", undefined, {
+      label: "Pays du visiteur (IP)",
+      why: "Déduit le pays via l'IP (fourni par Cloudflare, sans API externe) pour pré-sélectionner l'indicatif téléphonique et proposer des presets (navette + forfait boisson) aux visiteurs US/Canada.",
+    }).catch(() => ({ country: null })),
+
   // Suivi de panier (funnel) → n8n via le Worker. Best-effort : n'échoue jamais l'UI.
   track: (payload: unknown): Promise<{ ok: boolean }> =>
     post<{ ok: boolean }>("track", payload, {

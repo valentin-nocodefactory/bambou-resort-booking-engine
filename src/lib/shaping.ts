@@ -23,6 +23,11 @@ const grossOf = (a: { EUR?: { GrossValue: number | null } } | undefined | null):
   return typeof g === "number" ? g : null;
 };
 
+// Tarifs NON réservables depuis ce booking engine (ex. « Tarif Partenaires Actif
+// (CSE,COS,Asso.) », réservé à un canal dédié) → exclus des résultats.
+const EXCLUDED_RATE = /\bcse\b|partenaire|\bcos\b/i;
+export const isBookingExcludedRate = (name: string): boolean => EXCLUDED_RATE.test(name);
+
 export function buildRooms(avail: AvailabilityResponse, hotel: HotelConfig | null, lang = "fr-FR"): ShapedRoom[] {
   const rateById = new Map(avail.Rates.map((r) => [r.Id, r]));
   const groupById = new Map<string, RateGroup>(avail.RateGroups.map((g) => [g.Id, g]));
@@ -50,11 +55,13 @@ export function buildRooms(avail: AvailabilityResponse, hotel: HotelConfig | nul
     const rates: ShapedRate[] = [];
     for (const [rateId, price] of byRate) {
       const rate = rateById.get(rateId);
+      const name = loc(rate?.Name, "Tarif");
+      if (isBookingExcludedRate(name)) continue; // tarif CSE/partenaires : non réservable ici
       const group = rate ? groupById.get(rate.RateGroupId) : undefined;
       rates.push({
         rateId,
         rateGroupId: rate?.RateGroupId ?? "",
-        name: loc(rate?.Name, "Tarif"),
+        name,
         description: loc(rate?.Description ?? null, ""),
         isPrivate: rate?.IsPrivate ?? false,
         totalGross: price.total,
@@ -190,6 +197,34 @@ const PRODUCT_CATEGORIES: { key: string; label: string; test: RegExp }[] = [
     test: /housekeeping|m[ée]nage|nettoyage|cleaning|pet|animal|linge|lin(?:n)?en|laundry|blanchisserie|membership|conciergerie|lit b[ée]b[ée]|baby|crib|check|wifi|bed/i,
   },
 ];
+
+// Forfait boisson « 1er prix » d'un hébergement : le plus petit crédit boisson dispo
+// (pré-sélectionné pour les visiteurs US/Canada). null si l'hébergement n'en propose pas.
+export function cheapestDrinkProduct(products: ShapedProduct[], property: string | null): ShapedProduct | null {
+  return (
+    products
+      .filter(
+        (p) =>
+          (!p.property || p.property === property) &&
+          /boisson|drink|beverage|forfait|cr[ée]dit/i.test(`${p.name} ${p.description}`),
+      )
+      .sort((a, b) => a.priceEur - b.priceEur)[0] ?? null
+  );
+}
+
+// Repas déjà « inclus » à l'Hôtel Bambou : la demi-pension y comprend le petit-déjeuner
+// ET le dîner → ces extras sont redondants et MASQUÉS quand la chambre choisie appartient
+// à l'Hôtel Bambou. Exception : le petit-déjeuner FLOTTANT (expérience premium) reste
+// proposé. Le déjeuner / pension complète (midi) N'est PAS inclus → conservé. Culture
+// Créole & Villas (demi-pension NON incluse) montrent tous les extras.
+const MEAL_KEEP = /flottant|floating/i; // exception : toujours gardé même à l'Hôtel
+const BREAKFAST_OR_DINNER = /petit.?d[ée]j|breakfast|fr[üu]hst[üu]ck|d[îi]ner|dinner/i;
+
+export function isHotelIncludedMeal(p: ShapedProduct): boolean {
+  const hay = `${p.name} ${p.description}`;
+  if (MEAL_KEEP.test(hay)) return false;
+  return BREAKFAST_OR_DINNER.test(hay);
+}
 
 export function productCategory(p: ShapedProduct): { key: string; label: string; order: number } {
   const hay = `${p.name} ${p.description}`;

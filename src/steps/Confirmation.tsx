@@ -9,8 +9,13 @@ import { t } from "../i18n";
 
 const MAX_POLLS = 5;
 
+// Réservation de la navette aéroport : plateforme EXTERNE (SimplyBook), hors Mews.
+// Lien sortant proposé sur l'écran de confirmation une fois la réservation validée.
+const SHUTTLE_BOOKING_URL = "https://transfertshbambou.simplybook.me/v2/";
+
 export function Confirmation() {
-  const { rgid, created, checkIn, checkOut, guest, grandTotal, selectedRate, resetAll, goTo, track } = useBooking();
+  const { rgid, created, checkIn, checkOut, guest, grandTotal, selectedRate, airportTransfer, resetAll, goTo, track } =
+    useBooking();
 
   const [status, setStatus] = useState<ReservationStatusResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -130,6 +135,30 @@ export function Confirmation() {
               <Line label={t("confirmation.total")}>{eur(created.totalAmount.gross)}</Line>
             )}
           </div>
+
+          {/* Navette aéroport — lien SORTANT (plateforme externe SimplyBook), affiché
+              UNIQUEMENT si le client a coché « transfert aéroport », une fois la résa confirmée. */}
+          {airportTransfer && !loading && !pending && !failed && (
+            <div className="rounded-xl border border-turquoise/30 bg-turquoise/5 p-4">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-turquoise/15 text-xl" aria-hidden>
+                  ✈️
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-teal-deep">{t("confirmation.shuttleTitle")}</p>
+                  <p className="mt-0.5 text-sm text-ink/60">{t("confirmation.shuttleBody")}</p>
+                  <a
+                    href={SHUTTLE_BOOKING_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary mt-3 inline-flex"
+                  >
+                    {t("confirmation.shuttleCta")} <IconArrowRight className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
 
           {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
