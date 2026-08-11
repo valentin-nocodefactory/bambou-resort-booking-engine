@@ -85,6 +85,9 @@ interface BookingState {
   roomId: string | null;
   rateId: string | null;
   productIds: string[];
+  // Extra HORS Mews : simple intérêt « transfert aéroport » (booléen). N'affecte ni le
+  // prix ni la réservation Mews — envoyé à n8n pour déclencher une relance post-paiement.
+  airportTransfer: boolean;
   rgid: string | null; // reservation group id (retour paiement)
 }
 
@@ -109,6 +112,7 @@ function readUrl(): Partial<BookingState> {
   if (q.get("cat")) out.roomId = q.get("cat");
   if (q.get("rate")) out.rateId = q.get("rate");
   if (q.get("products")) out.productIds = q.get("products")!.split(",").filter(Boolean);
+  if (q.has("transfer")) out.airportTransfer = q.get("transfer") === "1";
   if (q.get("rgid")) out.rgid = q.get("rgid");
   // un retour paiement (?rgid=…) force l'étape confirmation
   if (out.rgid) out.step = "confirmation";
@@ -147,6 +151,7 @@ function writeUrl(s: BookingState, g: Guest) {
   if (s.roomId) q.set("cat", s.roomId);
   if (s.rateId) q.set("rate", s.rateId);
   if (s.productIds.length) q.set("products", s.productIds.join(","));
+  if (s.airportTransfer) q.set("transfer", "1");
   if (s.rgid) q.set("rgid", s.rgid);
   // Infos client (pour restaurer la saisie sur un lien partagé).
   if (g.firstName) q.set("fn", g.firstName);
@@ -202,6 +207,7 @@ interface BookingContextValue extends BookingState {
   setProperties: (keys: string[]) => void;
   clearSelection: () => void;
   toggleProduct: (id: string) => void;
+  setAirportTransfer: (v: boolean) => void; // extra hors Mews (relance n8n)
   setGuest: (p: Partial<Guest>) => void;
   setCreated: (r: ReservationCreateResult | null) => void;
   goTo: (step: Step) => void;
@@ -225,6 +231,7 @@ const defaults: BookingState = {
   roomId: null,
   rateId: null,
   productIds: [],
+  airportTransfer: false,
   rgid: null,
 };
 
@@ -405,6 +412,11 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const setAirportTransfer: BookingContextValue["setAirportTransfer"] = useCallback(
+    (v) => patch({ airportTransfer: v }),
+    [patch],
+  );
+
   const setGuest: BookingContextValue["setGuest"] = useCallback((p) => setGuestState((g) => ({ ...g, ...p })), []);
 
   const setCreated: BookingContextValue["setCreated"] = useCallback((r) => {
@@ -462,6 +474,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       ? { rateId: selectedRate.rateId, name: selectedRate.name, totalGross: selectedRate.totalGross }
       : null,
     products: selectedProducts.map((p) => ({ id: p.id, name: p.name, priceEur: p.priceEur })),
+    // Extra hors Mews : intérêt « transfert aéroport » (booléen) → n8n déclenche la relance.
+    airportTransfer: state.airportTransfer,
     totals: { room: roomTotal, products: productsTotal, grand: grandTotal },
     customer: {
       firstName: guest.firstName,
@@ -520,6 +534,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setProperties,
     clearSelection,
     toggleProduct,
+    setAirportTransfer,
     setGuest,
     setCreated,
     goTo,

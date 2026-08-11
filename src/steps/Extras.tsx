@@ -6,13 +6,15 @@ import { groupProducts, upgradeRooms } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
 import { UpsellCard } from "../components/UpsellCard";
 import { DataBadge } from "../components/DataBadge";
-import { IconArrowRight, IconSparkles } from "../components/icons";
+import { IconArrowRight, IconCheck, IconSparkles } from "../components/icons";
 
 export function Extras() {
   const {
     products,
     productIds,
     toggleProduct,
+    airportTransfer,
+    setAirportTransfer,
     imageBaseUrl,
     nightsCount,
     guestsCount,
@@ -55,6 +57,45 @@ export function Extras() {
           </p>
           <DataBadge label="Extras · Mews" />
         </div>
+
+        {/* Service Bambou (HORS Mews) : simple case à cocher « transfert aéroport ».
+            N'entre pas dans le total ni la résa Mews — booléen envoyé à n8n (relance). */}
+        <section>
+          <div className="mb-3 flex items-center gap-3">
+            <span className="h-5 w-1 rounded-full bg-turquoise" />
+            <h2 className="font-display text-lg text-teal-deep">{t("extras.serviceSection")}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAirportTransfer(!airportTransfer)}
+            aria-pressed={airportTransfer}
+            className={`flex w-full items-start gap-3 rounded-xl2 border p-4 text-left transition ${
+              airportTransfer
+                ? "border-turquoise bg-turquoise/5 ring-1 ring-turquoise"
+                : "border-ink/12 bg-white hover:border-turquoise/60"
+            }`}
+          >
+            <span
+              className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border transition ${
+                airportTransfer ? "border-turquoise bg-turquoise text-white" : "border-ink/25 text-transparent"
+              }`}
+            >
+              <IconCheck className="h-3.5 w-3.5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2">
+                <span className="text-xl leading-none" aria-hidden>
+                  ✈️
+                </span>
+                <span className="font-semibold text-marine">{t("extras.transferTitle")}</span>
+              </span>
+              <span className="mt-1 block text-sm leading-relaxed text-ink/60">{t("extras.transferDesc")}</span>
+            </span>
+            <span className="shrink-0 rounded-full bg-cream px-2 py-0.5 text-[11px] font-medium text-teal-deep/70">
+              {t("extras.transferBadge")}
+            </span>
+          </button>
+        </section>
 
         {groups.length > 0 ? (
           <div className="space-y-7">

@@ -29,6 +29,7 @@ type Cart = {
   customer_phone: string | null;
   reservation_group_id: string | null;
   payment_request_id: string | null;
+  airport_transfer: boolean | null; // extra hors Mews → cible de relance post-paiement
 };
 type FunnelRow = { step: string; carts: number };
 type EventRow = {
@@ -40,11 +41,15 @@ type EventRow = {
   payload: { totals?: { grand?: number | null } | null } | null;
 };
 
-const CART_COLS =
+const CART_COLS_BASE =
   "cart_id,first_seen,last_seen,last_step,last_status,payment_initiated,paid,lang," +
   "utm_source,utm_medium,utm_campaign,check_in,check_out,nights,adults,children," +
   "room_name,rate_name,total_grand,currency,customer_email,customer_name,customer_phone," +
   "reservation_group_id,payment_request_id";
+// `airport_transfer` est ajouté à part : si la migration Supabase n'a pas encore été
+// lancée, la requête retombe sur CART_COLS_BASE (le dashboard reste fonctionnel, sans
+// le drapeau transfert) au lieu de planter sur « column does not exist ».
+const CART_COLS = CART_COLS_BASE + ",airport_transfer";
 
 // Étapes du tunnel, dans l'ordre.
 const STEPS: { key: string; label: string }[] = [
@@ -223,13 +228,18 @@ function Panel({ email }: { email: string }) {
   const load = useCallback(async () => {
     setError(null);
     const since = sinceIso();
-    let cartsQ = supabase.from("carts").select(CART_COLS).order("last_seen", { ascending: false }).limit(5000);
-    if (since) cartsQ = cartsQ.gte("first_seen", since);
+    const runCarts = (cols: string) => {
+      let q = supabase.from("carts").select(cols).order("last_seen", { ascending: false }).limit(5000);
+      if (since) q = q.gte("first_seen", since);
+      return q;
+    };
 
-    const [cartsRes, funnelRes] = await Promise.all([
-      cartsQ,
-      supabase.rpc("dashboard_funnel", { since }),
-    ]);
+    const [cartsRes0, funnelRes] = await Promise.all([runCarts(CART_COLS), supabase.rpc("dashboard_funnel", { since })]);
+    // Repli si la colonne airport_transfer n'existe pas encore (migration non lancée).
+    const cartsRes =
+      cartsRes0.error && /airport_transfer/.test(cartsRes0.error.message || "")
+        ? await runCarts(CART_COLS_BASE)
+        : cartsRes0;
 
     if (cartsRes.error) setError(cartsRes.error.message);
     else setCarts((cartsRes.data ?? []) as unknown as Cart[]);
@@ -471,6 +481,15 @@ function Panel({ email }: { email: string }) {
                       {stepLabel(c.last_step)} · {timeAgo(c.last_seen)}
                     </p>
                   </div>
+                  {c.airport_transfer && (
+                    <span
+                      title="Transfert aéroport demandé"
+                      aria-label="Transfert aéroport demandé"
+                      className="shrink-0 rounded-full bg-turquoise/15 px-1.5 py-0.5 text-xs leading-none"
+                    >
+                      ✈️
+                    </span>
+                  )}
                   <StatusBadge cart={c} />
                   <span className="shrink-0 text-lg text-ink/25 transition group-hover:translate-x-0.5 group-hover:text-ink/45">›</span>
                 </button>
@@ -637,6 +656,7 @@ function CartDrawer({
               value={[cart.utm_source || "Direct", cart.utm_medium, cart.utm_campaign].filter(Boolean).join(" · ")}
             />
             <Fact label="Langue" value={cart.lang ? cart.lang.toUpperCase() : "—"} />
+            <Fact label="Transfert aéroport" value={cart.airport_transfer ? "✈️ Demandé" : "—"} strong={!!cart.airport_transfer} />
             <Fact label="Contact" value={[cart.customer_email, cart.customer_phone].filter(Boolean).join(" · ") || "—"} />
             <Fact label="Vu" value={`${fmtDateTime(cart.first_seen)} → ${timeAgo(cart.last_seen)}`} />
             {cart.reservation_group_id && <Fact label="Résa Mews" value={cart.reservation_group_id} mono />}

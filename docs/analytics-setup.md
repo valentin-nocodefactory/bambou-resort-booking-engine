@@ -28,6 +28,7 @@ Tout passe par **un seul** webhook n8n (pour avoir les logs), qui insère dans S
   "room": { "categoryId": "…", "name": "Bungalow Découverte" },
   "rate": { "rateId": "…", "name": "Non remboursable", "totalGross": 519.6 },
   "products": [{ "id": "…", "name": "Petit déjeuner", "priceEur": 12 }],
+  "airportTransfer": true,
   "totals": { "room": 519.6, "products": 0, "grand": 519.6, "currency": "EUR" },
   "customer": { "firstName": "Marie", "lastName": "Martin", "email": "…", "telephone": "+336…", "nationalityCode": "FR" },
   "reservationGroupId": null,
@@ -75,6 +76,7 @@ create table if not exists public.carts (
   room_name text, rate_name text, total_grand numeric, currency text,
   customer_email text, customer_name text, customer_phone text, customer_nationality text,
   reservation_group_id text, payment_request_id text,
+  airport_transfer boolean not null default false,   -- extra HORS Mews : cible de relance
   payload jsonb
 );
 create index if not exists carts_last_seen_idx on public.carts (last_seen desc);
@@ -94,7 +96,7 @@ begin
     check_in, check_out, nights, adults, children,
     room_name, rate_name, total_grand, currency,
     customer_email, customer_name, customer_phone, customer_nationality,
-    reservation_group_id, payment_request_id, payload
+    reservation_group_id, payment_request_id, airport_transfer, payload
   ) values (
     new.cart_id, ts, ts, new.step, new.status,
     new.status = 'paiement_initie', new.status = 'paiement_valide', p->>'lang',
@@ -107,7 +109,8 @@ begin
     p->'customer'->>'email',
     nullif(trim(concat(p->'customer'->>'firstName',' ',p->'customer'->>'lastName')),''),
     p->'customer'->>'telephone', p->'customer'->>'nationalityCode',
-    nullif(p->>'reservationGroupId',''), nullif(p->>'paymentRequestId',''), p
+    nullif(p->>'reservationGroupId',''), nullif(p->>'paymentRequestId',''),
+    coalesce((p->>'airportTransfer')::boolean, false), p
   )
   on conflict (cart_id) do update set
     last_seen            = greatest(c.last_seen, excluded.last_seen),
@@ -138,6 +141,7 @@ begin
     customer_nationality = coalesce(excluded.customer_nationality, c.customer_nationality),
     reservation_group_id = coalesce(excluded.reservation_group_id, c.reservation_group_id),
     payment_request_id   = coalesce(excluded.payment_request_id, c.payment_request_id),
+    airport_transfer     = excluded.airport_transfer,   -- dernier choix connu (coché / décoché)
     payload              = excluded.payload;
   return new;
 end $$;

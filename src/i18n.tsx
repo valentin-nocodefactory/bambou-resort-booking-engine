@@ -164,6 +164,13 @@ const DICT = {
   "extras.taxesIncl": { fr: "taxes incl.", en: "incl. taxes" },
   "extras.skip": { fr: "Passer", en: "Skip" },
   "extras.continueToPayment": { fr: "Continuer vers le paiement", en: "Continue to payment" },
+  "extras.serviceSection": { fr: "Service Bambou", en: "Bambou service" },
+  "extras.transferTitle": { fr: "Transfert aéroport", en: "Airport transfer" },
+  "extras.transferDesc": {
+    fr: "Cochez pour recevoir par e-mail le lien de réservation de votre transfert depuis / vers l'aéroport Aimé Césaire. Sans engagement.",
+    en: "Tick to receive the booking link for your transfer to / from Aimé Césaire airport by email. No commitment.",
+  },
+  "extras.transferBadge": { fr: "Sur demande", en: "On request" },
 
   // ── Payment / Confirmation / Results ──────────────────────────────────────
   "payment.title": { fr: "Paiement & confirmation", en: "Payment & confirmation" },
