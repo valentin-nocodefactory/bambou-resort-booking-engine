@@ -1,28 +1,13 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useBooking } from "../state/booking";
 import { t } from "../i18n";
-import { EMAIL_RE, regionName } from "../lib/format";
+import { EMAIL_RE } from "../lib/format";
 import { upgradeRooms } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
 import { IconArrowRight } from "../components/icons";
 
 // Code-split : libphonenumber-js (~38 Ko gzip) n'est chargé qu'à cette étape.
 const PhoneInput = lazy(() => import("../components/PhoneInput").then((m) => ({ default: m.PhoneInput })));
-
-const NATIONALITIES = [
-  ["FR", "France"],
-  ["BE", "Belgique"],
-  ["CH", "Suisse"],
-  ["LU", "Luxembourg"],
-  ["CA", "Canada"],
-  ["GB", "Royaume-Uni"],
-  ["US", "États-Unis"],
-  ["DE", "Allemagne"],
-  ["ES", "Espagne"],
-  ["IT", "Italie"],
-  ["NL", "Pays-Bas"],
-  ["PT", "Portugal"],
-];
 
 export function Guest() {
   const { selectedRoom, selectedRate, availableRooms, guest, setGuest, goTo } = useBooking();
@@ -98,26 +83,6 @@ export function Guest() {
                 }}
               />
             </Suspense>
-          </Field>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={t("guest.nationality")}>
-            <select
-              className="field-input"
-              value={guest.nationalityCode}
-              onChange={(e) => setGuest({ nationalityCode: e.target.value })}
-            >
-              {/* Pays détecté par IP hors de la liste courte → ajouté pour rester sélectionnable. */}
-              {!NATIONALITIES.some(([code]) => code === guest.nationalityCode) && (
-                <option value={guest.nationalityCode}>{regionName(guest.nationalityCode)}</option>
-              )}
-              {NATIONALITIES.map(([code]) => (
-                <option key={code} value={code}>
-                  {regionName(code)}
-                </option>
-              ))}
-            </select>
           </Field>
         </div>
 
