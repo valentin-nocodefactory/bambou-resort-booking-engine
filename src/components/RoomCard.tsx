@@ -19,14 +19,14 @@ export function RoomCard({
   imageBaseUrl,
   nightsCount,
   featured = false,
-  onChoose,
   onDetails,
 }: {
   room: ShapedRoom;
   imageBaseUrl: string;
   nightsCount: number;
   featured?: boolean;
-  onChoose: () => void;
+  // « Choisir » ouvre le panneau détail (choix du tarif obligatoire) — plus de bouton
+  // « Voir le détail » séparé : tout le monde passe par les détails.
   onDetails: () => void;
 }) {
   const cheapest = room.rates[0];
@@ -126,10 +126,7 @@ export function RoomCard({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={onDetails} className="btn-ghost">
-              {t("roomCard.viewDetails")}
-            </button>
-            <button type="button" onClick={onChoose} className="btn-primary">
+            <button type="button" onClick={onDetails} className="btn-primary">
               {t("roomCard.choose")} <IconArrowRight className="h-4 w-4" />
             </button>
           </div>

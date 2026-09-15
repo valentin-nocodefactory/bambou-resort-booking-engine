@@ -187,7 +187,6 @@ export function Results() {
                 imageBaseUrl={imageBaseUrl}
                 nightsCount={nightsCount}
                 featured={i === 0}
-                onChoose={() => choose(room, room.rates[0])}
                 onDetails={() => setOpenRoom(room)}
               />
               {/* Suggestion d'upsell inline après la 1re carte */}
@@ -237,7 +236,6 @@ export function Results() {
                           room={room}
                           imageBaseUrl={imageBaseUrl}
                           nightsCount={nightsCount}
-                          onChoose={() => choose(room, room.rates[0])}
                           onDetails={() => setOpenRoom(room)}
                         />
                       ))}

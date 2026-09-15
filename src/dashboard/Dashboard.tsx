@@ -30,7 +30,55 @@ type Cart = {
   reservation_group_id: string | null;
   payment_request_id: string | null;
   airport_transfer: boolean | null; // extra hors Mews → cible de relance post-paiement
+  infants: number | null; // bébés en berceau → déclenche le « kit bébé »
 };
+
+// Statut dérivé (une demande) : payé > paiement lancé non abouti > abandonné.
+type CartStatusKey = "paid" | "failed" | "abandoned";
+function cartStatus(c: Cart): CartStatusKey {
+  return c.paid ? "paid" : c.payment_initiated ? "failed" : "abandoned";
+}
+const STATUS_META: Record<CartStatusKey, { label: string; cls: string; rank: number }> = {
+  paid: { label: "Payé", cls: "bg-emerald-100 text-emerald-700", rank: 3 },
+  failed: { label: "Non abouti", cls: "bg-amber-100 text-amber-700", rank: 2 },
+  abandoned: { label: "Abandonné", cls: "bg-ink/10 text-ink/60", rank: 1 },
+};
+
+// Colonnes triables de la table.
+type SortKey =
+  | "customer_name"
+  | "status"
+  | "last_step"
+  | "check_in"
+  | "total_grand"
+  | "utm_source"
+  | "infants"
+  | "airport_transfer"
+  | "last_seen";
+function cartValue(c: Cart, key: SortKey): string | number {
+  switch (key) {
+    case "customer_name":
+      return (c.customer_name || c.customer_email || "zzz").toLowerCase();
+    case "status":
+      return STATUS_META[cartStatus(c)].rank;
+    case "last_step": {
+      const i = STEP_ORDER.indexOf(c.last_step || "");
+      return i < 0 ? 0 : i;
+    }
+    case "check_in":
+      return c.check_in || "";
+    case "total_grand":
+      return c.total_grand ?? -1;
+    case "utm_source":
+      return (c.utm_source || "zzz").toLowerCase();
+    case "infants":
+      return c.infants ?? 0;
+    case "airport_transfer":
+      return c.airport_transfer ? 1 : 0;
+    default:
+      return c.last_seen;
+  }
+}
 type FunnelRow = { step: string; carts: number };
 type EventRow = {
   id: number;
@@ -46,10 +94,11 @@ const CART_COLS_BASE =
   "utm_source,utm_medium,utm_campaign,check_in,check_out,nights,adults,children," +
   "room_name,rate_name,total_grand,currency,customer_email,customer_name,customer_phone," +
   "reservation_group_id,payment_request_id";
-// `airport_transfer` est ajouté à part : si la migration Supabase n'a pas encore été
-// lancée, la requête retombe sur CART_COLS_BASE (le dashboard reste fonctionnel, sans
-// le drapeau transfert) au lieu de planter sur « column does not exist ».
-const CART_COLS = CART_COLS_BASE + ",airport_transfer";
+// Colonnes optionnelles (migrations Supabase) ajoutées à part : si `infants` et/ou
+// `airport_transfer` n'existent pas encore, la requête retombe progressivement (le
+// dashboard reste fonctionnel, sans ces colonnes) au lieu de planter sur « column does
+// not exist ». Repli géré dans load().
+const CART_COLS = CART_COLS_BASE + ",airport_transfer,infants";
 
 // Étapes du tunnel, dans l'ordre.
 const STEPS: { key: string; label: string }[] = [
@@ -83,9 +132,8 @@ function timeAgo(iso: string): string {
 }
 
 const STEP_LABEL = new Map(STEPS.map((s) => [s.key, s.label]));
+const STEP_ORDER = STEPS.map((s) => s.key);
 const stepLabel = (key: string | null) => (key ? STEP_LABEL.get(key) ?? key : "—");
-const statusColor = (c: { paid: boolean; payment_initiated: boolean }) =>
-  c.paid ? "bg-emerald-400" : c.payment_initiated ? "bg-amber-400" : "bg-ink/20";
 const fmtDay = (iso: string) =>
   new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(new Date(`${iso}T00:00:00`));
 const fmtRange = (ci: string, co: string | null) => (co ? `${fmtDay(ci)} → ${fmtDay(co)}` : fmtDay(ci));
@@ -214,8 +262,11 @@ function Panel({ email }: { email: string }) {
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const rangeRef = useRef(range);
   rangeRef.current = range;
-  // Recherche + drawer de détail (historique de comportement d'un panier).
+  // Recherche + filtres + tri de la table.
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | CartStatusKey>("all");
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "last_seen", dir: "desc" });
+  // Drawer de détail (historique de comportement d'une demande).
   const [openCart, setOpenCart] = useState<Cart | null>(null);
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [eventsErr, setEventsErr] = useState<string | null>(null);
@@ -235,11 +286,14 @@ function Panel({ email }: { email: string }) {
     };
 
     const [cartsRes0, funnelRes] = await Promise.all([runCarts(CART_COLS), supabase.rpc("dashboard_funnel", { since })]);
-    // Repli si la colonne airport_transfer n'existe pas encore (migration non lancée).
-    const cartsRes =
-      cartsRes0.error && /airport_transfer/.test(cartsRes0.error.message || "")
-        ? await runCarts(CART_COLS_BASE)
-        : cartsRes0;
+    // Repli progressif si des colonnes optionnelles (migrations) manquent encore.
+    let cartsRes = cartsRes0;
+    if (cartsRes.error && /infants/.test(cartsRes.error.message || "")) {
+      cartsRes = await runCarts(CART_COLS_BASE + ",airport_transfer");
+    }
+    if (cartsRes.error && /airport_transfer/.test(cartsRes.error.message || "")) {
+      cartsRes = await runCarts(CART_COLS_BASE);
+    }
 
     if (cartsRes.error) setError(cartsRes.error.message);
     else setCarts((cartsRes.data ?? []) as unknown as Cart[]);
@@ -278,14 +332,26 @@ function Panel({ email }: { email: string }) {
     };
   }, [openCart]);
 
-  // Liste filtrée par la recherche (nom / e-mail / chambre).
-  const filteredCarts = useMemo(() => {
+  // Demandes filtrées (statut + recherche) puis triées selon la colonne active.
+  const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return carts;
-    return carts.filter((c) =>
-      [c.customer_name, c.customer_email, c.room_name, c.utm_source].some((v) => v?.toLowerCase().includes(q)),
-    );
-  }, [carts, query]);
+    const filtered = carts.filter((c) => {
+      if (statusFilter !== "all" && cartStatus(c) !== statusFilter) return false;
+      if (
+        q &&
+        ![c.customer_name, c.customer_email, c.room_name, c.utm_source].some((v) => v?.toLowerCase().includes(q))
+      )
+        return false;
+      return true;
+    });
+    const dir = sort.dir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      const va = cartValue(a, sort.key);
+      const vb = cartValue(b, sort.key);
+      if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
+      return String(va).localeCompare(String(vb)) * dir;
+    });
+  }, [carts, query, statusFilter, sort]);
 
   // ── Agrégats calculés depuis `carts` ──
   const kpi = useMemo(() => {
@@ -308,18 +374,6 @@ function Panel({ email }: { email: string }) {
       fromPrev: i > 0 && rows[i - 1].count ? r.count / rows[i - 1].count : 1,
     }));
   }, [funnel]);
-
-  const sources = useMemo(() => {
-    const map = new Map<string, { source: string; carts: number; paid: number }>();
-    for (const c of carts) {
-      const key = c.utm_source || "Direct";
-      const e = map.get(key) ?? { source: key, carts: 0, paid: 0 };
-      e.carts++;
-      if (c.paid) e.paid++;
-      map.set(key, e);
-    }
-    return [...map.values()].sort((a, b) => b.carts - a.carts).slice(0, 8);
-  }, [carts]);
 
   return (
     <div className="min-h-dvh bg-cream text-ink">
@@ -409,99 +463,123 @@ function Panel({ email }: { email: string }) {
           </div>
         </section>
 
-        <div className="space-y-6">
-          {/* Sources */}
-          <section className="card p-5">
-            <h2 className="font-display text-lg text-ink">Sources d'acquisition</h2>
-            <table className="mt-3 w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-ink/45">
-                  <th className="pb-2 font-medium">Source</th>
-                  <th className="pb-2 text-right font-medium">Paniers</th>
-                  <th className="pb-2 text-right font-medium">Résa</th>
-                  <th className="pb-2 text-right font-medium">Taux</th>
+        {/* ── Base des demandes : 1 ligne par demande, filtrable + triable ── */}
+        <section className="card overflow-hidden p-0">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+            <h2 className="font-display text-lg text-ink">
+              Demandes <span className="text-sm font-normal text-ink/45">· {rows.length}</span>
+            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1 rounded-full bg-cream p-1">
+                {(
+                  [
+                    ["all", "Toutes"],
+                    ["paid", "Payé"],
+                    ["failed", "Non abouti"],
+                    ["abandoned", "Abandonné"],
+                  ] as const
+                ).map(([k, l]) => (
+                  <button
+                    key={k}
+                    onClick={() => setStatusFilter(k)}
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                      statusFilter === k ? "bg-teal-deep text-cream" : "text-ink/55 hover:text-ink"
+                    }`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Rechercher (nom, e-mail, chambre, source…)"
+                className="field-input w-52 text-sm sm:w-64"
+              />
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] border-collapse text-sm">
+              <thead className="border-y border-ink/10 bg-cream/60 text-[11px] uppercase tracking-wide text-ink/50">
+                <tr>
+                  <Th label="Client" k="customer_name" sort={sort} setSort={setSort} />
+                  <Th label="Statut" k="status" sort={sort} setSort={setSort} />
+                  <Th label="Étape" k="last_step" sort={sort} setSort={setSort} />
+                  <Th label="Séjour" k="check_in" sort={sort} setSort={setSort} />
+                  <Th label="Voyageurs" />
+                  <Th label="Kit bébé" k="infants" sort={sort} setSort={setSort} align="center" />
+                  <Th label="Chambre" />
+                  <Th label="Total" k="total_grand" sort={sort} setSort={setSort} align="right" />
+                  <Th label="Transf." k="airport_transfer" sort={sort} setSort={setSort} align="center" />
+                  <Th label="Source" k="utm_source" sort={sort} setSort={setSort} />
+                  <Th label="Vu" k="last_seen" sort={sort} setSort={setSort} align="right" />
                 </tr>
               </thead>
               <tbody>
-                {sources.map((s) => (
-                  <tr key={s.source} className="border-t border-ink/5">
-                    <td className="py-2 font-medium text-ink">{s.source}</td>
-                    <td className="py-2 text-right text-ink/70">{s.carts}</td>
-                    <td className="py-2 text-right text-ink/70">{s.paid}</td>
-                    <td className="py-2 text-right font-semibold text-teal-deep">
-                      {pct(s.carts ? s.paid / s.carts : 0)}
+                {rows.map((c) => (
+                  <tr
+                    key={c.cart_id}
+                    onClick={() => setOpenCart(c)}
+                    className="cursor-pointer border-b border-ink/5 transition last:border-0 hover:bg-cream/60"
+                  >
+                    <td className="px-3 py-2.5">
+                      <p className="max-w-[180px] truncate font-semibold text-ink">
+                        {c.customer_name || c.customer_email || "Anonyme"}
+                      </p>
+                      {c.customer_name && c.customer_email && (
+                        <p className="max-w-[180px] truncate text-[11px] text-ink/45">{c.customer_email}</p>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <StatusBadge cart={c} />
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2.5 text-ink/70">{stepLabel(c.last_step)}</td>
+                    <td className="whitespace-nowrap px-3 py-2.5 text-ink/70">
+                      {c.check_in ? fmtRange(c.check_in, c.check_out) : "—"}
+                      {c.nights ? <span className="text-ink/40"> · {c.nights}n</span> : ""}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2.5 text-ink/70">
+                      {c.adults ? `${c.adults} ad.` : "—"}
+                      {c.children ? ` · ${c.children} enf.` : ""}
+                      {(c.infants ?? 0) > 0 && (
+                        <span className="ml-1" title={`${c.infants} bébé(s) en berceau`}>
+                          👶
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <KitBebe on={(c.infants ?? 0) > 0} />
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className="block max-w-[170px] truncate text-ink/70">{c.room_name || "—"}</span>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2.5 text-right font-semibold tabular-nums text-ink">
+                      {c.total_grand ? eur(c.total_grand) : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      {c.airport_transfer ? <span title="Transfert aéroport demandé">✈️</span> : ""}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2.5 text-ink/60">{c.utm_source || "Direct"}</td>
+                    <td className="whitespace-nowrap px-3 py-2.5 text-right text-[11px] text-ink/45">
+                      {timeAgo(c.last_seen)}
                     </td>
                   </tr>
                 ))}
-                {sources.length === 0 && (
+                {rows.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-3 text-ink/45">
-                      —
+                    <td colSpan={11} className="px-3 py-8 text-center text-ink/45">
+                      {carts.length ? "Aucune demande ne correspond aux filtres." : "Aucune demande sur cette période."}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
-          </section>
-
-          {/* Paniers — liste enrichie, recherchable, cliquable */}
-          <section className="card p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="font-display text-lg text-ink">
-                Paniers <span className="text-sm font-normal text-ink/45">· {filteredCarts.length}</span>
-              </h2>
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Rechercher (nom, e-mail, chambre…)"
-                className="field-input w-full max-w-xs text-sm"
-              />
-            </div>
-            <p className="mt-1 text-xs text-ink/45">Clique un panier pour voir son historique de comportement.</p>
-            <div className="mt-3 max-h-[560px] divide-y divide-ink/5 overflow-y-auto">
-              {filteredCarts.map((c) => (
-                <button
-                  key={c.cart_id}
-                  onClick={() => setOpenCart(c)}
-                  className="group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left transition hover:bg-cream/70"
-                >
-                  <span className={`h-9 w-1 shrink-0 rounded-full ${statusColor(c)}`} aria-hidden></span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-ink">
-                      {c.customer_name || c.customer_email || "Anonyme"}
-                    </p>
-                    <p className="truncate text-xs text-ink/50">
-                      {c.room_name || "—"}
-                      {c.check_in ? ` · ${fmtRange(c.check_in, c.check_out)}` : ""} · {c.utm_source || "Direct"}
-                    </p>
-                  </div>
-                  <div className="hidden shrink-0 text-right sm:block">
-                    <p className="text-sm font-semibold tabular-nums text-ink">{c.total_grand ? eur(c.total_grand) : "—"}</p>
-                    <p className="text-[11px] text-ink/45">
-                      {stepLabel(c.last_step)} · {timeAgo(c.last_seen)}
-                    </p>
-                  </div>
-                  {c.airport_transfer && (
-                    <span
-                      title="Transfert aéroport demandé"
-                      aria-label="Transfert aéroport demandé"
-                      className="shrink-0 rounded-full bg-turquoise/15 px-1.5 py-0.5 text-xs leading-none"
-                    >
-                      ✈️
-                    </span>
-                  )}
-                  <StatusBadge cart={c} />
-                  <span className="shrink-0 text-lg text-ink/25 transition group-hover:translate-x-0.5 group-hover:text-ink/45">›</span>
-                </button>
-              ))}
-              {filteredCarts.length === 0 && (
-                <p className="py-4 text-sm text-ink/45">
-                  {carts.length ? "Aucun panier ne correspond à la recherche." : "Aucun panier sur cette période."}
-                </p>
-              )}
-            </div>
-          </section>
-        </div>
+          </div>
+          <p className="px-5 py-3 text-xs text-ink/45">
+            Cliquez une ligne pour voir tous les événements de la demande (création, étapes, paiement).
+          </p>
+        </section>
 
         {openCart && (
           <CartDrawer cart={openCart} events={events} error={eventsErr} onClose={() => setOpenCart(null)} />
@@ -530,12 +608,68 @@ function StatTile({ label, value, accent = "ink" }: { label: string; value: stri
 }
 
 function StatusBadge({ cart }: { cart: Cart }) {
-  const [label, cls] = cart.paid
-    ? ["Payé", "bg-emerald-100 text-emerald-700"]
-    : cart.payment_initiated
-      ? ["Non abouti", "bg-amber-100 text-amber-700"]
-      : ["Abandonné", "bg-ink/10 text-ink/60"];
-  return <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>{label}</span>;
+  const m = STATUS_META[cartStatus(cart)];
+  return (
+    <span className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${m.cls}`}>
+      {m.label}
+    </span>
+  );
+}
+
+// En-tête de colonne triable (clic = tri ; re-clic = inverse le sens).
+type SortState = { key: SortKey; dir: "asc" | "desc" };
+function Th({
+  label,
+  k,
+  sort,
+  setSort,
+  align = "left",
+}: {
+  label: string;
+  k?: SortKey;
+  sort?: SortState;
+  setSort?: React.Dispatch<React.SetStateAction<SortState>>;
+  align?: "left" | "right" | "center";
+}) {
+  const alignCls = align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left";
+  if (!k || !sort || !setSort) return <th className={`px-3 py-2.5 font-medium ${alignCls}`}>{label}</th>;
+  const active = sort.key === k;
+  return (
+    <th className={`px-3 py-2.5 font-medium ${alignCls}`}>
+      <button
+        type="button"
+        onClick={() => setSort((s) => ({ key: k, dir: s.key === k && s.dir === "desc" ? "asc" : "desc" }))}
+        className={`inline-flex items-center gap-1 transition hover:text-ink ${active ? "text-ink" : ""}`}
+      >
+        {label}
+        <span className={active ? "opacity-100" : "opacity-20"}>{active && sort.dir === "asc" ? "↑" : "↓"}</span>
+      </button>
+    </th>
+  );
+}
+
+// Case « kit bébé » : cochée (turquoise) si la demande a un bébé, sinon case vide.
+function KitBebe({ on }: { on: boolean }) {
+  return on ? (
+    <span
+      title="Kit bébé requis (bébé en berceau)"
+      className="inline-flex h-5 w-5 items-center justify-center rounded border border-turquoise bg-turquoise text-white"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className="h-3.5 w-3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="m5 13 4 4L19 7" />
+      </svg>
+    </span>
+  ) : (
+    <span className="inline-block h-5 w-5 rounded border border-ink/15" aria-hidden />
+  );
 }
 
 // ── Drawer : fiche panier + timeline de comportement ────────────────────────
@@ -644,10 +778,19 @@ function CartDrawer({
               label="Voyageurs"
               value={
                 cart.adults
-                  ? `${cart.adults} adulte${cart.adults > 1 ? "s" : ""}${cart.children ? `, ${cart.children} enfant${cart.children > 1 ? "s" : ""}` : ""}`
+                  ? `${cart.adults} adulte${cart.adults > 1 ? "s" : ""}${cart.children ? `, ${cart.children} enfant${cart.children > 1 ? "s" : ""}` : ""}${(cart.infants ?? 0) > 0 ? `, ${cart.infants} bébé${(cart.infants ?? 0) > 1 ? "s" : ""}` : ""}`
                   : "—"
               }
             />
+            {(cart.infants ?? 0) > 0 && (
+              <div className="flex items-center justify-between gap-4 border-b border-ink/5 pb-2">
+                <dt className="shrink-0 text-ink/50">Kit bébé</dt>
+                <dd className="flex items-center gap-2">
+                  <KitBebe on />
+                  <span className="text-xs font-semibold text-teal-deep">Requis (berceau, chaise haute…)</span>
+                </dd>
+              </div>
+            )}
             <Fact label="Chambre" value={cart.room_name || "—"} />
             <Fact label="Tarif" value={cart.rate_name || "—"} />
             <Fact label="Total" value={cart.total_grand ? eur(cart.total_grand) : "—"} strong />

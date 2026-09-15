@@ -26,7 +26,7 @@ const DICT = {
     en: "Caribbean living, steps from the water. Book direct, at the best rate.",
   },
   "footer.securePayment": { fr: "Paiement sécurisé", en: "Secure payment" },
-  "footer.developedBy": { fr: "Développé par NocodeFactory.", en: "Built by NocodeFactory." },
+  "footer.developedBy": { fr: "Développé par", en: "Built by" },
   "footer.language": { fr: "Langue", en: "Language" },
 
   // ── Barre contact (appeler / partager / mail réception) ───────────────────

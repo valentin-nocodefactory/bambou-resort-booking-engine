@@ -111,7 +111,17 @@ function Footer() {
           <p className="inline-flex items-center gap-1.5 text-cream/60">
             <IconLeaf className="h-4 w-4 text-creole-soft" /> {t("footer.securePayment")}
           </p>
-          <p className="text-cream/60">{t("footer.developedBy")}</p>
+          <p className="text-cream/60">
+            {t("footer.developedBy")}{" "}
+            <a
+              href="https://www.nocodefactory.fr/?utm_source=bambou-booking-engine"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-cream/85 underline underline-offset-2 transition hover:text-cream"
+            >
+              NocodeFactory
+            </a>
+          </p>
         </div>
       </div>
     </footer>
