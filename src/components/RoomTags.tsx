@@ -1,7 +1,7 @@
 import type { ComponentType, SVGProps } from "react";
 import { roomBenefits } from "../lib/shaping";
 import type { ShapedRoom } from "../types/mews";
-import { IconWave, IconLeaf, IconStairs, IconCroissant, IconCloche } from "./icons";
+import { IconWave, IconLeaf, IconStairs, IconGroundFloor, IconCroissant, IconCloche } from "./icons";
 import { t, type TKey } from "../i18n";
 
 type IconC = ComponentType<SVGProps<SVGSVGElement>>;
@@ -13,6 +13,7 @@ const BENEFIT: Record<string, { key: TKey; Icon: IconC }> = {
   sea: { key: "benefit.sea", Icon: IconWave },
   quiet: { key: "benefit.quiet", Icon: IconLeaf },
   floor: { key: "benefit.floor", Icon: IconStairs },
+  ground: { key: "benefit.ground", Icon: IconGroundFloor },
 };
 
 export function benefitTags(room: ShapedRoom): Tag[] {

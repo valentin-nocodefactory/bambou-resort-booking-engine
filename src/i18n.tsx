@@ -260,6 +260,7 @@ const DICT = {
   "benefit.sea": { fr: "Vue mer", en: "Sea view" },
   "benefit.quiet": { fr: "Sans vis-à-vis", en: "Not overlooked" },
   "benefit.floor": { fr: "1er étage", en: "Upper floor" },
+  "benefit.ground": { fr: "Plain-pied", en: "Ground floor" },
   "roomCard.from": { fr: "dès", en: "from" },
   "roomCard.totalLine": { fr: (p) => `total · ${p.nights} nuit${(p.nights as number) > 1 ? "s" : ""} · ${p.rates} tarif${(p.rates as number) > 1 ? "s" : ""}`, en: (p) => `total · ${p.nights} night${(p.nights as number) > 1 ? "s" : ""} · ${p.rates} rate${(p.rates as number) > 1 ? "s" : ""}` },
   "roomCard.viewDetails": { fr: "Voir le détail", en: "View details" },

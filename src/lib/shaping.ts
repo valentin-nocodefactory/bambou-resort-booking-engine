@@ -174,9 +174,10 @@ export const spaceLabel = (s: string) => SPACE_LABELS[s]?.[getLang()] ?? s;
 
 // Tags « bénéfice client » d'une chambre — RÈGLE EN DUR, basée sur le NOM de la chambre
 // UNIQUEMENT (on n'en invente pas d'autres) :
-//   • nom contient « Panorama »  → Vue mer        (picto vagues)
-//   • nom contient « Sérénité »  → Sans vis-à-vis  (picto feuille)
-//   • nom contient « Harmonie »  → 1er étage       (picto escalier)
+//   • nom contient « Panorama »               → Vue mer        (picto vagues)
+//   • nom contient « Sérénité »               → Sans vis-à-vis  (picto feuille)
+//   • nom contient « Harmonie »               → 1er étage       (picto escalier)
+//   • nom contient « Découverte »/« Accessibilité » → Plain-pied (picto maison)
 // Renvoie des clés → l'UI mappe libellé (i18n) + picto SVG.
 export function roomBenefits(room: { name: string }): string[] {
   const name = room.name;
@@ -184,6 +185,7 @@ export function roomBenefits(room: { name: string }): string[] {
   if (/panorama/i.test(name)) out.push("sea");
   if (/s[ée]r[ée]nit[ée]/i.test(name)) out.push("quiet");
   if (/harmonie/i.test(name)) out.push("floor");
+  if (/d[ée]couverte|accessibilit[ée]/i.test(name)) out.push("ground");
   return out;
 }
 

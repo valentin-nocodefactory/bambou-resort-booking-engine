@@ -122,6 +122,14 @@ export const IconStairs = (p: SVGProps<SVGSVGElement>) => (
     <path d="M3 20h5v-5h5v-5h5v-5h3" />
   </svg>
 );
+// Maison de plain-pied (rez-de-chaussée, sans étage) — pour le bénéfice « Plain-pied ».
+export const IconGroundFloor = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M3 21h18" />
+    <path d="M6 21v-8l6-4 6 4v8" />
+    <path d="M10 21v-5h4v5" />
+  </svg>
+);
 export const IconStar = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)} fill="currentColor" stroke="none">
     <path d="M12 3.2l2.5 5.1 5.6.8-4 4 1 5.6-5.1-2.7L7.4 18.7l1-5.6-4-4 5.6-.8L12 3.2Z" />
