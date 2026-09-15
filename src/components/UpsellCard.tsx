@@ -7,8 +7,9 @@ import { Photo } from "./Photo";
 import { IconCheck, IconPlus, IconSparkles } from "./icons";
 import { t } from "../i18n";
 
-// Carte extra (étape Extras) — toggle d'ajout + « En savoir plus » (popup détail).
-// Conteneur en <div role="button"> (et non <button>) pour pouvoir imbriquer un bouton
+// Carte extra (étape Extras) — carte VERTICALE : photo en haut (ratio 3:2 constant),
+// infos dessous (titre COMPLET, description, prix), bouton d'ajout en overlay sur la
+// photo. Conteneur en <div role="button"> (et non <button>) pour imbriquer le bouton
 // « En savoir plus » sans bouton-dans-bouton (HTML invalide).
 export function UpsellCard({
   product,
@@ -47,46 +48,56 @@ export function UpsellCard({
                 }
               }
         }
-        className={`card group flex min-h-[9rem] w-full items-stretch gap-0 overflow-hidden text-left transition ${
-          locked ? "cursor-default ring-2 ring-turquoise/70" : "cursor-pointer hover:shadow-float"
-        } ${selected && !locked ? "ring-2 ring-turquoise" : ""}`}
+        className={`group flex h-full flex-col overflow-hidden rounded-2xl border bg-white text-left shadow-card transition focus:outline-none focus-visible:ring-2 focus-visible:ring-corail focus-visible:ring-offset-2 ${
+          locked
+            ? "cursor-default border-turquoise/70 ring-1 ring-turquoise/50"
+            : selected
+              ? "cursor-pointer border-turquoise shadow-float ring-2 ring-turquoise"
+              : "cursor-pointer border-ink/10 hover:shadow-float"
+        }`}
       >
-        <div className="relative w-24 shrink-0 sm:w-28">
+        {/* Photo (ratio constant 3:2) + bouton d'ajout / badge obligatoire en overlay */}
+        <div className="relative aspect-[3/2] w-full overflow-hidden">
           <Photo
-            src={imgUrl(imageBaseUrl, product.imageId, 300)}
+            src={imgUrl(imageBaseUrl, product.imageId, 640)}
             alt={product.name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
             gradient="from-creole via-creole-soft to-turquoise-vivid"
           />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/35 via-transparent to-transparent" />
+          {locked ? (
+            <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-turquoise px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-card">
+              <IconCheck className="h-3 w-3" /> {t("upsell.mandatory")}
+            </span>
+          ) : (
+            <span
+              className={`absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full shadow-card ring-1 transition ${
+                selected
+                  ? "bg-turquoise text-white ring-turquoise"
+                  : "bg-white/90 text-ink ring-black/5 backdrop-blur group-hover:bg-white"
+              }`}
+            >
+              {selected ? <IconCheck className="h-4 w-4" /> : <IconPlus className="h-4 w-4" />}
+            </span>
+          )}
         </div>
+
+        {/* Infos : titre COMPLET (jamais tronqué), description, prix */}
         <div className="flex flex-1 flex-col p-4">
-          <div className="flex items-start justify-between gap-2">
-            <p className="font-semibold leading-snug text-ink">{product.name}</p>
-            {locked ? (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-turquoise px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                <IconCheck className="h-3 w-3" /> {t("upsell.mandatory")}
-              </span>
-            ) : (
-              <span
-                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition ${
-                  selected ? "border-turquoise bg-turquoise text-white" : "border-ink/25 text-ink/40"
-                }`}
-              >
-                {selected ? <IconCheck className="h-4 w-4" /> : <IconPlus className="h-4 w-4" />}
-              </span>
-            )}
-          </div>
+          <p className="font-semibold leading-snug text-ink">{product.name}</p>
           {product.description && (
             <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-ink/60">{product.description}</p>
           )}
-          <div className="mt-auto flex items-end justify-between gap-2 pt-2">
-            <div className="text-sm">
+          <div className="mt-auto flex items-end justify-between gap-2 pt-3">
+            <div>
               <span className="font-display text-lg text-teal-deep">{eur(product.priceEur)}</span>
               {chargingLabel(product.chargingMode) && (
                 <span className="text-xs text-ink/45"> {chargingLabel(product.chargingMode)}</span>
               )}
               {lineTotal !== product.priceEur && (
-                <span className="text-xs text-ink/45"> · {eur(lineTotal)} {t("upsell.total")}</span>
+                <span className="block text-[11px] text-ink/45">
+                  {eur(lineTotal)} {t("upsell.total")}
+                </span>
               )}
             </div>
             {/* stopPropagation : ouvrir le détail sans (dé)cocher l'extra. */}
@@ -157,7 +168,7 @@ function ExtraDetailModal({
     >
       <div className="absolute inset-0 bg-ink/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div className="relative z-10 max-h-[90vh] w-full max-w-md animate-scale-in overflow-y-auto rounded-t-2xl bg-cream shadow-float sm:rounded-2xl">
-        <div className="relative h-44 w-full">
+        <div className="relative aspect-[3/2] w-full">
           <Photo
             src={imgUrl(imageBaseUrl, product.imageId, 800)}
             alt={product.name}
