@@ -33,12 +33,23 @@ export function Stars({ className = "" }: { className?: string }) {
   );
 }
 
-export function RatingPill({ score = "4,2", count = "2 064", className = "" }: { score?: string; count?: string; className?: string }) {
+export function RatingPill({
+  score = "4,2",
+  count = "2 064",
+  className = "",
+  tone = "dark",
+}: {
+  score?: string;
+  count?: string;
+  className?: string;
+  tone?: "dark" | "light";
+}) {
+  const light = tone === "light";
   return (
     <span className={`inline-flex items-center gap-1.5 text-sm ${className}`}>
       <IconStar className="h-4 w-4 text-creole" />
-      <strong className="font-semibold text-ink">{score}</strong>
-      <span className="text-ink/50">{t("conv.reviewsCount", { count })}</span>
+      <strong className={`font-semibold ${light ? "text-white" : "text-ink"}`}>{score}</strong>
+      <span className={light ? "text-white/70" : "text-ink/50"}>{t("conv.reviewsCount", { count })}</span>
     </span>
   );
 }

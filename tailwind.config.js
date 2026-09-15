@@ -43,10 +43,22 @@ export default {
           "0%": { opacity: "0", transform: "scale(0.97)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
+        // Ken Burns : léger zoom/pan lent sur la photo active du hero.
+        "hero-pan": {
+          "0%": { transform: "scale(1.06)" },
+          "100%": { transform: "scale(1.15)" },
+        },
+        // Remplissage de la barre de progression du carousel (segment actif).
+        "hero-progress": {
+          "0%": { transform: "scaleX(0)" },
+          "100%": { transform: "scaleX(1)" },
+        },
       },
       animation: {
         "fade-in": "fade-in 0.4s ease-out both",
         "scale-in": "scale-in 0.25s ease-out both",
+        "hero-pan": "hero-pan 7s ease-out both",
+        "hero-progress": "hero-progress 6s linear forwards",
       },
     },
   },

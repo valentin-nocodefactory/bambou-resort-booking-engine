@@ -69,6 +69,7 @@ const DICT = {
   "dates.title": { fr: "Réservez votre séjour", en: "Book your stay" },
   "dates.subtitle": { fr: "Hôtels & villas d'exception en Martinique", en: "Exceptional hotels & villas in Martinique" },
   "dates.directBooking": { fr: "Réservation en direct, sans frais ni commissions des plateformes", en: "Book direct — no platform fees or commissions" },
+  "hero.goToSlide": { fr: (p) => `Voir la photo ${p.n} sur ${p.total}`, en: (p) => `View photo ${p.n} of ${p.total}` },
   "dates.search": { fr: "Rechercher", en: "Search" },
   "dates.errorSelectDates": { fr: "Sélectionnez vos dates d'arrivée et de départ.", en: "Please select your check-in and check-out dates." },
   "dates.errorCheckoutAfter": { fr: "La date de départ doit être postérieure à l'arrivée.", en: "Check-out must be after check-in." },

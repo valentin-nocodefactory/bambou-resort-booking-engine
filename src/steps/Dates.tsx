@@ -3,6 +3,7 @@ import { useBooking, DEFAULT_PROPERTIES } from "../state/booking";
 import { nights } from "../lib/format";
 import { t, type TKey } from "../i18n";
 import { DateRangePicker } from "../components/DateRangePicker";
+import { HeroCarousel } from "../components/HeroCarousel";
 import { RatingPill } from "../components/conversion";
 import {
   IconArrowRight,
@@ -61,87 +62,91 @@ export function Dates() {
 
   return (
     <div className="relative">
-      <div className="mx-auto max-w-5xl px-5 pb-16 pt-10 sm:pt-16">
-        {/* En-tête éditorial compact */}
-        <div className="max-w-2xl">
-          <h1 className="font-display text-4xl leading-[1.07] text-ink text-balance sm:text-5xl">
-            {t("dates.title")}
-          </h1>
-          <p className="mt-3 text-lg leading-snug text-ink/70 sm:text-xl">
-            {t("dates.subtitle")}
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
-            <RatingPill />
-            <span className="inline-flex items-center gap-1.5 text-sm text-teal-deep">
-              <IconLeaf className="h-4 w-4 text-turquoise" /> {t("dates.directBooking")}
-            </span>
+      {/* Page de garde : hero plein cadre avec carousel photo (auto-rotation + barre
+          de progression). Le contenu (titre + moteur) est en surimpression, texte clair. */}
+      <HeroCarousel>
+        <div className="mx-auto max-w-5xl px-5 pb-16 pt-16 sm:pb-20 sm:pt-24">
+          {/* En-tête éditorial — sur le carousel, texte clair */}
+          <div className="max-w-2xl">
+            <h1 className="font-display text-4xl leading-[1.07] text-white text-balance drop-shadow-[0_2px_24px_rgba(6,26,45,0.5)] sm:text-5xl">
+              {t("dates.title")}
+            </h1>
+            <p className="mt-3 text-lg leading-snug text-white/85 drop-shadow-[0_1px_16px_rgba(6,26,45,0.45)] sm:text-xl">
+              {t("dates.subtitle")}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+              <RatingPill tone="light" />
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-white/90">
+                <IconLeaf className="h-4 w-4 text-corail" /> {t("dates.directBooking")}
+              </span>
+            </div>
           </div>
+
+          {/* Moteur de recherche */}
+          <form onSubmit={submit} className="relative z-20 mt-8 rounded-3xl border border-white/15 bg-white/95 p-3 shadow-float backdrop-blur sm:p-4">
+            <div className="grid gap-3 lg:grid-cols-[1.1fr_1.6fr_1fr_auto] lg:items-stretch">
+              {/* Hébergements (multi-sélection : 1, 2 ou 3) → filtre les logements */}
+              <PropertiesField
+                options={PROPERTY_OPTIONS}
+                selected={form.properties}
+                onChange={(props) => setForm((f) => ({ ...f, properties: props }))}
+              />
+
+              {/* Dates (range picker) */}
+              <DateRangePicker
+                checkIn={form.checkIn}
+                checkOut={form.checkOut}
+                onChange={(ci, co) => setForm((f) => ({ ...f, checkIn: ci, checkOut: co }))}
+              />
+
+              {/* Voyageurs */}
+              <GuestsField
+                adults={form.adults}
+                children={form.children}
+                infants={form.infants}
+                onChange={(a, c, i) => setForm((f) => ({ ...f, adults: a, children: c, infants: i }))}
+              />
+
+              {/* Rechercher */}
+              <button type="submit" className="btn-primary h-full min-h-[3.4rem] w-full px-6 lg:w-auto">
+                {t("dates.search")} <IconArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-2 px-1 text-xs text-ink/55">
+              {n > 0 ? (
+                <span>{t("dates.nightsGuests", { nights: n, guests: form.adults + form.children })}</span>
+              ) : (
+                <span>{t("dates.pickDatesHint")}</span>
+              )}
+            </div>
+
+            {error && <p className="mt-2 px-1 text-sm font-medium text-red-600">{error}</p>}
+          </form>
         </div>
+      </HeroCarousel>
 
-        {/* Moteur de recherche */}
-        <form onSubmit={submit} className="relative z-20 mt-8 rounded-3xl border border-ink/10 bg-white/90 p-3 shadow-float backdrop-blur sm:p-4">
-          <div className="grid gap-3 lg:grid-cols-[1.1fr_1.6fr_1fr_auto] lg:items-stretch">
-            {/* Hébergements (multi-sélection : 1, 2 ou 3) → filtre les logements */}
-            <PropertiesField
-              options={PROPERTY_OPTIONS}
-              selected={form.properties}
-              onChange={(props) => setForm((f) => ({ ...f, properties: props }))}
-            />
-
-            {/* Dates (range picker) */}
-            <DateRangePicker
-              checkIn={form.checkIn}
-              checkOut={form.checkOut}
-              onChange={(ci, co) => setForm((f) => ({ ...f, checkIn: ci, checkOut: co }))}
-            />
-
-            {/* Voyageurs */}
-            <GuestsField
-              adults={form.adults}
-              children={form.children}
-              infants={form.infants}
-              onChange={(a, c, i) => setForm((f) => ({ ...f, adults: a, children: c, infants: i }))}
-            />
-
-            {/* Rechercher */}
-            <button type="submit" className="btn-primary h-full min-h-[3.4rem] w-full px-6 lg:w-auto">
-              {t("dates.search")} <IconArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="mt-2 px-1 text-xs text-ink/55">
-            {n > 0 ? (
-              <span>{t("dates.nightsGuests", { nights: n, guests: form.adults + form.children })}</span>
-            ) : (
-              <span>{t("dates.pickDatesHint")}</span>
-            )}
-          </div>
-
-          {error && <p className="mt-2 px-1 text-sm font-medium text-red-600">{error}</p>}
-        </form>
-
-        {/* Nos promesses — arguments de marque repris de bambouresort.com */}
-        <div className="mt-14">
-          <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-corail">
-            {t("dates.artDeVivre")}
-          </p>
-          <div className="mx-auto mt-8 grid max-w-4xl gap-10 sm:grid-cols-3">
-            <PromiseCard
-              icon={<IconWave className="h-6 w-6" />}
-              title={t("dates.promise1Title")}
-              text={t("dates.promise1Text")}
-            />
-            <PromiseCard
-              icon={<IconMapPin className="h-6 w-6" />}
-              title={t("dates.promise2Title")}
-              text={t("dates.promise2Text")}
-            />
-            <PromiseCard
-              icon={<IconPalm className="h-6 w-6" />}
-              title={t("dates.promise3Title")}
-              text={t("dates.promise3Text")}
-            />
-          </div>
+      {/* Nos promesses — arguments de marque repris de bambouresort.com (sous le hero) */}
+      <div className="mx-auto max-w-5xl px-5 py-16">
+        <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-corail">
+          {t("dates.artDeVivre")}
+        </p>
+        <div className="mx-auto mt-8 grid max-w-4xl gap-10 sm:grid-cols-3">
+          <PromiseCard
+            icon={<IconWave className="h-6 w-6" />}
+            title={t("dates.promise1Title")}
+            text={t("dates.promise1Text")}
+          />
+          <PromiseCard
+            icon={<IconMapPin className="h-6 w-6" />}
+            title={t("dates.promise2Title")}
+            text={t("dates.promise2Text")}
+          />
+          <PromiseCard
+            icon={<IconPalm className="h-6 w-6" />}
+            title={t("dates.promise3Title")}
+            text={t("dates.promise3Text")}
+          />
         </div>
       </div>
     </div>
