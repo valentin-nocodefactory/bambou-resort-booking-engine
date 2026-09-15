@@ -31,7 +31,6 @@ type Cart = {
   payment_request_id: string | null;
   airport_transfer: boolean | null; // extra hors Mews → cible de relance post-paiement
   infants: number | null; // bébés en berceau → déclenche le « kit bébé »
-  region: string | null; // région IP du visiteur (ex. « QC ») → enjeu marketing
 };
 
 // Statut dérivé (une demande) : payé > paiement lancé non abouti > abandonné.
@@ -90,6 +89,7 @@ type EventRow = {
   payload: {
     totals?: { grand?: number | null } | null;
     products?: { id?: string; name?: string; priceEur?: number | null }[] | null;
+    geo?: { country?: string | null; region?: string | null } | null;
   } | null;
 };
 
@@ -102,7 +102,7 @@ const CART_COLS_BASE =
 // `airport_transfer` n'existent pas encore, la requête retombe progressivement (le
 // dashboard reste fonctionnel, sans ces colonnes) au lieu de planter sur « column does
 // not exist ». Repli géré dans load().
-const CART_COLS = CART_COLS_BASE + ",airport_transfer,infants,region";
+const CART_COLS = CART_COLS_BASE + ",airport_transfer,infants";
 
 // Étapes du tunnel, dans l'ordre.
 const STEPS: { key: string; label: string }[] = [
@@ -123,8 +123,23 @@ const RANGES: { key: string; label: string; days: number | null }[] = [
 ];
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-const eur = (n: number | null | undefined) =>
-  new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n ?? 0);
+// Prix EXACTS (pas d'arrondi) : 0 décimale si entier, sinon 2 (comme le front).
+const eur = (n: number | null | undefined) => {
+  const v = n ?? 0;
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: Number.isInteger(v) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(v);
+};
+
+// Drapeau emoji d'un code pays ISO-3166-1 alpha-2 (ex. « CA » → 🇨🇦). "" si invalide.
+function countryFlag(cc: string | null | undefined): string {
+  const c = (cc || "").trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(c)) return "";
+  return String.fromCodePoint(...[...c].map((ch) => 0x1f1e6 + ch.charCodeAt(0) - 65));
+}
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 
 function timeAgo(iso: string): string {
@@ -371,9 +386,6 @@ function Panel({ email }: { email: string }) {
     const [cartsRes0, funnelRes] = await Promise.all([runCarts(CART_COLS), supabase.rpc("dashboard_funnel", { since })]);
     // Repli progressif si des colonnes optionnelles (migrations) manquent encore.
     let cartsRes = cartsRes0;
-    if (cartsRes.error && /region/.test(cartsRes.error.message || "")) {
-      cartsRes = await runCarts(CART_COLS_BASE + ",airport_transfer,infants");
-    }
     if (cartsRes.error && /infants/.test(cartsRes.error.message || "")) {
       cartsRes = await runCarts(CART_COLS_BASE + ",airport_transfer");
     }
@@ -642,9 +654,9 @@ function Panel({ email }: { email: string }) {
                   <Th label="Séjour" k="check_in" sort={sort} setSort={setSort} />
                   <Th label="Voyageurs" />
                   <Th label="Kit bébé" k="infants" sort={sort} setSort={setSort} align="center" />
+                  <Th label="Transf." k="airport_transfer" sort={sort} setSort={setSort} align="center" />
                   <Th label="Chambre" />
                   <Th label="Total" k="total_grand" sort={sort} setSort={setSort} align="right" />
-                  <Th label="Transf." k="airport_transfer" sort={sort} setSort={setSort} align="center" />
                   <Th label="Source" k="utm_source" sort={sort} setSort={setSort} />
                   <Th label="Vu" k="last_seen" sort={sort} setSort={setSort} align="right" />
                 </tr>
@@ -693,16 +705,16 @@ function Panel({ email }: { email: string }) {
                       )}
                     </td>
                     <td className="px-3 py-2.5 text-center">
-                      <KitBebe on={(c.infants ?? 0) > 0} />
+                      <CheckMark on={(c.infants ?? 0) > 0} title="Kit bébé requis (bébé en berceau)" />
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <CheckMark on={!!c.airport_transfer} title="Transfert aéroport demandé" />
                     </td>
                     <td className="px-3 py-2.5">
                       <span className="block max-w-[170px] truncate text-ink/70">{c.room_name || "—"}</span>
                     </td>
                     <td className="whitespace-nowrap px-3 py-2.5 text-right font-semibold tabular-nums text-ink">
                       {c.total_grand ? eur(c.total_grand) : "—"}
-                    </td>
-                    <td className="px-3 py-2.5 text-center">
-                      {c.airport_transfer ? <span title="Transfert aéroport demandé">✈️</span> : ""}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2.5 text-ink/60">{c.utm_source || "Direct"}</td>
                     <td className="whitespace-nowrap px-3 py-2.5 text-right text-[11px] text-ink/45">
@@ -792,11 +804,12 @@ function Th({
   );
 }
 
-// Case « kit bébé » : cochée (turquoise) si la demande a un bébé, sinon case vide.
-function KitBebe({ on }: { on: boolean }) {
+// Case à cocher (lecture seule) : cochée (turquoise) si `on`, sinon case vide.
+// Utilisée pour « Kit bébé » et « Transfert » dans le tableau + le drawer.
+function CheckMark({ on, title }: { on: boolean; title?: string }) {
   return on ? (
     <span
-      title="Kit bébé requis (bébé en berceau)"
+      title={title}
       className="inline-flex h-5 w-5 items-center justify-center rounded border border-turquoise bg-turquoise text-white"
     >
       <svg
@@ -861,22 +874,17 @@ function CartDrawer({
         )
       : null;
 
-  // Total courant + impact (delta €) de chaque étape, lu dans le payload.
-  const timeline = (() => {
-    let running = 0;
-    let seen = false;
-    return (events ?? []).map((e) => {
-      const raw = e.payload?.totals?.grand;
-      const t = typeof raw === "number" ? raw : null;
-      let delta = 0;
-      if (t != null) {
-        delta = t - running;
-        running = t;
-        seen = true;
-      }
-      return { e, total: seen ? running : null, delta };
-    });
+  // Localisation IP (pays + région) : dernier payload d'événement qui la porte.
+  const geo = (() => {
+    for (let i = (events?.length ?? 0) - 1; i >= 0; i--) {
+      const g = events![i].payload?.geo;
+      if (g && (g.country || g.region)) return g;
+    }
+    return null;
   })();
+  const geoValue = geo
+    ? `${countryFlag(geo.country)} ${[geo.region, geo.country].filter(Boolean).join(" · ")}`.trim()
+    : "—";
 
   // Extras choisis : derniers produits présents dans un payload d'événement.
   const products = (() => {
@@ -988,7 +996,7 @@ function CartDrawer({
                 <div className="flex flex-wrap gap-2">
                   {(cart.infants ?? 0) > 0 && (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-turquoise/10 px-3 py-1.5 text-xs font-semibold text-teal-deep">
-                      <KitBebe on /> Kit bébé requis
+                      <CheckMark on title="Kit bébé requis" /> Kit bébé requis
                     </span>
                   )}
                   {cart.airport_transfer && (
@@ -1031,7 +1039,7 @@ function CartDrawer({
                 <Cell label="Source" value={cart.utm_source || "Direct"} />
                 <Cell label="Canal" value={cart.utm_medium || "—"} />
                 <Cell label="Campagne" value={cart.utm_campaign || "—"} />
-                <Cell label="Région (IP)" value={cart.region || "—"} />
+                <Cell label="Localisation (IP)" value={geoValue} />
                 <Cell label="Langue" value={cart.lang ? cart.lang.toUpperCase() : "—"} />
                 <Cell
                   label="Durée de navigation"
@@ -1065,9 +1073,9 @@ function CartDrawer({
               {!error && events?.length === 0 && <p className="mt-3 text-sm text-ink/45">Aucun événement enregistré.</p>}
               {events && events.length > 0 && (
                 <ol className="mt-4">
-                  {timeline.map(({ e, total, delta }, i) => {
+                  {events.map((e, i) => {
                     const m = eventMeta(e.status, e.step);
-                    const last = i === timeline.length - 1;
+                    const last = i === events.length - 1;
                     return (
                       <li key={e.id} className="relative flex gap-3 pb-4">
                         {!last && <span className="absolute left-[5px] top-3 h-full w-px bg-ink/12" aria-hidden></span>}
@@ -1077,19 +1085,6 @@ function CartDrawer({
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-ink">{m.label}</p>
                           <p className="text-xs tabular-nums text-ink/45">{fmtClock(e.event_at || e.received_at)}</p>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          {delta !== 0 && (
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${
-                                delta > 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                              }`}
-                            >
-                              {delta > 0 ? "+" : "−"}
-                              {eur(Math.abs(delta))}
-                            </span>
-                          )}
-                          {total != null && <p className="mt-0.5 text-[11px] tabular-nums text-ink/45">{eur(total)}</p>}
                         </div>
                       </li>
                     );
