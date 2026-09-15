@@ -169,6 +169,21 @@ export const IconGift = (p: SVGProps<SVGSVGElement>) => (
     <path d="M3.5 12.5h17M12 8.5v12M12 8.5C9 8.5 7 7 8 4.5c1-2 4 .5 4 4Zm0 0c3 0 5-1.5 4-4-1-2-4 .5-4 4Z" />
   </svg>
 );
+// Flocon — pour l'équipement « Climatisation ».
+export const IconSnow = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9" />
+  </svg>
+);
+// Ondes Wi-Fi — pour l'équipement « Wi-Fi gratuit ».
+export const IconWifi = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M2 8.8a15 15 0 0 1 20 0" />
+    <path d="M5.5 12.5a10 10 0 0 1 13 0" />
+    <path d="M9 16a5 5 0 0 1 6 0" />
+    <path d="M12 19.3h.01" />
+  </svg>
+);
 export const IconSun = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}>
     <circle cx="12" cy="12" r="4" />

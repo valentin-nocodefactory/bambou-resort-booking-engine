@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType, type SVGProps } from "react";
 import { api } from "../lib/api";
 import { eur, imgUrl } from "../lib/format";
 import { spaceLabel } from "../lib/shaping";
@@ -6,17 +6,26 @@ import type { ShapedRate, ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
 import { RoomTagsPanel } from "./RoomTags";
 import { FavoriteBadge, ScarcityBadge, ViewersNudge } from "./conversion";
-import { IconBed, IconCheck, IconClose, IconLeaf, IconShield, IconSun, IconUsers, IconWave } from "./icons";
-import { t } from "../i18n";
+import { IconBed, IconCheck, IconClose, IconLeaf, IconShield, IconSnow, IconSun, IconUsers, IconWave, IconWifi } from "./icons";
+import { t, type TKey } from "../i18n";
 
-// ⚠️ DÉMO (en dur) : Mews n'expose pas d'équipements structurés sur les RoomCategories ici.
-// À remplacer par de vraies données équipements en production.
-const AMENITIES = [
-  { icon: IconWave, key: "roomDetail.amenityView" },
-  { icon: IconSun, key: "roomDetail.amenityTerrace" },
-  { icon: IconLeaf, key: "roomDetail.amenityAc" },
-  { icon: IconCheck, key: "roomDetail.amenityWifi" },
-] as const;
+// Équipements — RÈGLE EN DUR par nom de chambre (Mews n'expose pas d'équipements
+// structurés ici). VUE : Gran Kay → jardin/cour ; Infini/Panorama → mer ; sinon jardin.
+// Terrasse privative, Climatisation, Wi-Fi gratuit : TOUTES les chambres.
+function roomAmenities(room: { name: string }): { icon: ComponentType<SVGProps<SVGSVGElement>>; key: TKey }[] {
+  const name = room.name;
+  const view = /gran\s*kay/i.test(name)
+    ? { icon: IconLeaf, key: "roomDetail.amenityViewGardenCourt" as TKey }
+    : /infini|panorama/i.test(name)
+      ? { icon: IconWave, key: "roomDetail.amenityViewSea" as TKey }
+      : { icon: IconLeaf, key: "roomDetail.amenityViewGarden" as TKey };
+  return [
+    view,
+    { icon: IconSun, key: "roomDetail.amenityTerrace" },
+    { icon: IconSnow, key: "roomDetail.amenityAc" },
+    { icon: IconWifi, key: "roomDetail.amenityWifi" },
+  ];
+}
 
 // Panneau détail qui glisse depuis la DROITE — large, miniatures au-dessus de la
 // photo, détails sur 2 colonnes (infos à gauche, tarifs à droite).
@@ -175,7 +184,7 @@ export function RoomDetailDrawer({
 
               <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-teal-deep/60">{t("roomDetail.amenities")}</p>
               <ul className="mt-2 grid grid-cols-2 gap-2.5">
-                {AMENITIES.map((a) => (
+                {roomAmenities(room).map((a) => (
                   <li key={a.key} className="inline-flex items-center gap-2 text-sm text-ink/75">
                     <a.icon className="h-4 w-4 shrink-0 text-turquoise" /> {t(a.key)}
                   </li>
