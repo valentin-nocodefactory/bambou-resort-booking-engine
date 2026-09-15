@@ -47,7 +47,7 @@ export function UpsellCard({
                 }
               }
         }
-        className={`card group flex h-36 w-full items-stretch gap-0 overflow-hidden text-left transition ${
+        className={`card group flex min-h-[9rem] w-full items-stretch gap-0 overflow-hidden text-left transition ${
           locked ? "cursor-default ring-2 ring-turquoise/70" : "cursor-pointer hover:shadow-float"
         } ${selected && !locked ? "ring-2 ring-turquoise" : ""}`}
       >
@@ -61,7 +61,7 @@ export function UpsellCard({
         </div>
         <div className="flex flex-1 flex-col p-4">
           <div className="flex items-start justify-between gap-2">
-            <p className="line-clamp-2 font-semibold leading-snug text-ink">{product.name}</p>
+            <p className="font-semibold leading-snug text-ink">{product.name}</p>
             {locked ? (
               <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-turquoise px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
                 <IconCheck className="h-3 w-3" /> {t("upsell.mandatory")}
