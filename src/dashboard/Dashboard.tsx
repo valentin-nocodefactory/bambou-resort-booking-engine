@@ -31,6 +31,7 @@ type Cart = {
   payment_request_id: string | null;
   airport_transfer: boolean | null; // extra hors Mews → cible de relance post-paiement
   infants: number | null; // bébés en berceau → déclenche le « kit bébé »
+  region: string | null; // région IP du visiteur (ex. « QC ») → enjeu marketing
 };
 
 // Statut dérivé (une demande) : payé > paiement lancé non abouti > abandonné.
@@ -86,7 +87,10 @@ type EventRow = {
   step: string | null;
   event_at: string | null;
   received_at: string;
-  payload: { totals?: { grand?: number | null } | null } | null;
+  payload: {
+    totals?: { grand?: number | null } | null;
+    products?: { id?: string; name?: string; priceEur?: number | null }[] | null;
+  } | null;
 };
 
 const CART_COLS_BASE =
@@ -98,7 +102,7 @@ const CART_COLS_BASE =
 // `airport_transfer` n'existent pas encore, la requête retombe progressivement (le
 // dashboard reste fonctionnel, sans ces colonnes) au lieu de planter sur « column does
 // not exist ». Repli géré dans load().
-const CART_COLS = CART_COLS_BASE + ",airport_transfer,infants";
+const CART_COLS = CART_COLS_BASE + ",airport_transfer,infants,region";
 
 // Étapes du tunnel, dans l'ordre.
 const STEPS: { key: string; label: string }[] = [
@@ -240,58 +244,82 @@ function ConfigNeeded() {
   );
 }
 
-// ── Login (email / mot de passe) ────────────────────────────────────────────
+// ── Login SANS mot de passe (lien magique) ──────────────────────────────────
+// `signInWithOtp` + `shouldCreateUser: false` : aucune création de compte possible.
+// Seuls les e-mails déjà ajoutés à la main dans Supabase (Auth → Users) reçoivent le
+// lien. On n'indique jamais si l'e-mail existe (anti-énumération) : message générique.
 function Login() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    if (error) setError(error.message);
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: `${window.location.origin}/dashboard.html`,
+      },
+    });
     setBusy(false);
+    if (error) setError(error.message);
+    else setSent(true);
   }
 
   return (
     <div className="grid min-h-dvh place-items-center bg-cream px-5">
-      <form onSubmit={submit} className="card w-full max-w-sm p-7">
+      <div className="card w-full max-w-sm p-7">
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-corail">Bambou · Back-office</p>
         <h1 className="mt-1 font-display text-2xl text-ink">Dashboard funnel</h1>
-        <p className="mt-1 text-sm text-ink/60">Connecte-toi pour piloter le tunnel.</p>
 
-        <label className="mt-5 block text-sm font-medium text-ink/80">
-          E-mail
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="field-input mt-1"
-            placeholder="toi@hotelbambou.fr"
-          />
-        </label>
-        <label className="mt-3 block text-sm font-medium text-ink/80">
-          Mot de passe
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="field-input mt-1"
-            placeholder="••••••••"
-          />
-        </label>
+        {sent ? (
+          <div className="mt-4">
+            <div className="grid h-11 w-11 place-items-center rounded-full bg-turquoise/10 text-teal-deep">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2.5" y="4.5" width="19" height="15" rx="2.5" />
+                <path d="M3 6.5l9 6 9-6" />
+              </svg>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-ink/70">
+              Si <b className="text-ink">{email.trim()}</b> est autorisé, un lien de connexion vient d'être envoyé.
+              Ouvrez-le <b className="text-ink">sur cet appareil</b> pour accéder au dashboard.
+            </p>
+            <button type="button" onClick={() => setSent(false)} className="btn-ghost mt-5 w-full">
+              Utiliser une autre adresse
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={submit}>
+            <p className="mt-1 text-sm text-ink/60">Connexion par lien magique — réservée aux comptes autorisés.</p>
+            <label className="mt-5 block text-sm font-medium text-ink/80">
+              E-mail
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="field-input mt-1"
+                placeholder="toi@hotelbambou.fr"
+                autoComplete="email"
+              />
+            </label>
 
-        {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
+            {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
 
-        <button type="submit" disabled={busy} className="btn-primary mt-5 w-full">
-          {busy ? "Connexion…" : "Se connecter"}
-        </button>
-      </form>
+            <button type="submit" disabled={busy} className="btn-primary mt-5 w-full">
+              {busy ? "Envoi…" : "Recevoir le lien de connexion"}
+            </button>
+            <p className="mt-3 text-xs leading-relaxed text-ink/45">
+              Aucun mot de passe. La création de compte est désactivée : seuls les e-mails ajoutés dans Supabase
+              peuvent se connecter.
+            </p>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
@@ -343,6 +371,9 @@ function Panel({ email }: { email: string }) {
     const [cartsRes0, funnelRes] = await Promise.all([runCarts(CART_COLS), supabase.rpc("dashboard_funnel", { since })]);
     // Repli progressif si des colonnes optionnelles (migrations) manquent encore.
     let cartsRes = cartsRes0;
+    if (cartsRes.error && /region/.test(cartsRes.error.message || "")) {
+      cartsRes = await runCarts(CART_COLS_BASE + ",airport_transfer,infants");
+    }
     if (cartsRes.error && /infants/.test(cartsRes.error.message || "")) {
       cartsRes = await runCarts(CART_COLS_BASE + ",airport_transfer");
     }
@@ -798,6 +829,7 @@ function CartDrawer({
   onClose: () => void;
 }) {
   const [entered, setEntered] = useState(false);
+  const [tab, setTab] = useState<"choix" | "marketing" | "historique">("choix");
   useEffect(() => {
     const raf = requestAnimationFrame(() => setEntered(true));
     const onKey = (e: KeyboardEvent) => {
@@ -820,6 +852,7 @@ function CartDrawer({
   };
 
   const name = cart.customer_name || cart.customer_email || "Panier anonyme";
+  const initial = (cart.customer_name || cart.customer_email || "?").trim().charAt(0).toUpperCase() || "?";
   const durationMin =
     events && events.length > 1
       ? Math.round(
@@ -845,6 +878,24 @@ function CartDrawer({
     });
   })();
 
+  // Extras choisis : derniers produits présents dans un payload d'événement.
+  const products = (() => {
+    for (let i = (events?.length ?? 0) - 1; i >= 0; i--) {
+      const p = events![i].payload?.products;
+      if (p && p.length) return p;
+    }
+    return [] as NonNullable<NonNullable<EventRow["payload"]>["products"]>;
+  })();
+
+  const voyageurs = cart.adults
+    ? `${cart.adults} adulte${cart.adults > 1 ? "s" : ""}${cart.children ? `, ${cart.children} enfant${cart.children > 1 ? "s" : ""}` : ""}${(cart.infants ?? 0) > 0 ? `, ${cart.infants} bébé${(cart.infants ?? 0) > 1 ? "s" : ""}` : ""}`
+    : "—";
+  const tabs = [
+    { key: "choix", label: "Choix" },
+    { key: "marketing", label: "Marketing" },
+    { key: "historique", label: "Historique" },
+  ] as const;
+
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={`Panier — ${name}`}>
       <div
@@ -852,127 +903,213 @@ function CartDrawer({
         className={`absolute inset-0 bg-ink/50 transition-opacity duration-300 ${entered ? "opacity-100" : "opacity-0"}`}
       ></div>
       <div
-        className={`absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-cream shadow-float transition-transform duration-300 ease-out ${
+        className={`absolute right-0 top-0 flex h-full w-full max-w-3xl flex-col bg-cream shadow-float transition-transform duration-300 ease-out ${
           entered ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex items-start justify-between gap-3 bg-teal-deep px-5 py-4 text-cream">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cream/60">Panier</p>
-            <h2 className="truncate font-display text-xl">{name}</h2>
-            {cart.customer_email && cart.customer_name && (
-              <p className="truncate text-xs text-cream/70">{cart.customer_email}</p>
-            )}
+        {/* ── Bloc UTILISATEUR — toujours visible ── */}
+        <div className="bg-teal-deep px-6 py-5 text-cream">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-cream/15 font-display text-lg">
+                {initial}
+              </span>
+              <div className="min-w-0">
+                <h2 className="truncate font-display text-xl leading-tight">{name}</h2>
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-cream/75">
+                  {cart.customer_email && <span className="truncate">{cart.customer_email}</span>}
+                  {cart.customer_phone && <span className="whitespace-nowrap">{cart.customer_phone}</span>}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={close}
+              aria-label="Fermer"
+              className="-mr-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-cream/70 transition hover:bg-cream/10 hover:text-cream"
+            >
+              ✕
+            </button>
           </div>
-          <button
-            onClick={close}
-            aria-label="Fermer"
-            className="-mr-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-cream/70 transition hover:bg-cream/10 hover:text-cream"
-          >
-            ✕
-          </button>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-cream">
+            <StatusBadge cart={cart} />
+            {(cart.infants ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-cream/15 px-2 py-0.5 text-[11px] font-semibold">
+                👶 Kit bébé
+              </span>
+            )}
+            {cart.airport_transfer && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-cream/15 px-2 py-0.5 text-[11px] font-semibold">
+                ✈️ Transfert
+              </span>
+            )}
+            <span className="rounded-full bg-cream/15 px-2 py-0.5 text-[11px] font-semibold">
+              {cart.lang ? cart.lang.toUpperCase() : "—"}
+            </span>
+            <span className="text-xs text-cream/60">· vu {timeAgo(cart.last_seen)}</span>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5">
-          <div className="mb-4">
-            <StatusBadge cart={cart} />
-          </div>
+        {/* ── Onglets (Choix / Marketing / Historique) ── */}
+        <div className="flex gap-1 border-b border-ink/10 px-5">
+          {tabs.map((tb) => (
+            <button
+              key={tb.key}
+              type="button"
+              onClick={() => setTab(tb.key)}
+              className={`-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition ${
+                tab === tb.key ? "border-corail text-ink" : "border-transparent text-ink/45 hover:text-ink"
+              }`}
+            >
+              {tb.label}
+            </button>
+          ))}
+        </div>
 
-          <dl className="grid grid-cols-1 gap-y-2.5 text-sm">
-            <Fact
-              label="Séjour"
-              value={
-                cart.check_in
-                  ? `${fmtRange(cart.check_in, cart.check_out)}${cart.nights ? ` · ${cart.nights} nuit${cart.nights > 1 ? "s" : ""}` : ""}`
-                  : "—"
-              }
-            />
-            <Fact
-              label="Voyageurs"
-              value={
-                cart.adults
-                  ? `${cart.adults} adulte${cart.adults > 1 ? "s" : ""}${cart.children ? `, ${cart.children} enfant${cart.children > 1 ? "s" : ""}` : ""}${(cart.infants ?? 0) > 0 ? `, ${cart.infants} bébé${(cart.infants ?? 0) > 1 ? "s" : ""}` : ""}`
-                  : "—"
-              }
-            />
-            {(cart.infants ?? 0) > 0 && (
-              <div className="flex items-center justify-between gap-4 border-b border-ink/5 pb-2">
-                <dt className="shrink-0 text-ink/50">Kit bébé</dt>
-                <dd className="flex items-center gap-2">
-                  <KitBebe on />
-                  <span className="text-xs font-semibold text-teal-deep">Requis (berceau, chaise haute…)</span>
-                </dd>
-              </div>
-            )}
-            <Fact label="Chambre" value={cart.room_name || "—"} />
-            <Fact label="Tarif" value={cart.rate_name || "—"} />
-            <Fact label="Total" value={cart.total_grand ? eur(cart.total_grand) : "—"} strong />
-            <Fact
-              label="Source"
-              value={[cart.utm_source || "Direct", cart.utm_medium, cart.utm_campaign].filter(Boolean).join(" · ")}
-            />
-            <Fact label="Langue" value={cart.lang ? cart.lang.toUpperCase() : "—"} />
-            <Fact label="Transfert aéroport" value={cart.airport_transfer ? "✈️ Demandé" : "—"} strong={!!cart.airport_transfer} />
-            <Fact label="Contact" value={[cart.customer_email, cart.customer_phone].filter(Boolean).join(" · ") || "—"} />
-            <Fact label="Vu" value={`${fmtDateTime(cart.first_seen)} → ${timeAgo(cart.last_seen)}`} />
-            {cart.reservation_group_id && <Fact label="Résa Mews" value={cart.reservation_group_id} mono />}
-          </dl>
-
-          <div className="mt-6">
-            <div className="flex items-baseline justify-between">
-              <h3 className="font-display text-lg text-ink">Comportement</h3>
-              {durationMin != null && (
-                <span className="text-xs text-ink/45">
-                  {durationMin === 0 ? "< 1 min" : `${durationMin} min`} sur le site
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* ── CHOIX ── */}
+          {tab === "choix" && (
+            <div className="space-y-5">
+              <div className="flex items-baseline justify-between rounded-xl border border-ink/8 bg-white px-4 py-3 shadow-card">
+                <span className="text-sm font-medium text-ink/60">Total</span>
+                <span className="font-display text-2xl text-teal-deep">
+                  {cart.total_grand ? eur(cart.total_grand) : "—"}
                 </span>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Cell
+                  label="Séjour"
+                  value={cart.check_in ? `${fmtRange(cart.check_in, cart.check_out)}${cart.nights ? ` · ${cart.nights}n` : ""}` : "—"}
+                />
+                <Cell label="Voyageurs" value={voyageurs} />
+                <Cell label="Chambre" value={cart.room_name || "—"} />
+                <Cell label="Tarif" value={cart.rate_name || "—"} />
+              </div>
+              {((cart.infants ?? 0) > 0 || cart.airport_transfer) && (
+                <div className="flex flex-wrap gap-2">
+                  {(cart.infants ?? 0) > 0 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-turquoise/10 px-3 py-1.5 text-xs font-semibold text-teal-deep">
+                      <KitBebe on /> Kit bébé requis
+                    </span>
+                  )}
+                  {cart.airport_transfer && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-turquoise/10 px-3 py-1.5 text-xs font-semibold text-teal-deep">
+                      ✈️ Transfert aéroport demandé
+                    </span>
+                  )}
+                </div>
+              )}
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/45">Extras choisis</p>
+                {products.length ? (
+                  <ul className="mt-2 space-y-1.5">
+                    {products.map((p, i) => (
+                      <li
+                        key={p.id || i}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-ink/8 bg-white px-3 py-2 text-sm"
+                      >
+                        <span className="min-w-0 truncate text-ink/80">{p.name || "Extra"}</span>
+                        {typeof p.priceEur === "number" && (
+                          <span className="shrink-0 tabular-nums text-ink/55">{eur(p.priceEur)}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-1 text-sm text-ink/45">Aucun extra sélectionné.</p>
+                )}
+              </div>
+              {cart.reservation_group_id && (
+                <Fact label="Résa Mews" value={cart.reservation_group_id} mono />
               )}
             </div>
+          )}
 
-            {error && (
-              <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
-                Impossible de charger l'historique. Ajoute la policy de lecture sur <code>booking_events</code> (voir
-                setup).
+          {/* ── MARKETING ── */}
+          {tab === "marketing" && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Cell label="Source" value={cart.utm_source || "Direct"} />
+                <Cell label="Canal" value={cart.utm_medium || "—"} />
+                <Cell label="Campagne" value={cart.utm_campaign || "—"} />
+                <Cell label="Région (IP)" value={cart.region || "—"} />
+                <Cell label="Langue" value={cart.lang ? cart.lang.toUpperCase() : "—"} />
+                <Cell
+                  label="Durée de navigation"
+                  value={durationMin == null ? "—" : durationMin === 0 ? "< 1 min" : `${durationMin} min`}
+                />
               </div>
-            )}
-            {!error && events === null && <p className="mt-3 text-sm text-ink/45">Chargement…</p>}
-            {!error && events?.length === 0 && <p className="mt-3 text-sm text-ink/45">Aucun événement enregistré.</p>}
+              <dl className="grid grid-cols-1 gap-y-2.5 text-sm">
+                <Fact label="Première visite" value={fmtDateTime(cart.first_seen)} />
+                <Fact label="Dernière activité" value={`${fmtDateTime(cart.last_seen)} · ${timeAgo(cart.last_seen)}`} />
+              </dl>
+            </div>
+          )}
 
-            {events && events.length > 0 && (
-              <ol className="mt-4 max-h-[42vh] overflow-y-auto pr-1">
-                {timeline.map(({ e, total, delta }, i) => {
-                  const m = eventMeta(e.status, e.step);
-                  const last = i === timeline.length - 1;
-                  return (
-                    <li key={e.id} className="relative flex gap-3 pb-4">
-                      {!last && <span className="absolute left-[5px] top-3 h-full w-px bg-ink/12" aria-hidden></span>}
-                      <span
-                        className={`relative z-10 mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${m.dot} ring-4 ring-cream`}
-                      ></span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-ink">{m.label}</p>
-                        <p className="text-xs tabular-nums text-ink/45">{fmtClock(e.event_at || e.received_at)}</p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        {delta !== 0 && (
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${
-                              delta > 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                            }`}
-                          >
-                            {delta > 0 ? "+" : "−"}
-                            {eur(Math.abs(delta))}
-                          </span>
-                        )}
-                        {total != null && <p className="mt-0.5 text-[11px] tabular-nums text-ink/45">{eur(total)}</p>}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
-          </div>
+          {/* ── HISTORIQUE ── */}
+          {tab === "historique" && (
+            <div>
+              <div className="flex items-baseline justify-between">
+                <h3 className="font-display text-lg text-ink">Parcours</h3>
+                {durationMin != null && (
+                  <span className="text-xs text-ink/45">
+                    {durationMin === 0 ? "< 1 min" : `${durationMin} min`} sur le site
+                  </span>
+                )}
+              </div>
+              {error && (
+                <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+                  Impossible de charger l'historique. Ajoute la policy de lecture sur <code>booking_events</code>.
+                </div>
+              )}
+              {!error && events === null && <p className="mt-3 text-sm text-ink/45">Chargement…</p>}
+              {!error && events?.length === 0 && <p className="mt-3 text-sm text-ink/45">Aucun événement enregistré.</p>}
+              {events && events.length > 0 && (
+                <ol className="mt-4">
+                  {timeline.map(({ e, total, delta }, i) => {
+                    const m = eventMeta(e.status, e.step);
+                    const last = i === timeline.length - 1;
+                    return (
+                      <li key={e.id} className="relative flex gap-3 pb-4">
+                        {!last && <span className="absolute left-[5px] top-3 h-full w-px bg-ink/12" aria-hidden></span>}
+                        <span
+                          className={`relative z-10 mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${m.dot} ring-4 ring-cream`}
+                        ></span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-ink">{m.label}</p>
+                          <p className="text-xs tabular-nums text-ink/45">{fmtClock(e.event_at || e.received_at)}</p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          {delta !== 0 && (
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${
+                                delta > 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                              }`}
+                            >
+                              {delta > 0 ? "+" : "−"}
+                              {eur(Math.abs(delta))}
+                            </span>
+                          )}
+                          {total != null && <p className="mt-0.5 text-[11px] tabular-nums text-ink/45">{eur(total)}</p>}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </div>
+          )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Cellule d'info (label + valeur) pour les grilles des onglets du drawer.
+function Cell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-ink/8 bg-white px-3.5 py-3">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-ink/45">{label}</p>
+      <p className="mt-0.5 break-words font-medium text-ink">{value}</p>
     </div>
   );
 }
