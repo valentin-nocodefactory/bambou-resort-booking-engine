@@ -106,8 +106,8 @@ export function DateRangePicker({
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 z-50 mt-2 animate-scale-in rounded-2xl border border-ink/10 bg-white p-4 shadow-float sm:left-auto sm:right-auto sm:w-[640px] sm:p-5">
-          <div className="mb-3 flex items-center justify-between">
+        <div className="absolute left-0 right-0 z-50 mt-2 animate-scale-in rounded-2xl border border-ink/10 bg-white p-3 shadow-float sm:left-auto sm:right-auto sm:w-[600px] sm:p-4">
+          <div className="mb-2 flex items-center justify-between">
             <button
               type="button"
               onClick={() => canGoPrev && shiftMonth(-1)}
@@ -128,18 +128,18 @@ export function DateRangePicker({
             </button>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {months.map((mv, idx) => (
               <div key={`${mv.y}-${mv.m}`} className={idx === 1 ? "hidden sm:block" : ""}>
-                <p className="mb-2 text-center text-sm font-semibold capitalize text-ink">{monthLabel(mv.y, mv.m)}</p>
-                <div className="grid grid-cols-7 gap-y-1 text-center">
+                <p className="mb-1.5 text-center text-sm font-semibold capitalize text-ink">{monthLabel(mv.y, mv.m)}</p>
+                <div className="grid grid-cols-7 gap-y-0.5 text-center">
                   {weekdays.map((w) => (
-                    <span key={w} className="pb-1 text-[11px] font-medium uppercase text-ink/35">
+                    <span key={w} className="pb-0.5 text-[11px] font-medium uppercase text-ink/35">
                       {w.charAt(0)}
                     </span>
                   ))}
                   {monthCells(mv.y, mv.m).map((day, i) => {
-                    if (!day) return <span key={`b${i}`} className="h-10" />;
+                    if (!day) return <span key={`b${i}`} className="h-8" />;
                     const disabled = day < minDate;
                     const isStart = !!checkIn && day === checkIn;
                     const isEnd = !!previewEnd && day === previewEnd && day !== checkIn;
@@ -155,10 +155,10 @@ export function DateRangePicker({
                           ? "bg-[linear-gradient(to_right,#061a2d26_50%,transparent_50%)]"
                           : "";
                     return (
-                      <div key={day} onMouseEnter={() => setHover(day)} className="relative h-10">
+                      <div key={day} onMouseEnter={() => setHover(day)} className="relative h-8">
                         {band && (
                           <span
-                            className={`pointer-events-none absolute inset-x-0 top-1/2 h-9 -translate-y-1/2 ${band}`}
+                            className={`pointer-events-none absolute inset-x-0 top-1/2 h-7 -translate-y-1/2 ${band}`}
                             aria-hidden
                           />
                         )}
@@ -168,7 +168,7 @@ export function DateRangePicker({
                           onClick={() => pick(day)}
                           aria-label={fmtDate(day)}
                           aria-pressed={isStart || day === checkOut}
-                          className={`absolute inset-0 m-auto grid h-9 w-9 place-items-center rounded-full text-sm transition ${
+                          className={`absolute inset-0 m-auto grid h-8 w-8 place-items-center rounded-full text-sm transition ${
                             disabled
                               ? "cursor-not-allowed text-ink/25 line-through"
                               : edge
@@ -186,7 +186,7 @@ export function DateRangePicker({
             ))}
           </div>
 
-          <div className="mt-4 flex items-center justify-between border-t border-ink/10 pt-3">
+          <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-2.5">
             <button
               type="button"
               onClick={() => {

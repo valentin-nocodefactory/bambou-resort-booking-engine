@@ -65,7 +65,7 @@ export function Dates() {
       {/* Page de garde : contenu en surimpression sur le carousel plein écran. Colonne
           pleine hauteur — le moteur descend vers le centre, les 3 arguments en bas.
           Tout tient dans un écran (pas de scroll). */}
-      <div className="mx-auto flex min-h-dvh max-w-6xl flex-col px-5 pb-12 pt-24 sm:px-8 sm:pt-28">
+      <div className="mx-auto flex min-h-dvh max-w-6xl flex-col px-5 pb-12 pt-28 sm:px-8 sm:pt-36">
         {/* En-tête éditorial — texte clair sur la photo */}
         <div className="max-w-2xl">
           <h1 className="font-display text-[2.6rem] leading-[1.05] text-white text-balance drop-shadow-[0_2px_24px_rgba(6,26,45,0.55)] sm:text-6xl">
@@ -82,11 +82,9 @@ export function Dates() {
           </div>
         </div>
 
-        {/* Espace qui fait descendre le moteur vers le centre de l'écran */}
-        <div className="min-h-[1.5rem] flex-1" />
-
-        {/* Moteur de recherche */}
-        <form onSubmit={submit} className="relative z-20 max-w-4xl rounded-3xl border border-white/50 bg-white/95 p-2.5 shadow-float backdrop-blur sm:p-4">
+        {/* Moteur de recherche — juste sous le titre (remonté pour que le calendrier
+            s'ouvre dans l'espace libre en dessous, sans scroll) */}
+        <form onSubmit={submit} className="relative z-20 mt-6 max-w-4xl rounded-3xl border border-white/50 bg-white/95 p-2.5 shadow-float backdrop-blur sm:p-4">
           <div className="grid gap-3 lg:grid-cols-[1.1fr_1.6fr_1fr_auto] lg:items-stretch">
             {/* Hébergements (multi-sélection : 1, 2 ou 3) → filtre les logements */}
             <PropertiesField
@@ -127,8 +125,8 @@ export function Dates() {
           {error && <p className="mt-2 px-1 text-sm font-medium text-red-600">{error}</p>}
         </form>
 
-        {/* Laisse respirer la photo entre le moteur et les arguments */}
-        <div className="min-h-[2rem] flex-1" />
+        {/* Espace en bas → place pour l'ouverture du calendrier + pousse les arguments en bas */}
+        <div className="flex-1" />
 
         {/* Arguments de marque — 3 colonnes en surimpression, texte clair */}
         <HeroPromises />
