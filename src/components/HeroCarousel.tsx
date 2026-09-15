@@ -5,11 +5,10 @@ import { t } from "../i18n";
 // enchaîné (auto-rotation) + léger zoom Ken Burns. Barre de progression DISCRÈTE en
 // bas à gauche. Photos fournies par le client (public/img/hero).
 const SLIDES = [
-  "/img/hero/1-plage.webp", // plage aérienne (paysage)
-  "/img/hero/2-bungalow.jpg", // bungalow créole jaune (portrait)
-  "/img/hero/3-porte.webp", // porte bleue créole (portrait)
-  "/img/hero/4-chambre.jpg", // chambre (paysage)
-  "/img/hero/5-transats.jpg", // transats & parasol face à la mer (portrait)
+  "/img/hero/1-resort.webp", // vue aérienne du resort (piscine + marina + mer)
+  "/img/hero/2-plage.webp", // plage lagon turquoise (aérien)
+  "/img/hero/3-bambou.webp", // cannes de bambou (identité « Bambou »)
+  "/img/hero/4-piscine.webp", // coupe au bord de la piscine (art de vivre)
 ];
 const INTERVAL = 6000; // synchronisé avec l'animation `hero-progress` (6s)
 

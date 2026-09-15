@@ -134,9 +134,9 @@ export function Dates() {
   );
 }
 
-// Arguments de marque, EN SURIMPRESSION sur la photo : un seul bandeau vitré
-// (glassmorphism) avec 3 items séparés par des filets — pas 3 cartes séparées.
-// Sur mobile : empilé, descriptions masquées pour rester compact.
+// Arguments de marque, EN SURIMPRESSION sur la photo : simplement EMPILÉS en bas
+// (pas de bloc/box) — texte clair avec ombre portée pour rester lisible sur la photo.
+// Sur mobile : descriptions masquées pour rester compact.
 const PROMISES: { Icon: (p: { className?: string }) => JSX.Element; title: TKey; text: TKey }[] = [
   { Icon: IconWave, title: "dates.promise1Title", text: "dates.promise1Text" },
   { Icon: IconMapPin, title: "dates.promise2Title", text: "dates.promise2Text" },
@@ -145,20 +145,22 @@ const PROMISES: { Icon: (p: { className?: string }) => JSX.Element; title: TKey;
 
 function HeroPromises() {
   return (
-    <div className="mt-8 max-w-4xl overflow-hidden rounded-2xl border border-white/20 bg-white/10 shadow-[0_20px_60px_-24px_rgba(6,26,45,0.75)] backdrop-blur-xl">
-      <div className="grid divide-y divide-white/15 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-        {PROMISES.map((p) => (
-          <div key={p.title} className="flex items-start gap-3 px-5 py-4">
-            <span className="mt-0.5 shrink-0 text-corail">
-              <p.Icon className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="font-semibold leading-tight text-white">{t(p.title)}</p>
-              <p className="mt-1 hidden text-xs leading-snug text-white/75 sm:block">{t(p.text)}</p>
-            </div>
+    <div className="mt-8 flex max-w-md flex-col gap-4">
+      {PROMISES.map((p) => (
+        <div key={p.title} className="flex items-start gap-3">
+          <span className="mt-0.5 shrink-0 text-corail drop-shadow-[0_1px_8px_rgba(6,26,45,0.7)]">
+            <p.Icon className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-semibold leading-tight text-white [text-shadow:0_1px_12px_rgb(6_26_45_/_0.75)]">
+              {t(p.title)}
+            </p>
+            <p className="mt-0.5 hidden text-xs leading-snug text-white/80 [text-shadow:0_1px_10px_rgb(6_26_45_/_0.7)] sm:block">
+              {t(p.text)}
+            </p>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 }
