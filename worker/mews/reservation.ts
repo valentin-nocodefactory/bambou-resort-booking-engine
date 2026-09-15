@@ -133,10 +133,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   });
 
   if (!res.ok || !res.data) {
-    return json(
-      { error: "reservation_failed", status: res.status, details: res.data },
-      res.status >= 400 ? res.status : 502,
-    );
+    // Détail de l'erreur Mews journalisé CÔTÉ SERVEUR uniquement (jamais renvoyé au
+    // client — évite de divulguer les messages/IDs internes de Mews).
+    console.error("mews reservation_failed", res.status, JSON.stringify(res.data));
+    return json({ error: "reservation_failed", status: res.status }, res.status >= 400 ? res.status : 502);
   }
 
   const d = res.data;

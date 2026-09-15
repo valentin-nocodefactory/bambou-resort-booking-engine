@@ -53,6 +53,17 @@ export default {
       return handler({ request, env, waitUntil: (p) => ctx.waitUntil(p) });
     }
     // Front statique + fallback SPA (géré par le binding ASSETS).
-    return env.ASSETS.fetch(request);
+    const res = await env.ASSETS.fetch(request);
+    // En-têtes de sécurité (sûrs, sans casser le CDN d'images Mews ni un éventuel embed) :
+    //  • Referrer-Policy: no-referrer → l'URL (qui peut contenir des paramètres) ne fuit
+    //    jamais vers une origine tierce (ex. CDN d'images) via l'en-tête Referer.
+    //  • nosniff → empêche le MIME-sniffing. HSTS → force HTTPS.
+    // (CSP et X-Frame-Options volontairement NON posés ici : à décider/tester selon
+    //  l'intégration en iframe éventuelle sur le site vitrine.)
+    const headers = new Headers(res.headers);
+    headers.set("Referrer-Policy", "no-referrer");
+    headers.set("X-Content-Type-Options", "nosniff");
+    headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
+    return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
   },
 };
