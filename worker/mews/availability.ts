@@ -85,6 +85,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     for (const x of r.data.ViolatedRestrictions ?? []) restrictions.push(x);
   }
 
+  // Panne Mews TOTALE : TOUS les hébergements interrogés ont échoué (timeout / réseau /
+  // 5xx) → on renvoie une vraie erreur 502, et NON un 200 « vide » qui s'afficherait à
+  // tort « Aucune disponibilité ». Le front bascule alors sur l'écran d'erreur + réessai
+  // (errorMessage → err.unreachable). Un échec PARTIEL (≥ 1 hébergement OK) garde la fusion.
+  if (results.every((r) => !r.ok)) return json({ error: "mews_unreachable" }, 502);
+
   return json({
     RateGroups: [...groupById.values()],
     Rates: [...rateById.values()],

@@ -180,6 +180,14 @@ const DICT = {
   },
   "extras.transferBadge": { fr: "Sur demande", en: "On request" },
 
+  // ── Catégories d'extras (shaping.productCategory) ─────────────────────────
+  "prodCat.food": { fr: "Restauration", en: "Dining" },
+  "prodCat.wellness": { fr: "Bien-être & Spa", en: "Wellness & Spa" },
+  "prodCat.activities": { fr: "Activités & Excursions", en: "Activities & Excursions" },
+  "prodCat.transfer": { fr: "Transferts & Mobilité", en: "Transfers & Mobility" },
+  "prodCat.services": { fr: "Services & Confort", en: "Services & Comfort" },
+  "prodCat.other": { fr: "Autres extras", en: "Other extras" },
+
   // ── Payment / Confirmation / Results ──────────────────────────────────────
   "payment.title": { fr: "Paiement & confirmation", en: "Payment & confirmation" },
   "payment.subtitleOnline": { fr: "Réglez en ligne en toute sécurité.", en: "Pay online securely." },

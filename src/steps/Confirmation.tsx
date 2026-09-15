@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useBooking } from "../state/booking";
 import { api, errorMessage } from "../lib/api";
 import { eur, fmtDate } from "../lib/format";
+import { loadConfirmationSnapshot } from "../lib/confirmationSnapshot";
 import type { ReservationStatusResult } from "../types/mews";
 import { Brand } from "../components/Brand";
 import { IconArrowRight, IconCalendar, IconCheck, IconShield } from "../components/icons";
@@ -25,6 +26,16 @@ export function Confirmation() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const groupId = rgid ?? created?.id ?? null;
+
+  // Retour d'un paiement hébergé Mews = chargement FRAIS (état React perdu) : on récupère
+  // l'instantané persisté avant la redirection (corrélé au reservationGroupId) pour
+  // ré-afficher dates / e-mail / total et le CTA navette — absents de l'URL ?rgid seule.
+  const snap = useMemo(() => loadConfirmationSnapshot(groupId), [groupId]);
+  const showCheckIn = checkIn || snap?.checkIn || "";
+  const showCheckOut = checkOut || snap?.checkOut || "";
+  const showEmail = guest.email || snap?.email || "";
+  const showTotal = selectedRate && grandTotal > 0 ? grandTotal : created?.totalAmount?.gross ?? snap?.total ?? 0;
+  const showTransfer = airportTransfer || !!snap?.airportTransfer;
 
   const loadStatus = useCallback(
     async (poll = false) => {
@@ -124,21 +135,18 @@ export function Confirmation() {
           )}
 
           <div className="space-y-2 text-sm">
-            {checkIn && checkOut && (
+            {showCheckIn && showCheckOut && (
               <Line icon={<IconCalendar className="h-4 w-4" />} label={t("confirmation.stay")}>
-                {fmtDate(checkIn)} → {fmtDate(checkOut)}
+                {fmtDate(showCheckIn)} → {fmtDate(showCheckOut)}
               </Line>
             )}
-            {guest.email && <Line label={t("confirmation.travelerEmail")}>{guest.email}</Line>}
-            {selectedRate && grandTotal > 0 && <Line label={t("confirmation.total")}>{eur(grandTotal)}</Line>}
-            {created?.totalAmount?.gross != null && !selectedRate && (
-              <Line label={t("confirmation.total")}>{eur(created.totalAmount.gross)}</Line>
-            )}
+            {showEmail && <Line label={t("confirmation.travelerEmail")}>{showEmail}</Line>}
+            {showTotal > 0 && <Line label={t("confirmation.total")}>{eur(showTotal)}</Line>}
           </div>
 
           {/* Navette aéroport — lien SORTANT (plateforme externe SimplyBook), affiché
               UNIQUEMENT si le client a coché « transfert aéroport », une fois la résa confirmée. */}
-          {airportTransfer && !loading && !pending && !failed && (
+          {showTransfer && !loading && !pending && !failed && (
             <div className="rounded-xl border border-turquoise/30 bg-turquoise/5 p-4">
               <div className="flex items-start gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-turquoise/15 text-xl" aria-hidden>

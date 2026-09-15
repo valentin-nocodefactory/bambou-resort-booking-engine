@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useBooking } from "../state/booking";
 import { ApiError, api, errorMessage } from "../lib/api";
 import { eur, fmtDate, toUtc } from "../lib/format";
+import { saveConfirmationSnapshot } from "../lib/confirmationSnapshot";
 import { StepLayout } from "../components/StepLayout";
 import { SecureBadge } from "../components/DataBadge";
 import { StayBreakdown } from "../components/StayBreakdown";
@@ -24,6 +25,7 @@ export function Payment() {
     products,
     guest,
     grandTotal,
+    airportTransfer,
     nightsCount,
     setCreated,
     goTo,
@@ -83,6 +85,19 @@ export function Payment() {
       });
 
       setCreated(result);
+
+      // Instantané pour l'écran de confirmation : le retour du paiement hébergé Mews est un
+      // chargement FRAIS de l'app (état React perdu) → on conserve dates / e-mail / total /
+      // intérêt navette, corrélés au reservationGroupId, pour un écran complet au retour.
+      saveConfirmationSnapshot({
+        rgid: result.id,
+        checkIn,
+        checkOut,
+        email: guest.email.trim(),
+        total: grandTotal,
+        airportTransfer,
+        roomName: selectedRoom.name,
+      });
 
       // Panier → « paiement initié ». On await (avant la redirection) pour être sûr
       // que l'event parte. reservationGroupId fourni ici car `created` (contexte)

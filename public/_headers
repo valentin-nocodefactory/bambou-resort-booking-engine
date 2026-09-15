@@ -1,0 +1,17 @@
+# En-têtes de sécurité posés au niveau des Static Assets Cloudflare.
+# Indispensable car le Worker ne s'exécute PAS pour les assets servis EN DIRECT
+# (la racine "/", les bundles JS/CSS) — seul le fallback SPA et /api passent par le Worker
+# (cf. worker/index.ts). Ce fichier couvre donc TOUTES les réponses, uniformément.
+#   • Referrer-Policy: no-referrer  → l'URL (paramètres inclus) ne fuit jamais en Referer.
+#   • X-Content-Type-Options: nosniff → pas de MIME-sniffing.
+#   • Strict-Transport-Security     → force HTTPS (2 ans, sous-domaines).
+/*
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=63072000; includeSubDomains
+
+# Back-office (page d'admin, derrière login) : interdire tout embed → anti-clickjacking.
+# Les règles /* ci-dessus s'appliquent AUSSI à /dashboard (elles se cumulent). Le funnel
+# de réservation, lui, reste embeddable sur le site vitrine (aucune règle X-Frame ici).
+/dashboard*
+  X-Frame-Options: DENY

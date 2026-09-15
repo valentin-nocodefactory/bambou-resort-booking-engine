@@ -16,7 +16,7 @@ import type {
 } from "../types/mews";
 import { loc } from "./format";
 import { getLang } from "./lang";
-import { t } from "../i18n";
+import { t, type TKey } from "../i18n";
 
 const grossOf = (a: { EUR?: { GrossValue: number | null } } | undefined | null): number | null => {
   const g = a?.EUR?.GrossValue;
@@ -213,30 +213,32 @@ export function shapeProducts(hotel: HotelConfig | null, lang = "fr-FR"): Shaped
 
 // Catégorisation heuristique des extras par mots-clés (Mews n'expose pas les noms
 // de catégories de produits). Robuste pour la demo comme pour la prod.
-const PRODUCT_CATEGORIES: { key: string; label: string; test: RegExp }[] = [
+// labelKey = clé i18n (résolue via t() À CHAQUE rendu, cf. productCategory) → libellés
+// localisés FR/EN (les visiteurs EN voyaient auparavant des titres de section en français).
+const PRODUCT_CATEGORIES: { key: string; labelKey: TKey; test: RegExp }[] = [
   {
     key: "food",
-    label: "Restauration",
+    labelKey: "prodCat.food",
     test: /breakfast|petit.?d[ée]j|d[ée]jeuner|d[îi]ner|dinner|repas|food|beverage|boisson|burger|beer|bi[èe]re|brunch|pension|menu|caf[ée]|wine|vin|champagne|snack|fr[üu]hst[üu]ck/i,
   },
   {
     key: "wellness",
-    label: "Bien-être & Spa",
+    labelKey: "prodCat.wellness",
     test: /spa|massage|soin|wellness|sauna|hammam|jacuzzi|beaut[ée]|fitness|yoga|d[ée]tente/i,
   },
   {
     key: "activities",
-    label: "Activités & Excursions",
+    labelKey: "prodCat.activities",
     test: /tour|excursion|ticket|billet|disney|visite|activit|plong[ée]e|catamaran|snorkel|kayak|jet.?ski|randonn[ée]e|ski|golf|cours|exp[ée]rience/i,
   },
   {
     key: "transfer",
-    label: "Transferts & Mobilité",
+    labelKey: "prodCat.transfer",
     test: /transfer|transfert|navette|shuttle|taxi|a[ée]roport|airport|voiture|parking/i,
   },
   {
     key: "services",
-    label: "Services & Confort",
+    labelKey: "prodCat.services",
     test: /housekeeping|m[ée]nage|nettoyage|cleaning|pet|animal|linge|lin(?:n)?en|laundry|blanchisserie|membership|conciergerie|lit b[ée]b[ée]|baby|crib|check|wifi|bed/i,
   },
 ];
@@ -309,9 +311,9 @@ export function mandatoryReveillon(
 export function productCategory(p: ShapedProduct): { key: string; label: string; order: number } {
   const hay = `${p.name} ${p.description}`;
   for (let i = 0; i < PRODUCT_CATEGORIES.length; i++) {
-    if (PRODUCT_CATEGORIES[i].test.test(hay)) return { key: PRODUCT_CATEGORIES[i].key, label: PRODUCT_CATEGORIES[i].label, order: i };
+    if (PRODUCT_CATEGORIES[i].test.test(hay)) return { key: PRODUCT_CATEGORIES[i].key, label: t(PRODUCT_CATEGORIES[i].labelKey), order: i };
   }
-  return { key: "other", label: "Autres extras", order: 99 };
+  return { key: "other", label: t("prodCat.other"), order: 99 };
 }
 
 export function groupProducts(products: ShapedProduct[]): { key: string; label: string; items: ShapedProduct[] }[] {

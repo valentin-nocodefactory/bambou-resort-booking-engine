@@ -58,8 +58,11 @@ export default {
     //  • Referrer-Policy: no-referrer → l'URL (qui peut contenir des paramètres) ne fuit
     //    jamais vers une origine tierce (ex. CDN d'images) via l'en-tête Referer.
     //  • nosniff → empêche le MIME-sniffing. HSTS → force HTTPS.
-    // (CSP et X-Frame-Options volontairement NON posés ici : à décider/tester selon
-    //  l'intégration en iframe éventuelle sur le site vitrine.)
+    // NB : ces en-têtes ne couvrent QUE les routes servies PAR le Worker (/api + fallback
+    //  SPA type /confirmation, /dashboard). Les assets servis EN DIRECT par Cloudflare
+    //  (la racine "/", les bundles JS/CSS) ne passent pas par ici → ils sont couverts par
+    //  public/_headers (même jeu d'en-têtes + X-Frame-Options DENY sur /dashboard).
+    //  CSP volontairement NON posée : à décider/tester selon l'embed iframe du site vitrine.
     const headers = new Headers(res.headers);
     headers.set("Referrer-Policy", "no-referrer");
     headers.set("X-Content-Type-Options", "nosniff");
