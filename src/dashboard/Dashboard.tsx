@@ -259,90 +259,76 @@ function ConfigNeeded() {
   );
 }
 
-// ── Login SANS mot de passe (lien magique) ──────────────────────────────────
-// `signInWithOtp` + `shouldCreateUser: false` : aucune création de compte possible.
-// Seuls les e-mails déjà ajoutés à la main dans Supabase (Auth → Users) reçoivent le
-// lien. On n'indique jamais si l'e-mail existe (anti-énumération) : message générique.
+// ── Login classique e-mail + mot de passe ───────────────────────────────────
+// signInWithPassword : pas d'e-mail envoyé (ni rate limit ni config Site URL/SMTP).
+// Les comptes sont créés À LA MAIN dans Supabase (Auth → Users) ; l'inscription en ligne
+// doit être désactivée côté Supabase (Providers → Email → Enable signups: off).
+// Message d'erreur générique (anti-énumération) : on ne dit pas si l'e-mail existe.
 function Login() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        shouldCreateUser: false,
-        emailRedirectTo: `${window.location.origin}/dashboard.html`,
-      },
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setBusy(false);
     if (error) {
-      // Message propre en français (on ne renvoie jamais l'erreur brute).
       setError(
-        /rate limit/i.test(error.message)
-          ? "Trop de demandes de connexion. Patientez quelques minutes avant de réessayer."
-          : "Envoi impossible pour le moment. Réessayez dans quelques instants.",
+        /invalid login credentials/i.test(error.message)
+          ? "E-mail ou mot de passe incorrect."
+          : /rate limit/i.test(error.message)
+            ? "Trop de tentatives. Patientez quelques minutes."
+            : "Connexion impossible pour le moment. Réessayez.",
       );
-    } else {
-      setSent(true);
     }
+    // Succès → onAuthStateChange (Dashboard) bascule automatiquement sur le Panel.
   }
 
   return (
     <div className="grid min-h-dvh place-items-center bg-cream px-5">
-      <div className="card w-full max-w-sm p-7">
+      <form onSubmit={submit} className="card w-full max-w-sm p-7">
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-corail">Bambou · Back-office</p>
         <h1 className="mt-1 font-display text-2xl text-ink">Dashboard funnel</h1>
+        <p className="mt-1 text-sm text-ink/60">Accès réservé — connectez-vous.</p>
 
-        {sent ? (
-          <div className="mt-4">
-            <div className="grid h-11 w-11 place-items-center rounded-full bg-turquoise/10 text-teal-deep">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2.5" y="4.5" width="19" height="15" rx="2.5" />
-                <path d="M3 6.5l9 6 9-6" />
-              </svg>
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-ink/70">
-              Si <b className="text-ink">{email.trim()}</b> est autorisé, un lien de connexion vient d'être envoyé.
-              Ouvrez-le <b className="text-ink">sur cet appareil</b> pour accéder au dashboard.
-            </p>
-            <button type="button" onClick={() => setSent(false)} className="btn-ghost mt-5 w-full">
-              Utiliser une autre adresse
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={submit}>
-            <p className="mt-1 text-sm text-ink/60">Connexion par lien magique — réservée aux comptes autorisés.</p>
-            <label className="mt-5 block text-sm font-medium text-ink/80">
-              E-mail
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="field-input mt-1"
-                placeholder="toi@hotelbambou.fr"
-                autoComplete="email"
-              />
-            </label>
+        <label className="mt-5 block text-sm font-medium text-ink/80">
+          E-mail
+          <input
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="field-input mt-1"
+            placeholder="toi@hotelbambou.fr"
+          />
+        </label>
+        <label className="mt-3 block text-sm font-medium text-ink/80">
+          Mot de passe
+          <input
+            type="password"
+            required
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="field-input mt-1"
+            placeholder="••••••••"
+          />
+        </label>
 
-            {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
+        {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
 
-            <button type="submit" disabled={busy} className="btn-primary mt-5 w-full">
-              {busy ? "Envoi…" : "Recevoir le lien de connexion"}
-            </button>
-            <p className="mt-3 text-xs leading-relaxed text-ink/45">
-              Aucun mot de passe. Accès strictement réservé : si votre adresse est autorisée, vous recevrez un lien de
-              connexion par e-mail.
-            </p>
-          </form>
-        )}
-      </div>
+        <button type="submit" disabled={busy} className="btn-primary mt-5 w-full">
+          {busy ? "Connexion…" : "Se connecter"}
+        </button>
+        <p className="mt-3 text-xs leading-relaxed text-ink/45">
+          Accès strictement réservé. Les comptes sont créés manuellement — pas d'inscription en ligne.
+        </p>
+      </form>
     </div>
   );
 }
