@@ -150,6 +150,52 @@ function eventMeta(status: string, step: string | null): { label: string; dot: s
   return { label: `Étape · ${stepLabel(step)}`, dot: "bg-turquoise" };
 }
 
+// ── Export CSV (séparateur « ; » + BOM UTF-8 → accents OK dans Excel FR) ──────
+const CSV_COLS: { label: string; get: (c: Cart) => string | number }[] = [
+  { label: "Client", get: (c) => c.customer_name || "" },
+  { label: "E-mail", get: (c) => c.customer_email || "" },
+  { label: "Téléphone", get: (c) => c.customer_phone || "" },
+  { label: "Statut", get: (c) => STATUS_META[cartStatus(c)].label },
+  { label: "Étape", get: (c) => stepLabel(c.last_step) },
+  { label: "Arrivée", get: (c) => c.check_in || "" },
+  { label: "Départ", get: (c) => c.check_out || "" },
+  { label: "Nuits", get: (c) => c.nights ?? "" },
+  { label: "Adultes", get: (c) => c.adults ?? "" },
+  { label: "Enfants", get: (c) => c.children ?? "" },
+  { label: "Bébés", get: (c) => c.infants ?? 0 },
+  { label: "Kit bébé", get: (c) => ((c.infants ?? 0) > 0 ? "Oui" : "Non") },
+  { label: "Chambre", get: (c) => c.room_name || "" },
+  { label: "Tarif", get: (c) => c.rate_name || "" },
+  { label: "Total", get: (c) => c.total_grand ?? "" },
+  { label: "Devise", get: (c) => c.currency || "" },
+  { label: "Transfert aéroport", get: (c) => (c.airport_transfer ? "Oui" : "Non") },
+  { label: "Source", get: (c) => c.utm_source || "Direct" },
+  { label: "Medium", get: (c) => c.utm_medium || "" },
+  { label: "Campagne", get: (c) => c.utm_campaign || "" },
+  { label: "Langue", get: (c) => (c.lang || "").toUpperCase() },
+  { label: "Résa Mews", get: (c) => c.reservation_group_id || "" },
+  { label: "Première visite", get: (c) => c.first_seen },
+  { label: "Dernière visite", get: (c) => c.last_seen },
+];
+const csvCell = (v: string | number): string => {
+  const s = String(v ?? "");
+  return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+function exportCartsCsv(rows: Cart[]) {
+  const head = CSV_COLS.map((c) => csvCell(c.label)).join(";");
+  const body = rows.map((c) => CSV_COLS.map((col) => csvCell(col.get(c))).join(";")).join("\r\n");
+  const csv = String.fromCharCode(0xfeff) + head + "\r\n" + body;
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `demandes-bambou-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 // Racine : gère l'auth et route vers Login ou le Panel.
 // ══════════════════════════════════════════════════════════════════════════
@@ -266,6 +312,15 @@ function Panel({ email }: { email: string }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | CartStatusKey>("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "last_seen", dir: "desc" });
+  // Sélection de lignes (cart_id) → export CSV de la sélection.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggleRow = (id: string) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   // Drawer de détail (historique de comportement d'une demande).
   const [openCart, setOpenCart] = useState<Cart | null>(null);
   const [events, setEvents] = useState<EventRow[] | null>(null);
@@ -353,6 +408,20 @@ function Panel({ email }: { email: string }) {
     });
   }, [carts, query, statusFilter, sort]);
 
+  // Sélection : « tout sélectionner » agit sur les lignes VISIBLES (filtrées).
+  const allVisibleSelected = rows.length > 0 && rows.every((c) => selected.has(c.cart_id));
+  const someVisibleSelected = !allVisibleSelected && rows.some((c) => selected.has(c.cart_id));
+  const toggleAll = () =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (allVisibleSelected) rows.forEach((c) => next.delete(c.cart_id));
+      else rows.forEach((c) => next.add(c.cart_id));
+      return next;
+    });
+  // Lignes exportées : la sélection si non vide, sinon toutes les lignes filtrées.
+  const selectedRows = rows.filter((c) => selected.has(c.cart_id));
+  const exportRows = selectedRows.length ? selectedRows : rows;
+
   // ── Agrégats calculés depuis `carts` ──
   const kpi = useMemo(() => {
     const total = carts.length;
@@ -379,7 +448,7 @@ function Panel({ email }: { email: string }) {
     <div className="min-h-dvh bg-cream text-ink">
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-ink/10 bg-cream/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-5 py-3 sm:px-8">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-corail">Bambou · Back-office</p>
             <h1 className="font-display text-xl text-ink">Dashboard funnel</h1>
@@ -412,7 +481,7 @@ function Panel({ email }: { email: string }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-6 px-5 py-6">
+      <main className="w-full space-y-6 px-5 py-6 sm:px-8">
         {error && (
           <div className="rounded-xl2 border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             <b>Erreur de lecture :</b> {error}
@@ -496,6 +565,27 @@ function Panel({ email }: { email: string }) {
                 placeholder="Rechercher (nom, e-mail, chambre, source…)"
                 className="field-input w-52 text-sm sm:w-64"
               />
+              {selected.size > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-ink/55">
+                  {selected.size} sélectionnée{selected.size > 1 ? "s" : ""}
+                  <button
+                    type="button"
+                    onClick={() => setSelected(new Set())}
+                    className="font-semibold text-corail hover:underline"
+                  >
+                    Effacer
+                  </button>
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => exportCartsCsv(exportRows)}
+                disabled={exportRows.length === 0}
+                className="btn-primary text-sm disabled:opacity-40"
+                title={selected.size ? "Exporter la sélection" : "Exporter toutes les lignes filtrées"}
+              >
+                Exporter CSV ({exportRows.length})
+              </button>
             </div>
           </div>
 
@@ -503,6 +593,18 @@ function Panel({ email }: { email: string }) {
             <table className="w-full min-w-[900px] border-collapse text-sm">
               <thead className="border-y border-ink/10 bg-cream/60 text-[11px] uppercase tracking-wide text-ink/50">
                 <tr>
+                  <th className="w-10 px-3 py-2.5">
+                    <input
+                      type="checkbox"
+                      aria-label="Tout sélectionner"
+                      checked={allVisibleSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = someVisibleSelected;
+                      }}
+                      onChange={toggleAll}
+                      className="h-4 w-4 cursor-pointer accent-teal-deep align-middle"
+                    />
+                  </th>
                   <Th label="Client" k="customer_name" sort={sort} setSort={setSort} />
                   <Th label="Statut" k="status" sort={sort} setSort={setSort} />
                   <Th label="Étape" k="last_step" sort={sort} setSort={setSort} />
@@ -521,8 +623,19 @@ function Panel({ email }: { email: string }) {
                   <tr
                     key={c.cart_id}
                     onClick={() => setOpenCart(c)}
-                    className="cursor-pointer border-b border-ink/5 transition last:border-0 hover:bg-cream/60"
+                    className={`cursor-pointer border-b border-ink/5 transition last:border-0 hover:bg-cream/60 ${
+                      selected.has(c.cart_id) ? "bg-teal-deep/[0.06]" : ""
+                    }`}
                   >
+                    <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        aria-label={`Sélectionner ${c.customer_name || c.customer_email || "la demande"}`}
+                        checked={selected.has(c.cart_id)}
+                        onChange={() => toggleRow(c.cart_id)}
+                        className="h-4 w-4 cursor-pointer accent-teal-deep align-middle"
+                      />
+                    </td>
                     <td className="px-3 py-2.5">
                       <p className="max-w-[180px] truncate font-semibold text-ink">
                         {c.customer_name || c.customer_email || "Anonyme"}
@@ -568,7 +681,7 @@ function Panel({ email }: { email: string }) {
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={11} className="px-3 py-8 text-center text-ink/45">
+                    <td colSpan={12} className="px-3 py-8 text-center text-ink/45">
                       {carts.length ? "Aucune demande ne correspond aux filtres." : "Aucune demande sur cette période."}
                     </td>
                   </tr>
