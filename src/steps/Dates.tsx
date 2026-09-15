@@ -63,9 +63,9 @@ export function Dates() {
   return (
     <HeroCarousel>
       {/* Page de garde : contenu en surimpression sur le carousel plein écran. Colonne
-          pleine hauteur — titre + moteur en haut, arguments (bandeau vitré) en bas ;
-          la photo respire au centre. */}
-      <div className="mx-auto flex min-h-dvh max-w-6xl flex-col px-5 pb-20 pt-24 sm:px-8 sm:pt-28">
+          pleine hauteur — le moteur descend vers le centre, les 3 arguments en bas.
+          Tout tient dans un écran (pas de scroll). */}
+      <div className="mx-auto flex min-h-dvh max-w-6xl flex-col px-5 pb-12 pt-24 sm:px-8 sm:pt-28">
         {/* En-tête éditorial — texte clair sur la photo */}
         <div className="max-w-2xl">
           <h1 className="font-display text-[2.6rem] leading-[1.05] text-white text-balance drop-shadow-[0_2px_24px_rgba(6,26,45,0.55)] sm:text-6xl">
@@ -82,8 +82,11 @@ export function Dates() {
           </div>
         </div>
 
+        {/* Espace qui fait descendre le moteur vers le centre de l'écran */}
+        <div className="min-h-[1.5rem] flex-1" />
+
         {/* Moteur de recherche */}
-        <form onSubmit={submit} className="relative z-20 mt-7 max-w-4xl rounded-3xl border border-white/50 bg-white/95 p-3 shadow-float backdrop-blur sm:p-4">
+        <form onSubmit={submit} className="relative z-20 max-w-4xl rounded-3xl border border-white/50 bg-white/95 p-2.5 shadow-float backdrop-blur sm:p-4">
           <div className="grid gap-3 lg:grid-cols-[1.1fr_1.6fr_1fr_auto] lg:items-stretch">
             {/* Hébergements (multi-sélection : 1, 2 ou 3) → filtre les logements */}
             <PropertiesField
@@ -127,7 +130,7 @@ export function Dates() {
         {/* Laisse respirer la photo entre le moteur et les arguments */}
         <div className="min-h-[2rem] flex-1" />
 
-        {/* Arguments de marque — EN SURIMPRESSION sur bandeau vitré (glass), texte clair */}
+        {/* Arguments de marque — 3 colonnes en surimpression, texte clair */}
         <HeroPromises />
       </div>
     </HeroCarousel>
@@ -145,20 +148,18 @@ const PROMISES: { Icon: (p: { className?: string }) => JSX.Element; title: TKey;
 
 function HeroPromises() {
   return (
-    <div className="mt-8 flex max-w-md flex-col gap-4">
+    <div className="grid max-w-4xl grid-cols-3 gap-3 sm:gap-10">
       {PROMISES.map((p) => (
-        <div key={p.title} className="flex items-start gap-3">
-          <span className="mt-0.5 shrink-0 text-corail drop-shadow-[0_1px_8px_rgba(6,26,45,0.7)]">
+        <div key={p.title} className="flex flex-col gap-1.5">
+          <span className="text-corail drop-shadow-[0_1px_8px_rgba(6,26,45,0.7)]">
             <p.Icon className="h-5 w-5" />
           </span>
-          <div className="min-w-0">
-            <p className="font-semibold leading-tight text-white [text-shadow:0_1px_12px_rgb(6_26_45_/_0.75)]">
-              {t(p.title)}
-            </p>
-            <p className="mt-0.5 hidden text-xs leading-snug text-white/80 [text-shadow:0_1px_10px_rgb(6_26_45_/_0.7)] sm:block">
-              {t(p.text)}
-            </p>
-          </div>
+          <p className="text-sm font-semibold leading-tight text-white [text-shadow:0_1px_12px_rgb(6_26_45_/_0.75)]">
+            {t(p.title)}
+          </p>
+          <p className="hidden text-xs leading-snug text-white/75 [text-shadow:0_1px_10px_rgb(6_26_45_/_0.7)] sm:block">
+            {t(p.text)}
+          </p>
         </div>
       ))}
     </div>
