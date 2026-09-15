@@ -281,8 +281,16 @@ function Login() {
       },
     });
     setBusy(false);
-    if (error) setError(error.message);
-    else setSent(true);
+    if (error) {
+      // Message propre en français (on ne renvoie jamais l'erreur brute).
+      setError(
+        /rate limit/i.test(error.message)
+          ? "Trop de demandes de connexion. Patientez quelques minutes avant de réessayer."
+          : "Envoi impossible pour le moment. Réessayez dans quelques instants.",
+      );
+    } else {
+      setSent(true);
+    }
   }
 
   return (
