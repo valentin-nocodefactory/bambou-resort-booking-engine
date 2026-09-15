@@ -329,8 +329,8 @@ function Login() {
               {busy ? "Envoi…" : "Recevoir le lien de connexion"}
             </button>
             <p className="mt-3 text-xs leading-relaxed text-ink/45">
-              Aucun mot de passe. La création de compte est désactivée : seuls les e-mails ajoutés dans Supabase
-              peuvent se connecter.
+              Aucun mot de passe. Accès strictement réservé : si votre adresse est autorisée, vous recevrez un lien de
+              connexion par e-mail.
             </p>
           </form>
         )}

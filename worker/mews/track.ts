@@ -40,6 +40,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
       nights: num(s.nights),
       adults: num(s.adults),
       children: num(s.children),
+      infants: num(s.infants), // bébés en berceau → case « kit bébé » du dashboard
     },
     room:
       b.room && typeof b.room === "object"
@@ -72,6 +73,13 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
     paymentRequestId: str(b.paymentRequestId, 60),
     // Langue de la session (fr|en).
     lang: str(b.lang, 5),
+    // Extra HORS Mews : intérêt « transfert aéroport » (booléen) → relance + dashboard.
+    airportTransfer: b.airportTransfer === true,
+    // Géo IP (pays + région, ex. FR/ARA ou CA/QC) → enjeux marketing du dashboard.
+    geo:
+      b.geo && typeof b.geo === "object"
+        ? { country: str(b.geo.country, 2), region: str(b.geo.region, 8) }
+        : null,
     // Attribution marketing (utm_*, gclid, fbclid) capturée à l'arrivée. Whitelist stricte.
     utm: utmObject(b.utm),
   };
