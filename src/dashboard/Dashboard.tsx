@@ -89,7 +89,7 @@ type EventRow = {
   payload: {
     totals?: { grand?: number | null } | null;
     products?: { id?: string; name?: string; priceEur?: number | null }[] | null;
-    geo?: { country?: string | null; region?: string | null } | null;
+    geo?: { country?: string | null; region?: string | null; city?: string | null } | null;
   } | null;
 };
 
@@ -868,16 +868,16 @@ function CartDrawer({
         )
       : null;
 
-  // Localisation IP (pays + région) : dernier payload d'événement qui la porte.
+  // Localisation IP (ville + région + pays) : dernier payload d'événement qui la porte.
   const geo = (() => {
     for (let i = (events?.length ?? 0) - 1; i >= 0; i--) {
       const g = events![i].payload?.geo;
-      if (g && (g.country || g.region)) return g;
+      if (g && (g.country || g.region || g.city)) return g;
     }
     return null;
   })();
   const geoValue = geo
-    ? `${countryFlag(geo.country)} ${[geo.region, geo.country].filter(Boolean).join(" · ")}`.trim()
+    ? `${countryFlag(geo.country)} ${[geo.city, geo.region, geo.country].filter(Boolean).join(" · ")}`.trim()
     : "—";
 
   // Extras choisis : derniers produits présents dans un payload d'événement.
@@ -947,6 +947,9 @@ function CartDrawer({
             <span className="rounded-full bg-cream/15 px-2 py-0.5 text-[11px] font-semibold">
               {cart.lang ? cart.lang.toUpperCase() : "—"}
             </span>
+            {geo && (
+              <span className="rounded-full bg-cream/15 px-2 py-0.5 text-[11px] font-semibold">{geoValue}</span>
+            )}
             <span className="text-xs text-cream/60">· vu {timeAgo(cart.last_seen)}</span>
           </div>
         </div>

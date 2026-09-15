@@ -10,7 +10,7 @@ import { json, type Env } from "./_lib";
 export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
   const url = new URL(request.url);
   const isLocal = url.hostname === "localhost" || url.hostname === "127.0.0.1";
-  const cf = (request as unknown as { cf?: { country?: string; regionCode?: string } }).cf;
+  const cf = (request as unknown as { cf?: { country?: string; regionCode?: string; city?: string } }).cf;
   const raw = ((isLocal && url.searchParams.get("cc")) || cf?.country || "").toString().toUpperCase();
   // Écarte les codes non exploitables : XX (inconnu), T1 (Tor), AP (Anonymous Proxy).
   const country = /^[A-Z]{2}$/.test(raw) && !["XX", "T1", "AP", "A1", "A2"].includes(raw) ? raw : null;
@@ -18,5 +18,8 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
   // Override localhost `?region=QC` pour tester ; sinon `request.cf.regionCode` (Cloudflare).
   const rawRegion = ((isLocal && url.searchParams.get("region")) || cf?.regionCode || "").toString().toUpperCase();
   const region = /^[A-Z0-9]{1,3}$/.test(rawRegion) ? rawRegion : null;
-  return json({ country, region }, 200, "no-store");
+  // Ville (ex. « Lyon ») — fournie par Cloudflare (`request.cf.city`). Override `?city=` en local.
+  const rawCity = ((isLocal && url.searchParams.get("city")) || cf?.city || "").toString().trim();
+  const city = rawCity && rawCity.length <= 80 ? rawCity : null;
+  return json({ country, region, city }, 200, "no-store");
 };

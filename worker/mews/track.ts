@@ -75,10 +75,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
     lang: str(b.lang, 5),
     // Extra HORS Mews : intérêt « transfert aéroport » (booléen) → relance + dashboard.
     airportTransfer: b.airportTransfer === true,
-    // Géo IP (pays + région, ex. FR/ARA ou CA/QC) → enjeux marketing du dashboard.
+    // Géo IP (pays + région + ville, ex. FR/ARA/Lyon) → localisation dans le dashboard.
     geo:
       b.geo && typeof b.geo === "object"
-        ? { country: str(b.geo.country, 2), region: str(b.geo.region, 8) }
+        ? { country: str(b.geo.country, 2), region: str(b.geo.region, 8), city: str(b.geo.city, 80) }
         : null,
     // Attribution marketing (utm_*, gclid, fbclid) capturée à l'arrivée. Whitelist stricte.
     utm: utmObject(b.utm),

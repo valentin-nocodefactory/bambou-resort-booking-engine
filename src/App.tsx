@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { BookingProvider, useBooking, type Step } from "./state/booking";
 import { Brand } from "./components/Brand";
 import { StepProgress } from "./components/StepProgress";
-import { DevPanel } from "./components/DevPanel";
 import { ContactBar } from "./components/ContactBar";
 import { Dates } from "./steps/Dates";
 import { Results } from "./steps/Results";
@@ -94,7 +93,6 @@ function Shell() {
 
       <Footer />
       <ContactBar />
-      <DevPanel />
     </div>
   );
 }

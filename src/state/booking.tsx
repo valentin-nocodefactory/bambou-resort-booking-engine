@@ -443,8 +443,12 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   // téléphonique (nationalité) selon le pays de l'IP. Visiteurs US/Canada : précoche la
   // navette aéroport + pré-sélectionne le forfait boisson 1er prix de l'hébergement choisi.
   const geoDoneRef = useRef(false);
-  // Géo IP (pays + région) captée pour le tracking → enjeux marketing du dashboard.
-  const geoRef = useRef<{ country: string | null; region: string | null }>({ country: null, region: null });
+  // Géo IP (pays + région + ville) captée pour le tracking → localisation dans le dashboard.
+  const geoRef = useRef<{ country: string | null; region: string | null; city: string | null }>({
+    country: null,
+    region: null,
+    city: null,
+  });
   const naPresetRef = useRef(false); // visiteur US/CA → presets à appliquer
   const naDrinkDoneRef = useRef(false); // forfait boisson déjà pré-sélectionné (une fois)
   useEffect(() => {
@@ -459,7 +463,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     // On appelle toujours /geo (léger, no-store) pour tracer le pays détecté en debug.
     void api.geo().then((r) => {
       if (!alive) return;
-      geoRef.current = { country: r.country, region: r.region }; // pour le tracking (dashboard)
+      geoRef.current = { country: r.country, region: r.region, city: r.city }; // pour le tracking (dashboard)
       // Région QC (en français) → appellations québécoises des repas (déjeuner/dîner/souper).
       // Indépendant de « visite fraîche » : c'est de l'affichage, pas du pré-remplissage.
       const quebec = r.region === "QC" && getLang() === "fr";
@@ -573,7 +577,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     // Attribution marketing capturée à l'arrivée (utm_*, gclid, fbclid) + langue + géo IP.
     utm: getUtms(),
     lang: getLang(),
-    geo: { country: geoRef.current.country, region: geoRef.current.region },
+    geo: { country: geoRef.current.country, region: geoRef.current.region, city: geoRef.current.city },
   });
 
   const track: BookingContextValue["track"] = (status, extra = {}) =>
