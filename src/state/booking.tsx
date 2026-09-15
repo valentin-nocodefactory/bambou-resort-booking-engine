@@ -13,6 +13,7 @@ import { getLang } from "../lib/lang";
 import { getUtms } from "../lib/utm";
 import { nights as countNights } from "../lib/format";
 import { buildRooms, shapeProducts, cheapestDrinkProduct, mandatoryReveillon, isReveillonProduct } from "../lib/shaping";
+import { setQuebecLocale } from "../lib/quebec";
 import type { HotelConfig, ReservationCreateResult, ShapedProduct, ShapedRate, ShapedRoom } from "../types/mews";
 
 export type Step = "dates" | "results" | "guest" | "upgrade" | "extras" | "payment" | "confirmation";
@@ -255,6 +256,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [hotel, setHotel] = useState<HotelConfig | null>(null);
   const [hotelLoading, setHotelLoading] = useState(true);
   const [hotelError, setHotelError] = useState(false);
+  // Force un re-rendu quand la locale québécoise est activée (appellations des repas).
+  const [, forceQc] = useState(0);
 
   // garde l'URL synchronisée (état de résa + infos client saisies)
   useEffect(() => writeUrl(state, guest), [state, guest]);
@@ -453,13 +456,21 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     let alive = true;
     // On appelle toujours /geo (léger, no-store) pour tracer le pays détecté en debug.
     void api.geo().then((r) => {
+      if (!alive) return;
+      // Région QC (en français) → appellations québécoises des repas (déjeuner/dîner/souper).
+      // Indépendant de « visite fraîche » : c'est de l'affichage, pas du pré-remplissage.
+      const quebec = r.region === "QC" && getLang() === "fr";
       // eslint-disable-next-line no-console
       console.log(
-        `[geo] pays détecté (IP): ${r.country ?? "—"} · visite fraîche: ${fresh} · nationalité en cours: ${
-          g.nationalityCode || "FR (défaut)"
-        }`,
+        `[geo] pays détecté (IP): ${r.country ?? "—"} · région: ${r.region ?? "—"}${
+          quebec ? " · appellations québécoises ACTIVÉES" : ""
+        } · visite fraîche: ${fresh} · nationalité en cours: ${g.nationalityCode || "FR (défaut)"}`,
       );
-      if (!alive || !fresh || !r.country) return;
+      if (quebec) {
+        setQuebecLocale(true);
+        forceQc((n) => n + 1);
+      }
+      if (!fresh || !r.country) return;
       // Indicatif : on n'écrase pas un choix explicite (uniquement si encore défaut FR).
       setGuestState((gg) => (gg.nationalityCode === "FR" ? { ...gg, nationalityCode: r.country as string } : gg));
       if (r.country === "US" || r.country === "CA") {

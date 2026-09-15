@@ -1,5 +1,6 @@
 import type { ComponentType, SVGProps } from "react";
 import { roomBenefits } from "../lib/shaping";
+import { qcMeal } from "../lib/quebec";
 import type { ShapedRoom } from "../types/mews";
 import { IconWave, IconLeaf, IconStairs, IconGroundFloor, IconCroissant, IconCloche } from "./icons";
 import { t, type TKey } from "../i18n";
@@ -24,8 +25,8 @@ export function benefitTags(room: ShapedRoom): Tag[] {
 export function mealTags(room: ShapedRoom): Tag[] {
   if (room.property !== "hotel") return [];
   return [
-    { key: "breakfast", label: t("roomCard.breakfastIncl"), Icon: IconCroissant },
-    { key: "dinner", label: t("roomCard.dinnerIncl"), Icon: IconCloche },
+    { key: "breakfast", label: qcMeal(t("roomCard.breakfastIncl")), Icon: IconCroissant },
+    { key: "dinner", label: qcMeal(t("roomCard.dinnerIncl")), Icon: IconCloche },
   ];
 }
 

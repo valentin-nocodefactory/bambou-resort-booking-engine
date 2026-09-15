@@ -1,5 +1,6 @@
 import { eur, imgUrl } from "../lib/format";
 import { spaceLabel } from "../lib/shaping";
+import { qcMeal } from "../lib/quebec";
 import type { ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
 import { RoomBenefitsOverlay } from "./RoomTags";
@@ -102,10 +103,10 @@ export function RoomCard({
           {room.property === "hotel" && (
             <>
               <span className="inline-flex w-fit items-center gap-1 rounded-full bg-turquoise/10 px-2.5 py-1 text-[11px] font-semibold text-teal-deep">
-                <IconCroissant className="h-3.5 w-3.5" /> {t("roomCard.breakfastIncl")}
+                <IconCroissant className="h-3.5 w-3.5" /> {qcMeal(t("roomCard.breakfastIncl"))}
               </span>
               <span className="inline-flex w-fit items-center gap-1 rounded-full bg-turquoise/10 px-2.5 py-1 text-[11px] font-semibold text-teal-deep">
-                <IconCloche className="h-3.5 w-3.5" /> {t("roomCard.dinnerIncl")}
+                <IconCloche className="h-3.5 w-3.5" /> {qcMeal(t("roomCard.dinnerIncl"))}
               </span>
             </>
           )}

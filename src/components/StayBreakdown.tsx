@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useBooking, productLineTotal } from "../state/booking";
 import { eur } from "../lib/format";
+import { qcMeal } from "../lib/quebec";
 import { IconCloche, IconCroissant } from "./icons";
 import { t } from "../i18n";
 
@@ -25,18 +26,18 @@ export function StayBreakdown() {
         <>
           <Row
             icon={<IconCroissant className="h-4 w-4" />}
-            label={t("breakdown.breakfast", { count: nightsCount })}
+            label={qcMeal(t("breakdown.breakfast", { count: nightsCount }))}
             note={t("breakdown.included")}
           />
           <Row
             icon={<IconCloche className="h-4 w-4" />}
-            label={t("breakdown.dinner", { count: nightsCount })}
+            label={qcMeal(t("breakdown.dinner", { count: nightsCount }))}
             note={t("breakdown.included")}
           />
         </>
       )}
       {selectedProducts.map((p) => (
-        <Row key={p.id} label={p.name} value={eur(productLineTotal(p, nightsCount, guestsCount))} />
+        <Row key={p.id} label={qcMeal(p.name)} value={eur(productLineTotal(p, nightsCount, guestsCount))} />
       ))}
       {taxe > 0 && <Row label={t("breakdown.cityTax")} value={eur(taxe)} />}
       <div className="mt-1.5 border-t border-ink/10 pt-2.5">

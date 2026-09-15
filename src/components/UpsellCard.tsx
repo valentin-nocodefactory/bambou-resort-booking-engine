@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { productLineTotal } from "../state/booking";
 import { eur, imgUrl } from "../lib/format";
 import { chargingLabel } from "../lib/shaping";
+import { qcMeal } from "../lib/quebec";
 import type { ShapedProduct } from "../types/mews";
 import { Photo } from "./Photo";
 import { IconCheck, IconPlus, IconSparkles } from "./icons";
@@ -84,9 +85,9 @@ export function UpsellCard({
 
         {/* Infos : titre COMPLET (jamais tronqué), description, prix */}
         <div className="flex flex-1 flex-col p-4">
-          <p className="font-semibold leading-snug text-ink">{product.name}</p>
+          <p className="font-semibold leading-snug text-ink">{qcMeal(product.name)}</p>
           {product.description && (
-            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-ink/60">{product.description}</p>
+            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-ink/60">{qcMeal(product.description)}</p>
           )}
           <div className="mt-auto flex items-end justify-between gap-2 pt-3">
             <div>
@@ -185,7 +186,7 @@ function ExtraDetailModal({
           </button>
         </div>
         <div className="p-5">
-          <h3 className="font-display text-xl text-ink">{product.name}</h3>
+          <h3 className="font-display text-xl text-ink">{qcMeal(product.name)}</h3>
           <p className="mt-1 text-sm">
             <span className="font-display text-lg text-teal-deep">{eur(product.priceEur)}</span>
             {chargingLabel(product.chargingMode) && (
@@ -196,7 +197,7 @@ function ExtraDetailModal({
             )}
           </p>
           {product.description && (
-            <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-ink/70">{product.description}</p>
+            <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-ink/70">{qcMeal(product.description)}</p>
           )}
           <div className="mt-5 flex items-center gap-2">
             {locked ? (
@@ -243,10 +244,10 @@ export function InlineUpsell({
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-ink">
-          {t("upsell.enhance", { name: product.name })}
+          {t("upsell.enhance", { name: qcMeal(product.name) })}
         </p>
         <p className="text-xs text-ink/60">
-          {product.description || t("upsell.descFallback")} ·{" "}
+          {qcMeal(product.description) || t("upsell.descFallback")} ·{" "}
           <span className="font-semibold text-teal-deep">{eur(product.priceEur)}</span>
         </p>
       </div>

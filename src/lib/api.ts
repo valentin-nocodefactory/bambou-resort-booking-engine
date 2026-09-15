@@ -190,11 +190,24 @@ export const api = {
 
   // Détection best-effort du pays via l'IP (Cloudflare). Pré-remplit l'indicatif
   // téléphonique + presets US/CA. Ne stocke rien ; échoue silencieusement.
-  geo: () =>
-    call<{ country: string | null }>("geo", undefined, {
+  geo: () => {
+    // En localhost UNIQUEMENT, on relaie les overrides de test `?cc=` / `?region=` de
+    // l'URL de l'app vers l'endpoint geo (qui ne les accepte lui aussi qu'en localhost).
+    let path = "geo";
+    if (typeof window !== "undefined" && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
+      const app = new URLSearchParams(window.location.search);
+      const qs = new URLSearchParams();
+      for (const k of ["cc", "region"]) {
+        const v = app.get(k);
+        if (v) qs.set(k, v);
+      }
+      if ([...qs].length) path = `geo?${qs.toString()}`;
+    }
+    return call<{ country: string | null; region: string | null }>(path, undefined, {
       label: "Pays du visiteur (IP)",
-      why: "Déduit le pays via l'IP (fourni par Cloudflare, sans API externe) pour pré-sélectionner l'indicatif téléphonique et proposer des presets (navette + forfait boisson) aux visiteurs US/Canada.",
-    }).catch(() => ({ country: null })),
+      why: "Déduit le pays + la région via l'IP (fourni par Cloudflare, sans API externe) pour : pré-sélectionner l'indicatif téléphonique, proposer des presets (navette + forfait boisson) aux visiteurs US/Canada, et afficher les appellations québécoises des repas (région QC).",
+    }).catch(() => ({ country: null, region: null }));
+  },
 
   // Suivi de panier (funnel) → n8n via le Worker. Best-effort : n'échoue jamais l'UI.
   track: (payload: unknown): Promise<{ ok: boolean }> =>

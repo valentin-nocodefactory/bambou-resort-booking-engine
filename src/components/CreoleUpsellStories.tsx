@@ -1,6 +1,7 @@
 import { useBooking } from "../state/booking";
 import { eur, imgUrl } from "../lib/format";
 import { chargingLabel } from "../lib/shaping";
+import { qcMeal } from "../lib/quebec";
 import type { ShapedProduct } from "../types/mews";
 import { Photo } from "./Photo";
 import { IconCheck, IconPlus, IconSparkles } from "./icons";
@@ -94,8 +95,8 @@ export function CreoleUpsellStories() {
                 {on ? <IconCheck className="h-4 w-4" /> : <IconPlus className="h-4 w-4" />}
               </span>
               <div className="absolute inset-x-0 bottom-0 p-3 text-cream">
-                <p className="font-display text-base leading-tight">{o.title}</p>
-                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-cream/85">{o.desc}</p>
+                <p className="font-display text-base leading-tight">{qcMeal(o.title)}</p>
+                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-cream/85">{qcMeal(o.desc)}</p>
                 <p className="mt-1.5 inline-block rounded-full bg-cream/20 px-2 py-0.5 text-[11px] font-semibold backdrop-blur">
                   {o.priceLabel}
                 </p>
