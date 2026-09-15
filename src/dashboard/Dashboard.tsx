@@ -730,11 +730,13 @@ function Panel({ email }: { email: string }) {
             Cliquez une ligne pour voir tous les événements de la demande (création, étapes, paiement).
           </p>
         </section>
-
-        {openCart && (
-          <CartDrawer cart={openCart} events={events} error={eventsErr} onClose={() => setOpenCart(null)} />
-        )}
       </main>
+
+      {/* Drawer HORS de <main> : `main` a `space-y-6` qui appliquerait un margin-top au
+          conteneur fixe (inset-0) → décalait l'overlay vers le bas. Ici, aucun décalage. */}
+      {openCart && (
+        <CartDrawer cart={openCart} events={events} error={eventsErr} onClose={() => setOpenCart(null)} />
+      )}
     </div>
   );
 }
@@ -934,16 +936,6 @@ function CartDrawer({
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-cream">
             <StatusBadge cart={cart} />
-            {(cart.infants ?? 0) > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-cream/15 px-2 py-0.5 text-[11px] font-semibold">
-                👶 Kit bébé
-              </span>
-            )}
-            {cart.airport_transfer && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-cream/15 px-2 py-0.5 text-[11px] font-semibold">
-                ✈️ Transfert
-              </span>
-            )}
             <span className="rounded-full bg-cream/15 px-2 py-0.5 text-[11px] font-semibold">
               {cart.lang ? cart.lang.toUpperCase() : "—"}
             </span>
