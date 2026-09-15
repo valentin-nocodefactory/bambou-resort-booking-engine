@@ -29,6 +29,9 @@ function Shell() {
   const { step, hotelError, reloadHotel, resetAll, goTo, hydrating } = useBooking();
   const StepView = STEP_COMPONENTS[step];
   const showProgress = ["results", "guest", "upgrade", "extras", "payment"].includes(step);
+  // Page de garde : le carousel prend tout l'écran → en-tête transparent EN SURIMPRESSION
+  // (logo clair), pour que la photo remonte jusqu'en haut. Autres étapes : barre crème.
+  const isHero = step === "dates";
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -41,8 +44,14 @@ function Shell() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
-      <header className="sticky top-0 z-30 border-b border-ink/5 bg-cream/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <header
+        className={
+          isHero
+            ? "absolute inset-x-0 top-0 z-30"
+            : "sticky top-0 z-30 border-b border-ink/5 bg-cream/85 backdrop-blur"
+        }
+      >
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <button
             type="button"
             onClick={() => {
@@ -52,15 +61,19 @@ function Shell() {
             className="self-start"
             aria-label={t("header.home")}
           >
-            <Brand className="text-teal-deep" />
+            <Brand className={isHero ? "text-cream drop-shadow-[0_1px_12px_rgba(6,26,45,0.55)]" : "text-teal-deep"} />
           </button>
           {showProgress ? (
             <div className="sm:max-w-xl sm:flex-1">
               <StepProgress />
             </div>
           ) : (
-            <span className="hidden items-center gap-1.5 text-sm font-medium text-teal-deep sm:inline-flex">
-              <IconTag className="h-4 w-4 text-turquoise" /> {t("header.bestPrice")}
+            <span
+              className={`hidden items-center gap-1.5 text-sm font-medium sm:inline-flex ${
+                isHero ? "text-white/90 drop-shadow-[0_1px_12px_rgba(6,26,45,0.55)]" : "text-teal-deep"
+              }`}
+            >
+              <IconTag className={`h-4 w-4 ${isHero ? "text-corail" : "text-turquoise"}`} /> {t("header.bestPrice")}
             </span>
           )}
         </div>

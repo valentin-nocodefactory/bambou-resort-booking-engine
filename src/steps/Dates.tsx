@@ -61,107 +61,104 @@ export function Dates() {
   }
 
   return (
-    <div className="relative">
-      {/* Page de garde : hero plein cadre avec carousel photo (auto-rotation + barre
-          de progression). Le contenu (titre + moteur) est en surimpression, texte clair. */}
-      <HeroCarousel>
-        <div className="mx-auto max-w-5xl px-5 pb-16 pt-16 sm:pb-20 sm:pt-24">
-          {/* En-tête éditorial — sur le carousel, texte clair */}
-          <div className="max-w-2xl">
-            <h1 className="font-display text-4xl leading-[1.07] text-white text-balance drop-shadow-[0_2px_24px_rgba(6,26,45,0.5)] sm:text-5xl">
-              {t("dates.title")}
-            </h1>
-            <p className="mt-3 text-lg leading-snug text-white/85 drop-shadow-[0_1px_16px_rgba(6,26,45,0.45)] sm:text-xl">
-              {t("dates.subtitle")}
-            </p>
-            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
-              <RatingPill tone="light" />
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-white/90">
-                <IconLeaf className="h-4 w-4 text-corail" /> {t("dates.directBooking")}
-              </span>
-            </div>
+    <HeroCarousel>
+      {/* Page de garde : contenu en surimpression sur le carousel plein écran. Colonne
+          pleine hauteur — titre + moteur en haut, arguments (bandeau vitré) en bas ;
+          la photo respire au centre. */}
+      <div className="mx-auto flex min-h-dvh max-w-6xl flex-col px-5 pb-20 pt-24 sm:px-8 sm:pt-28">
+        {/* En-tête éditorial — texte clair sur la photo */}
+        <div className="max-w-2xl">
+          <h1 className="font-display text-[2.6rem] leading-[1.05] text-white text-balance drop-shadow-[0_2px_24px_rgba(6,26,45,0.55)] sm:text-6xl">
+            {t("dates.title")}
+          </h1>
+          <p className="mt-3 max-w-xl text-lg leading-snug text-white/85 drop-shadow-[0_1px_16px_rgba(6,26,45,0.5)] sm:text-xl">
+            {t("dates.subtitle")}
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+            <RatingPill tone="light" />
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-white/90">
+              <IconLeaf className="h-4 w-4 text-corail" /> {t("dates.directBooking")}
+            </span>
+          </div>
+        </div>
+
+        {/* Moteur de recherche */}
+        <form onSubmit={submit} className="relative z-20 mt-7 max-w-4xl rounded-3xl border border-white/50 bg-white/95 p-3 shadow-float backdrop-blur sm:p-4">
+          <div className="grid gap-3 lg:grid-cols-[1.1fr_1.6fr_1fr_auto] lg:items-stretch">
+            {/* Hébergements (multi-sélection : 1, 2 ou 3) → filtre les logements */}
+            <PropertiesField
+              options={PROPERTY_OPTIONS}
+              selected={form.properties}
+              onChange={(props) => setForm((f) => ({ ...f, properties: props }))}
+            />
+
+            {/* Dates (range picker) */}
+            <DateRangePicker
+              checkIn={form.checkIn}
+              checkOut={form.checkOut}
+              onChange={(ci, co) => setForm((f) => ({ ...f, checkIn: ci, checkOut: co }))}
+            />
+
+            {/* Voyageurs */}
+            <GuestsField
+              adults={form.adults}
+              children={form.children}
+              infants={form.infants}
+              onChange={(a, c, i) => setForm((f) => ({ ...f, adults: a, children: c, infants: i }))}
+            />
+
+            {/* Rechercher */}
+            <button type="submit" className="btn-primary h-full min-h-[3.4rem] w-full px-6 lg:w-auto">
+              {t("dates.search")} <IconArrowRight className="h-4 w-4" />
+            </button>
           </div>
 
-          {/* Moteur de recherche */}
-          <form onSubmit={submit} className="relative z-20 mt-8 rounded-3xl border border-white/15 bg-white/95 p-3 shadow-float backdrop-blur sm:p-4">
-            <div className="grid gap-3 lg:grid-cols-[1.1fr_1.6fr_1fr_auto] lg:items-stretch">
-              {/* Hébergements (multi-sélection : 1, 2 ou 3) → filtre les logements */}
-              <PropertiesField
-                options={PROPERTY_OPTIONS}
-                selected={form.properties}
-                onChange={(props) => setForm((f) => ({ ...f, properties: props }))}
-              />
+          <div className="mt-2 px-1 text-xs text-ink/55">
+            {n > 0 ? (
+              <span>{t("dates.nightsGuests", { nights: n, guests: form.adults + form.children })}</span>
+            ) : (
+              <span>{t("dates.pickDatesHint")}</span>
+            )}
+          </div>
 
-              {/* Dates (range picker) */}
-              <DateRangePicker
-                checkIn={form.checkIn}
-                checkOut={form.checkOut}
-                onChange={(ci, co) => setForm((f) => ({ ...f, checkIn: ci, checkOut: co }))}
-              />
+          {error && <p className="mt-2 px-1 text-sm font-medium text-red-600">{error}</p>}
+        </form>
 
-              {/* Voyageurs */}
-              <GuestsField
-                adults={form.adults}
-                children={form.children}
-                infants={form.infants}
-                onChange={(a, c, i) => setForm((f) => ({ ...f, adults: a, children: c, infants: i }))}
-              />
+        {/* Laisse respirer la photo entre le moteur et les arguments */}
+        <div className="min-h-[2rem] flex-1" />
 
-              {/* Rechercher */}
-              <button type="submit" className="btn-primary h-full min-h-[3.4rem] w-full px-6 lg:w-auto">
-                {t("dates.search")} <IconArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="mt-2 px-1 text-xs text-ink/55">
-              {n > 0 ? (
-                <span>{t("dates.nightsGuests", { nights: n, guests: form.adults + form.children })}</span>
-              ) : (
-                <span>{t("dates.pickDatesHint")}</span>
-              )}
-            </div>
-
-            {error && <p className="mt-2 px-1 text-sm font-medium text-red-600">{error}</p>}
-          </form>
-        </div>
-      </HeroCarousel>
-
-      {/* Nos promesses — arguments de marque repris de bambouresort.com (sous le hero) */}
-      <div className="mx-auto max-w-5xl px-5 py-16">
-        <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-corail">
-          {t("dates.artDeVivre")}
-        </p>
-        <div className="mx-auto mt-8 grid max-w-4xl gap-10 sm:grid-cols-3">
-          <PromiseCard
-            icon={<IconWave className="h-6 w-6" />}
-            title={t("dates.promise1Title")}
-            text={t("dates.promise1Text")}
-          />
-          <PromiseCard
-            icon={<IconMapPin className="h-6 w-6" />}
-            title={t("dates.promise2Title")}
-            text={t("dates.promise2Text")}
-          />
-          <PromiseCard
-            icon={<IconPalm className="h-6 w-6" />}
-            title={t("dates.promise3Title")}
-            text={t("dates.promise3Text")}
-          />
-        </div>
+        {/* Arguments de marque — EN SURIMPRESSION sur bandeau vitré (glass), texte clair */}
+        <HeroPromises />
       </div>
-    </div>
+    </HeroCarousel>
   );
 }
 
-// Argument de marque — style « Nos promesses » du site : cercle corail fin + icône centrée.
-function PromiseCard({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
+// Arguments de marque, EN SURIMPRESSION sur la photo : un seul bandeau vitré
+// (glassmorphism) avec 3 items séparés par des filets — pas 3 cartes séparées.
+// Sur mobile : empilé, descriptions masquées pour rester compact.
+const PROMISES: { Icon: (p: { className?: string }) => JSX.Element; title: TKey; text: TKey }[] = [
+  { Icon: IconWave, title: "dates.promise1Title", text: "dates.promise1Text" },
+  { Icon: IconMapPin, title: "dates.promise2Title", text: "dates.promise2Text" },
+  { Icon: IconPalm, title: "dates.promise3Title", text: "dates.promise3Text" },
+];
+
+function HeroPromises() {
   return (
-    <div className="flex flex-col items-center text-center">
-      <span className="grid h-16 w-16 place-items-center rounded-full border border-corail/40 text-corail">
-        {icon}
-      </span>
-      <p className="mt-4 font-semibold text-marine">{title}</p>
-      <p className="mt-1.5 text-sm leading-relaxed text-marine/60">{text}</p>
+    <div className="mt-8 max-w-4xl overflow-hidden rounded-2xl border border-white/20 bg-white/10 shadow-[0_20px_60px_-24px_rgba(6,26,45,0.75)] backdrop-blur-xl">
+      <div className="grid divide-y divide-white/15 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        {PROMISES.map((p) => (
+          <div key={p.title} className="flex items-start gap-3 px-5 py-4">
+            <span className="mt-0.5 shrink-0 text-corail">
+              <p.Icon className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="font-semibold leading-tight text-white">{t(p.title)}</p>
+              <p className="mt-1 hidden text-xs leading-snug text-white/75 sm:block">{t(p.text)}</p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
