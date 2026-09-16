@@ -128,19 +128,22 @@ export function RoomDetailDrawer({
             </button>
             {images.length > 1 && (
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/65 via-ink/15 to-transparent p-3">
-                <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                {/* px-1 py-1 : marge pour que le liseré (ring, dessiné À L'EXTÉRIEUR) ne soit
+                    pas rogné par le défilement — overflow-x rogne aussi en vertical. */}
+                <div className="no-scrollbar flex gap-2 overflow-x-auto px-1 py-1">
                   {images.map((id, i) => (
                     <button
                       key={`${id}-${i}`}
                       type="button"
                       onClick={() => setActive(i)}
                       aria-label={t("roomDetail.photoAria", { n: i + 1 })}
-                      // Vignette carrée : petite image en cover (les photos reviennent au bon
-                      // ratio grâce à mode=fit dans imgUrl). Active nettement cerclée corail.
+                      // Vignette carrée, image en cover (ratio correct via mode=fit).
+                      // Contour BLANC : épais sur l'active, discret sinon. Vignettes OPAQUES
+                      // (l'opacité translucide faisait « baver » le fond → aspect bizarre).
                       className={`h-14 w-14 shrink-0 overflow-hidden rounded-md transition ${
                         i === active
-                          ? "opacity-100 ring-[3px] ring-corail"
-                          : "opacity-60 ring-1 ring-white/60 hover:opacity-100"
+                          ? "ring-[3px] ring-white"
+                          : "ring-1 ring-white/40 hover:ring-white/80"
                       }`}
                     >
                       <Photo src={imgUrl(imageBaseUrl, id, 240)} alt="" className="h-full w-full object-cover" />
