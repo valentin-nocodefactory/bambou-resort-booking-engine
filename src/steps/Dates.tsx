@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useBooking, DEFAULT_PROPERTIES } from "../state/booking";
+import { useBooking, DEFAULT_PROPERTIES, HIDDEN_PROPERTIES } from "../state/booking";
 import { nights } from "../lib/format";
 import { t, type TKey } from "../i18n";
 import { DateRangePicker } from "../components/DateRangePicker";
@@ -21,11 +21,13 @@ import {
 // `desc` = clé i18n résolue AU RENDU via t() (pas au niveau module, sinon figée en fr
 // avant initLang()). `label` = nom propre, non traduit.
 type PropertyOption = { key: string; label: string; desc: TKey; image: string };
-const PROPERTY_OPTIONS: PropertyOption[] = [
+const ALL_PROPERTY_OPTIONS: PropertyOption[] = [
   { key: "hotel", label: "Hôtel Bambou", desc: "dates.propHotelDesc", image: "/img/properties/hotel.webp" },
   { key: "creole", label: "Culture Créole", desc: "dates.propCreoleDesc", image: "/img/properties/creole.webp" },
   { key: "villas", label: "Villas", desc: "dates.propVillasDesc", image: "/img/properties/villas.webp" },
 ];
+// Villas temporairement masquées des cases à cocher (cf. HIDDEN_PROPERTIES dans booking.tsx).
+const PROPERTY_OPTIONS = ALL_PROPERTY_OPTIONS.filter((o) => !HIDDEN_PROPERTIES.includes(o.key));
 
 // Écran de recherche STANDALONE (pas de hero) — moteur de réservation seul,
 // entouré d'éléments de réassurance / conversion. Style Airbnb.

@@ -71,8 +71,14 @@ const emptyGuest: Guest = {
   notes: "",
 };
 
+// ⏸️ Hébergements MASQUÉS temporairement côté front : retirés des cases à cocher, des
+// résultats ET des recommandations (teasers). Pour tout réactiver : remettre ce tableau
+// à [] (un seul endroit — Dates.tsx et Results.tsx s'appuient dessus).
+export const HIDDEN_PROPERTIES: string[] = ["villas"];
+
 // Hébergements sélectionnables (Booking Engine configs) — cf. worker _lib PROPERTIES.
-export const DEFAULT_PROPERTIES = ["hotel", "creole", "villas"];
+// Les hébergements de HIDDEN_PROPERTIES sont retirés du set par défaut (donc pas recherchés).
+export const DEFAULT_PROPERTIES = ["hotel", "creole", "villas"].filter((p) => !HIDDEN_PROPERTIES.includes(p));
 
 interface BookingState {
   step: Step;

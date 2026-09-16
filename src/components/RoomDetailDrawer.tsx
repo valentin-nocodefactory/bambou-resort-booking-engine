@@ -135,11 +135,18 @@ export function RoomDetailDrawer({
                       type="button"
                       onClick={() => setActive(i)}
                       aria-label={t("roomDetail.photoAria", { n: i + 1 })}
-                      className={`h-11 w-14 shrink-0 overflow-hidden rounded-md ring-2 transition ${
-                        i === active ? "ring-white" : "ring-white/40 opacity-80 hover:opacity-100"
+                      // Miniature CARRÉE cadrée sur le HAUT (object-top) : les photos Mews
+                      // sont très hautes (hauteur fixe ~1632 px) et leur MILIEU est souvent
+                      // la zone la moins parlante (mesuré : bande centrale sombre) — cadrer
+                      // en haut montre le sujet (bâtiment / vue) et rend la vignette lisible.
+                      // Miniature active nettement cerclée (corail épais) ; autres discrètes.
+                      className={`h-14 w-14 shrink-0 overflow-hidden rounded-md transition ${
+                        i === active
+                          ? "opacity-100 ring-[3px] ring-corail"
+                          : "opacity-60 ring-1 ring-white/60 hover:opacity-100"
                       }`}
                     >
-                      <Photo src={imgUrl(imageBaseUrl, id, 200)} alt="" className="h-full w-full object-cover" />
+                      <Photo src={imgUrl(imageBaseUrl, id, 240)} alt="" className="h-full w-full object-cover object-top" />
                     </button>
                   ))}
                 </div>

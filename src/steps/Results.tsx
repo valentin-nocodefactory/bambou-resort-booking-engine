@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useBooking } from "../state/booking";
+import { useBooking, HIDDEN_PROPERTIES } from "../state/booking";
 import { api, errorMessage } from "../lib/api";
 import { fmtDate } from "../lib/format";
 import { buildRooms } from "../lib/shaping";
@@ -79,7 +79,10 @@ export function Results() {
 
   // Teaser : hébergements NON cochés mais dispos sur ces dates (nom + nombre).
   const teasers = useMemo(() => {
-    const labels: { key: string; label: string }[] = hotel?.Properties ?? [];
+    // Villas temporairement masquées des recommandations (cf. HIDDEN_PROPERTIES dans booking.tsx).
+    const labels: { key: string; label: string }[] = (hotel?.Properties ?? []).filter(
+      (p) => !HIDDEN_PROPERTIES.includes(p.key),
+    );
     return labels
       .filter((p) => !properties.includes(p.key))
       .map((p) => ({ ...p, count: allRooms.filter((r) => r.property === p.key).length }))
