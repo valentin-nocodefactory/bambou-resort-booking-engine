@@ -97,13 +97,15 @@ export function fmtDateLong(date: string): string {
     : dateFmtFor({ weekday: "long", day: "numeric", month: "long" }, "long").format(new Date(t));
 }
 
-// URL d'image Mews : `${ImageBaseUrl}/{imageId}?width=…`. Renvoie null si pas d'id.
+// URL d'image Mews : `${ImageBaseUrl}/{imageId}?width=…&mode=fit`. Renvoie null si pas d'id.
 // ⚠️ Le CDN Mews attend `width` (et non `w`) : avec `w`, le prod sert l'image pleine
-// résolution TRONQUÉE à 1 Mio (illisible → image cassée). `width` renvoie une image
-// complète ET redimensionnée (prod + demo).
+// résolution TRONQUÉE à 1 Mio (illisible → image cassée).
+// ⚠️ `mode=fit` est INDISPENSABLE : SANS lui, Mews fige la hauteur d'origine et force
+// juste la largeur → l'image est DÉFORMÉE (écrasée en hauteur, ex. 240×1632 au lieu de
+// 240×160). `mode=fit` conserve le ratio (redimensionnement proportionnel).
 export function imgUrl(baseUrl: string | undefined, imageId: string | null | undefined, width = 900): string | null {
   if (!baseUrl || !imageId) return null;
-  return `${baseUrl}/${imageId}?width=${width}`;
+  return `${baseUrl}/${imageId}?width=${width}&mode=fit`;
 }
 
 // yyyy-mm-dd du jour (en UTC) + ajout de N jours — pour les valeurs par défaut du sélecteur.
