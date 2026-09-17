@@ -33,9 +33,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
   const adults = clampInt(b.adults, 1, 30, 2);
   const children = clampInt(b.children, 0, 20, 0);
-  // Bébés en berceau : gratuits ET non décomptés → ne filtrent AUCUN hébergement (à la
-  // différence des enfants). Là où une catégorie Mews existe (Hôtel), le bébé est envoyé
-  // sans décrémenter la dispo ; ailleurs il est simplement ignoré ici (note à la résa).
+  // Bébés en berceau : gratuits ET non décomptés → n'impactent pas la dispo. SEULE exception :
+  // les hébergements « adultes uniquement » (Créole) sont exclus dès qu'il y a un bébé (cf.
+  // filtre plus bas). Là où une catégorie Mews existe (Hôtel), le bébé est envoyé sans
+  // décrémenter la dispo ; ailleurs (Villas) il est simplement consigné en note à la résa.
   const infants = clampInt(b.infants, 0, 10, 0);
 
   // Hébergements demandés (whitelist stricte). Vide/absent → tous.
@@ -43,8 +44,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     Array.isArray(b.properties) && b.properties.length
       ? b.properties.map(propertyByKey).filter((p): p is NonNullable<typeof p> => !!p)
       : PROPERTIES;
-  // Un hébergement sans catégorie enfant ne peut pas accueillir d'enfants → écarté si children > 0.
-  const selected = requested.filter((p) => children === 0 || p.childAgeCategoryId);
+  // Enfants (4-12) : un hébergement sans catégorie enfant ne peut pas les accueillir → écarté
+  // si children > 0. Bébés (<4) : les hébergements « adultes uniquement » (Créole) sont AUSSI
+  // écartés dès qu'il y a un bébé. (Hôtel & Villas gardent les bébés.)
+  const selected = requested.filter(
+    (p) => (children === 0 || p.childAgeCategoryId) && (infants === 0 || !p.adultsOnly),
+  );
   const empty = { RateGroups: [], Rates: [], RoomCategoryAvailabilities: [], ViolatedRestrictions: [] };
   if (!selected.length) return json(empty);
 

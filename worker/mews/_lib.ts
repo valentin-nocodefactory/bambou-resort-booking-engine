@@ -58,10 +58,13 @@ export interface Property {
   // Mews (Villas rejette d'ailleurs l'ID avec « Invalid AgeCategoryId »), il est juste
   // consigné en note de réservation. Vérifié en live via configuration + getAvailability.
   infantAgeCategoryId: string | null;
+  // Hébergement STRICTEMENT réservé aux adultes (aucun -13 ans) : exclu de la recherche
+  // dès qu'il y a un enfant OU un bébé. Ex. Culture Créole (chambres « 18 ans et + »).
+  adultsOnly?: boolean;
 }
 export const PROPERTIES: Property[] = [
   { key: "hotel", label: "Hôtel Bambou", configId: "43ec5bf8-09e2-4ae8-83d2-b39900e86b9b", adultAgeCategoryId: "3b9bdb28-d9e1-4fac-904f-b2cf00febb8f", childAgeCategoryId: "5cd331e0-0069-4f46-a20f-b2cf00febb8f", infantAgeCategoryId: "c0331e97-729b-4a90-ab23-b2f901596d45" },
-  { key: "creole", label: "Culture Créole", configId: "14625406-8090-43ca-b671-b39900ec4c4a", adultAgeCategoryId: "5e456326-2b0f-49ff-9a2f-b2cf00febb8e", childAgeCategoryId: null, infantAgeCategoryId: null },
+  { key: "creole", label: "Culture Créole", configId: "14625406-8090-43ca-b671-b39900ec4c4a", adultAgeCategoryId: "5e456326-2b0f-49ff-9a2f-b2cf00febb8e", childAgeCategoryId: null, infantAgeCategoryId: null, adultsOnly: true },
   { key: "villas", label: "Villas", configId: "ff229529-717c-4b37-9c0f-b2cf00febe21", adultAgeCategoryId: "663eebb6-9663-4916-96d2-b2cf00febb8f", childAgeCategoryId: "2232f4de-28c3-445b-9aaa-b2cf00febb8f", infantAgeCategoryId: null },
 ];
 export const propertyByKey = (key: unknown): Property | undefined =>
