@@ -20,12 +20,13 @@ export function StayBreakdown() {
   const taxe = selectedRate.citySejour ?? 0;
   // Supplément réveillon inclus dans le tarif (ligne TVA 8,5 %) → itemisé, et nommé selon la
   // nuit couverte (l'API Distributor ne renvoie pas le nom du produit inclus).
-  const reveillon = selectedRate.reveillonGross ?? 0;
-  const reveillonKey = stayCoversNight(checkIn, checkOut, 12, 24)
-    ? "breakdown.reveillonNoel"
-    : stayCoversNight(checkIn, checkOut, 12, 31)
-      ? "breakdown.reveillonSylvestre"
-      : "breakdown.reveillon";
+  // On n'itemise le supplément 8,5 % QUE sur une vraie nuit de réveillon (24/12 ou 31/12).
+  // Ailleurs cette ligne peut être un repas inclus (ex. dîner demi-pension à l'Hôtel, taxé
+  // 8,5 %) → surtout pas l'étiqueter « réveillon ». (Vérifié : Créole hors réveillon → 8,5 % = 0.)
+  const coversNoel = stayCoversNight(checkIn, checkOut, 12, 24);
+  const coversSylvestre = stayCoversNight(checkIn, checkOut, 12, 31);
+  const reveillon = coversNoel || coversSylvestre ? selectedRate.reveillonGross ?? 0 : 0;
+  const reveillonKey = coversNoel ? "breakdown.reveillonNoel" : "breakdown.reveillonSylvestre";
   const accommodation = Math.max(0, roomTotal - taxe - reveillon);
 
   return (

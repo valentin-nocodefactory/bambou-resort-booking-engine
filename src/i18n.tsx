@@ -207,7 +207,6 @@ const DICT = {
   "breakdown.cityTax": { fr: "Taxe de séjour", en: "City tax" },
   "breakdown.reveillonNoel": { fr: "Réveillon de Noël", en: "Christmas Eve gala" },
   "breakdown.reveillonSylvestre": { fr: "Réveillon de la Saint-Sylvestre", en: "New Year's Eve gala" },
-  "breakdown.reveillon": { fr: "Supplément inclus", en: "Included supplement" },
   "breakdown.included": { fr: "Inclus", en: "Included" },
   "breakdown.total": { fr: "Total (TTC)", en: "Total (incl. taxes)" },
   "payment.methodOnlineTitle": { fr: "Paiement en ligne sécurisé", en: "Secure online payment" },
