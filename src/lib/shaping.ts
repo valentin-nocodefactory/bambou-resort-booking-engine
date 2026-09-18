@@ -42,7 +42,17 @@ function taxeSejourGross(amount: unknown): number | null {
 const EXCLUDED_RATE = /\bcse\b|partenaire|\bcos\b/i;
 export const isBookingExcludedRate = (name: string): boolean => EXCLUDED_RATE.test(name);
 
-export function buildRooms(avail: AvailabilityResponse, hotel: HotelConfig | null, lang = "fr-FR"): ShapedRoom[] {
+// Bungalow Harmonie : chambres réservées aux voyageurs de 12 ans et + (déjà indiqué dans le
+// nom Mews « 12 ans et + »). Règle EN DUR par nom → masquée dès qu'il y a un mineur dans la
+// recherche (enfant 4-12 ou bébé <4), l'app ne connaissant que des tranches, pas l'âge exact.
+const AGE_12_PLUS_ONLY = /harmonie/i;
+export const isAgeRestrictedRoom = (name: string): boolean => AGE_12_PLUS_ONLY.test(name);
+
+export function buildRooms(
+  avail: AvailabilityResponse,
+  hotel: HotelConfig | null,
+  occupancy: { children?: number; infants?: number } = {},
+): ShapedRoom[] {
   const rateById = new Map(avail.Rates.map((r) => [r.Id, r]));
   const groupById = new Map<string, RateGroup>(avail.RateGroups.map((g) => [g.Id, g]));
   const categoryById = new Map((hotel?.RoomCategories ?? []).map((c) => [c.Id, c]));
@@ -109,9 +119,13 @@ export function buildRooms(avail: AvailabilityResponse, hotel: HotelConfig | nul
     // (catégorie masquée / edge Mews) → aucune donnée présentable (nom, photo,
     // hébergement) → on l'ignore plutôt que d'afficher une carte « Hébergement » vide.
     if (!cat) continue;
+    const name = loc(cat.Name, "Hébergement");
+    // Bungalow Harmonie : réservé aux 12 ans et + → masqué dès qu'un mineur est dans la
+    // recherche (enfant 4-12 ou bébé <4). Règle EN DUR, par nom (cf. isAgeRestrictedRoom).
+    if (isAgeRestrictedRoom(name) && ((occupancy.children ?? 0) > 0 || (occupancy.infants ?? 0) > 0)) continue;
     rooms.push({
       categoryId: rca.RoomCategoryId,
-      name: loc(cat.Name, "Hébergement"),
+      name,
       description: loc(cat.Description ?? null, ""),
       imageIds: cat?.ImageIds ?? [],
       normalBedCount: cat?.NormalBedCount ?? 0,

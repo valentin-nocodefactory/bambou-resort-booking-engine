@@ -69,7 +69,10 @@ export function Results() {
   }, [checkIn, checkOut, adults, children, infants, voucherCode, reloadKey]);
 
   // Toutes les chambres dispos (tous hébergements), taguées par `property`.
-  const allRooms = useMemo(() => (data ? buildRooms(data, hotel) : []), [data, hotel]);
+  const allRooms = useMemo(
+    () => (data ? buildRooms(data, hotel, { children, infants }) : []),
+    [data, hotel, children, infants],
+  );
 
   // Filtre d'affichage : hébergements cochés (une chambre sans property reste visible).
   const rooms = useMemo(
