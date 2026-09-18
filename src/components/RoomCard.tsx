@@ -1,11 +1,10 @@
 import { eur, imgUrl } from "../lib/format";
 import { spaceLabel } from "../lib/shaping";
-import { qcMeal } from "../lib/quebec";
 import type { ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
-import { RoomBenefitsOverlay } from "./RoomTags";
+import { RoomBenefitsOverlay, mealTags } from "./RoomTags";
 import { FavoriteBadge, HotBadge, SavingsBadge, ScarcityBadge, ViewersNudge, seeded } from "./conversion";
-import { IconArrowRight, IconBed, IconCheck, IconCloche, IconCroissant, IconUsers } from "./icons";
+import { IconArrowRight, IconBed, IconCheck, IconUsers } from "./icons";
 import { t } from "../i18n";
 
 // Libellés d'hébergement (pour le badge sur la carte, quand plusieurs sont affichés).
@@ -99,17 +98,15 @@ export function RoomCard({
           <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
             <IconCheck className="h-3.5 w-3.5" /> {t("roomCard.noFees")}
           </span>
-          {/* Hôtel Bambou : demi-pension incluse dans le tarif. */}
-          {room.property === "hotel" && (
-            <>
-              <span className="inline-flex w-fit items-center gap-1 rounded-full bg-turquoise/10 px-2.5 py-1 text-[11px] font-semibold text-teal-deep">
-                <IconCroissant className="h-3.5 w-3.5" /> {qcMeal(t("roomCard.breakfastIncl"))}
-              </span>
-              <span className="inline-flex w-fit items-center gap-1 rounded-full bg-turquoise/10 px-2.5 py-1 text-[11px] font-semibold text-teal-deep">
-                <IconCloche className="h-3.5 w-3.5" /> {qcMeal(t("roomCard.dinnerIncl"))}
-              </span>
-            </>
-          )}
+          {/* Repas inclus dans le tarif (Hôtel = demi-pension, Culture Créole = petit-déj). */}
+          {mealTags(room).map((meal) => (
+            <span
+              key={meal.key}
+              className="inline-flex w-fit items-center gap-1 rounded-full bg-turquoise/10 px-2.5 py-1 text-[11px] font-semibold text-teal-deep"
+            >
+              <meal.Icon className="h-3.5 w-3.5" /> {meal.label}
+            </span>
+          ))}
         </div>
 
         <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-4">

@@ -1,5 +1,5 @@
 import type { ComponentType, SVGProps } from "react";
-import { roomBenefits } from "../lib/shaping";
+import { includedMeals, roomBenefits } from "../lib/shaping";
 import { qcMeal } from "../lib/quebec";
 import type { ShapedRoom } from "../types/mews";
 import { IconWave, IconLeaf, IconStairs, IconGroundFloor, IconCroissant, IconCloche } from "./icons";
@@ -21,13 +21,14 @@ export function benefitTags(room: ShapedRoom): Tag[] {
   return roomBenefits(room).map((b) => ({ key: b, label: t(BENEFIT[b].key), Icon: BENEFIT[b].Icon }));
 }
 
-// Repas inclus (demi-pension) — Hôtel Bambou uniquement.
+// Repas inclus dans le tarif, selon l'hébergement (cf. shaping.includedMeals) :
+// Hôtel Bambou = demi-pension (petit-déj + dîner), Culture Créole = petit-déjeuner.
+const MEAL: Record<string, { key: TKey; Icon: IconC }> = {
+  breakfast: { key: "roomCard.breakfastIncl", Icon: IconCroissant },
+  dinner: { key: "roomCard.dinnerIncl", Icon: IconCloche },
+};
 export function mealTags(room: ShapedRoom): Tag[] {
-  if (room.property !== "hotel") return [];
-  return [
-    { key: "breakfast", label: qcMeal(t("roomCard.breakfastIncl")), Icon: IconCroissant },
-    { key: "dinner", label: qcMeal(t("roomCard.dinnerIncl")), Icon: IconCloche },
-  ];
+  return includedMeals(room).map((m) => ({ key: m, label: qcMeal(t(MEAL[m].key)), Icon: MEAL[m].Icon }));
 }
 
 // Tags bénéfice en OVERLAY sur la photo (fond sombre translucide, lisibles sur l'image).

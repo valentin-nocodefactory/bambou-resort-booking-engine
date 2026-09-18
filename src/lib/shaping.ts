@@ -48,6 +48,17 @@ export const isBookingExcludedRate = (name: string): boolean => EXCLUDED_RATE.te
 const AGE_12_PLUS_ONLY = /harmonie/i;
 export const isAgeRestrictedRoom = (name: string): boolean => AGE_12_PLUS_ONLY.test(name);
 
+// Repas déjà INCLUS dans le tarif, par hébergement (→ tags « inclus » sur la carte et le
+// détail chambre) :
+//  • Hôtel Bambou   : demi-pension → petit-déjeuner + dîner
+//  • Culture Créole : petit-déjeuner
+//  • Villas         : rien d'inclus
+export function includedMeals(room: { property?: string | null }): ("breakfast" | "dinner")[] {
+  if (room.property === "hotel") return ["breakfast", "dinner"];
+  if (room.property === "creole") return ["breakfast"];
+  return [];
+}
+
 export function buildRooms(
   avail: AvailabilityResponse,
   hotel: HotelConfig | null,
