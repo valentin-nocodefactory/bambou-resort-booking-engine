@@ -1,5 +1,5 @@
 import { productLineTotal, useBooking } from "../state/booking";
-import { eur, fmtDate } from "../lib/format";
+import { money, fmtDate } from "../lib/format";
 import { chargingLabel, spaceLabel } from "../lib/shaping";
 import { SavingsLine } from "./conversion";
 import { IconBed, IconCalendar, IconCheck, IconLock, IconUsers } from "./icons";
@@ -62,7 +62,7 @@ export function BookingSummary() {
 
       <div className="border-t border-ink/10 px-5 py-4 text-sm">
         {selectedRate && (
-          <Line label={t("summary.accommodation", { count: nightsCount })} value={eur(roomTotal)} />
+          <Line label={t("summary.accommodation", { count: nightsCount })} value={money(roomTotal)} />
         )}
         {selectedProducts.map((p) => (
           <Line
@@ -75,7 +75,7 @@ export function BookingSummary() {
                 ) : null}
               </>
             }
-            value={eur(productLineTotal(p, nightsCount, guestsCount))}
+            value={money(productLineTotal(p, nightsCount, guestsCount))}
           />
         ))}
         {!selectedRate && !selectedProducts.length && (
@@ -86,9 +86,9 @@ export function BookingSummary() {
       <div className="flex items-end justify-between border-t border-ink/10 bg-cream/60 px-5 py-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-teal-deep/70">{t("summary.total")}</p>
-          <p className="text-[11px] text-ink/50">{t("summary.taxesIncluded")}{productsTotal > 0 ? t("summary.extrasNote", { amount: eur(productsTotal) }) : ""}</p>
+          <p className="text-[11px] text-ink/50">{t("summary.taxesIncluded")}{productsTotal > 0 ? t("summary.extrasNote", { amount: money(productsTotal) }) : ""}</p>
         </div>
-        <p className="font-display text-2xl text-teal-deep">{grandTotal > 0 ? eur(grandTotal) : "—"}</p>
+        <p className="font-display text-2xl text-teal-deep">{grandTotal > 0 ? money(grandTotal) : "—"}</p>
       </div>
 
       {savings > 0 && (

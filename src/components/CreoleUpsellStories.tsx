@@ -1,5 +1,5 @@
 import { useBooking } from "../state/booking";
-import { eur, imgUrl } from "../lib/format";
+import { money, imgUrl } from "../lib/format";
 import { chargingLabel } from "../lib/shaping";
 import { qcMeal } from "../lib/quebec";
 import type { ShapedProduct } from "../types/mews";
@@ -34,7 +34,7 @@ export function CreoleUpsellStories() {
       title: t("creoleUp.dinnerTitle"),
       desc: t("creoleUp.dinnerDesc"),
       imageId: dinner.imageId,
-      priceLabel: `+${eur(dinner.priceEur)} ${chargingLabel(dinner.chargingMode)}`.trim(),
+      priceLabel: `+${money(dinner.priceEur)} ${chargingLabel(dinner.chargingMode)}`.trim(),
       products: [dinner],
     });
   if (champagne && escale)
@@ -43,7 +43,7 @@ export function CreoleUpsellStories() {
       title: t("creoleUp.romanticTitle"),
       desc: t("creoleUp.romanticDesc"),
       imageId: champagne.imageId,
-      priceLabel: `+${eur(champagne.priceEur + escale.priceEur)}`,
+      priceLabel: `+${money(champagne.priceEur + escale.priceEur)}`,
       products: [champagne, escale],
     });
 

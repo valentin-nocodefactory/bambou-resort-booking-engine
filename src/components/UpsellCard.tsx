@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { productLineTotal } from "../state/booking";
-import { eur, imgUrl } from "../lib/format";
+import { money, imgUrl } from "../lib/format";
 import { chargingLabel } from "../lib/shaping";
 import { qcMeal } from "../lib/quebec";
 import type { ShapedProduct } from "../types/mews";
@@ -91,13 +91,13 @@ export function UpsellCard({
           )}
           <div className="mt-auto flex items-end justify-between gap-2 pt-3">
             <div>
-              <span className="font-display text-lg text-teal-deep">{eur(product.priceEur)}</span>
+              <span className="font-display text-lg text-teal-deep">{money(product.priceEur)}</span>
               {chargingLabel(product.chargingMode) && (
                 <span className="text-xs text-ink/45"> {chargingLabel(product.chargingMode)}</span>
               )}
               {lineTotal !== product.priceEur && (
                 <span className="block text-[11px] text-ink/45">
-                  {eur(lineTotal)} {t("upsell.total")}
+                  {money(lineTotal)} {t("upsell.total")}
                 </span>
               )}
             </div>
@@ -188,12 +188,12 @@ function ExtraDetailModal({
         <div className="p-5">
           <h3 className="font-display text-xl text-ink">{qcMeal(product.name)}</h3>
           <p className="mt-1 text-sm">
-            <span className="font-display text-lg text-teal-deep">{eur(product.priceEur)}</span>
+            <span className="font-display text-lg text-teal-deep">{money(product.priceEur)}</span>
             {chargingLabel(product.chargingMode) && (
               <span className="text-ink/50"> {chargingLabel(product.chargingMode)}</span>
             )}
             {lineTotal !== product.priceEur && (
-              <span className="text-ink/50"> · {eur(lineTotal)} {t("upsell.total")}</span>
+              <span className="text-ink/50"> · {money(lineTotal)} {t("upsell.total")}</span>
             )}
           </p>
           {product.description && (
@@ -248,7 +248,7 @@ export function InlineUpsell({
         </p>
         <p className="text-xs text-ink/60">
           {qcMeal(product.description) || t("upsell.descFallback")} ·{" "}
-          <span className="font-semibold text-teal-deep">{eur(product.priceEur)}</span>
+          <span className="font-semibold text-teal-deep">{money(product.priceEur)}</span>
         </p>
       </div>
       <button

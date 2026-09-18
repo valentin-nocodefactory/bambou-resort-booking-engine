@@ -1,5 +1,6 @@
 import type { Localized } from "../types/mews";
 import { getLang, LOCALE } from "./lang";
+import { getCurrency, convert, CURRENCIES, type Currency } from "./currency";
 
 // Locale Intl courante (fr-FR | en-GB). La langue est fixe par chargement de page.
 const locale = () => LOCALE[getLang()];
@@ -57,6 +58,32 @@ export function eur(value: number | null | undefined, opts?: { decimals?: 0 | 2 
   if (value == null || !Number.isFinite(value)) return "—";
   const d = opts?.decimals ?? (Number.isInteger(value) ? 0 : 2);
   return eurFmt(d).format(value);
+}
+
+// Formatter Intl DÉCIMAL (sans style « currency ») mémoïsé par (locale, décimales) : pour
+// les devises converties (USD/CAD), on colle nous-même le symbole désambiguïsé (US$ / C$).
+const decCache = new Map<string, Intl.NumberFormat>();
+const decFmt = (decimals: number) => {
+  const key = `${locale()}:${decimals}`;
+  let f = decCache.get(key);
+  if (!f) {
+    f = new Intl.NumberFormat(locale(), { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    decCache.set(key, f);
+  }
+  return f;
+};
+
+// Prix d'AFFICHAGE dans la devise choisie. EUR → eur() natif (inchangé). USD/CAD →
+// conversion « approximative » (⚠️ la transaction reste EN EUR) + symbole collé (US$ / C$).
+// `decimals` : même logique que eur() (0 si le montant EUR est entier, sinon 2), surchargeable.
+export function money(value: number | null | undefined, opts?: { decimals?: 0 | 2; currency?: Currency }): string {
+  const cur = opts?.currency ?? getCurrency();
+  if (cur === "EUR") return eur(value, opts);
+  if (value == null || !Number.isFinite(value)) return "—";
+  const d = opts?.decimals ?? (Number.isInteger(value) ? 0 : 2);
+  const meta = CURRENCIES[cur];
+  const num = decFmt(d).format(convert(value, cur));
+  return meta.position === "prefix" ? `${meta.symbol}${num}` : `${num} ${meta.symbol}`;
 }
 
 // Normalise une date (yyyy-mm-dd ou ISO) en ISO 8601 UTC minuit.

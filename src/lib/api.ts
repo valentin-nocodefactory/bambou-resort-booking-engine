@@ -209,6 +209,14 @@ export const api = {
     }).catch(() => ({ country: null, region: null, city: null }));
   },
 
+  // Taux de change EUR→USD/CAD pour l'AFFICHAGE approximatif (switcher de devise). La
+  // transaction reste TOUJOURS en EUR. Best-effort : null si indisponible (repli statique).
+  fx: () =>
+    call<{ EUR: number; USD: number; CAD: number }>("fx", undefined, {
+      label: "Taux de change (affichage)",
+      why: "Récupère les taux EUR→USD/CAD (BCE) pour afficher des prix approximatifs dans la devise du visiteur. La transaction reste en EUR.",
+    }).catch(() => null),
+
   // Suivi de panier (funnel) → n8n via le Worker. Best-effort : n'échoue jamais l'UI.
   track: (payload: unknown): Promise<{ ok: boolean }> =>
     post<{ ok: boolean }>("track", payload, {

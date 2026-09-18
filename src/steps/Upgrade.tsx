@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useBooking } from "../state/booking";
 import { t } from "../i18n";
-import { eur, imgUrl } from "../lib/format";
+import { money, imgUrl } from "../lib/format";
 import { spaceLabel, upgradeBenefits, upgradeRooms } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
 import { CreoleUpsellStories } from "../components/CreoleUpsellStories";
@@ -54,7 +54,7 @@ export function Upgrade() {
             <p className="truncate font-medium text-ink">{selectedRoom.name}</p>
             <p className="text-xs text-ink/50">{selectedRate.name}</p>
           </div>
-          <p className="shrink-0 font-display text-lg text-teal-deep">{eur(selectedRate.totalGross)}</p>
+          <p className="shrink-0 font-display text-lg text-teal-deep">{money(selectedRate.totalGross)}</p>
         </div>
 
         {/* Upsells « stories » Culture Créole (repas + pack romantique) — se pré-cochent à Extras. */}
@@ -94,7 +94,7 @@ export function Upgrade() {
                       <div className="flex items-start justify-between gap-3">
                         <h3 className="line-clamp-2 font-display text-xl text-ink">{room.name}</h3>
                         <div className="shrink-0 text-right">
-                          <p className="font-display text-xl text-creole">+{eur(diff)}</p>
+                          <p className="font-display text-xl text-creole">+{money(diff)}</p>
                           <p className="text-[11px] text-ink/45">{t("upgrade.perStay")}</p>
                         </div>
                       </div>
@@ -113,7 +113,7 @@ export function Upgrade() {
                           <IconBed className="h-3.5 w-3.5 text-turquoise" /> {t("upgrade.beds", { count: room.normalBedCount })}
                           {room.extraBedCount > 0 ? ` +${room.extraBedCount}` : ""}
                         </span>
-                        <span className="text-ink/40">{t("upgrade.soit")} {eur(room.fromGross)} · {t("upgrade.nights", { count: nightsCount })}</span>
+                        <span className="text-ink/40">{t("upgrade.soit")} {money(room.fromGross)} · {t("upgrade.nights", { count: nightsCount })}</span>
                       </div>
                       <div className="mt-auto pt-4">
                         {isSelected ? (
@@ -130,7 +130,7 @@ export function Upgrade() {
                             onClick={() => selectRoomRate(room, room.rates[0])}
                             className="btn-accent w-full"
                           >
-                            {t("upgrade.upgradeFor")} +{eur(diff)} <IconArrowRight className="h-4 w-4" />
+                            {t("upgrade.upgradeFor")} +{money(diff)} <IconArrowRight className="h-4 w-4" />
                           </button>
                         )}
                       </div>

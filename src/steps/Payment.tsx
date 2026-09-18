@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useBooking } from "../state/booking";
 import { ApiError, api, errorMessage } from "../lib/api";
-import { eur, fmtDate, toUtc } from "../lib/format";
+import { eur, money, fmtDate, toUtc } from "../lib/format";
 import { saveConfirmationSnapshot } from "../lib/confirmationSnapshot";
 import { StepLayout } from "../components/StepLayout";
 import { SecureBadge } from "../components/DataBadge";
@@ -27,6 +27,7 @@ export function Payment() {
     grandTotal,
     airportTransfer,
     nightsCount,
+    currency,
     setCreated,
     goTo,
     track,
@@ -162,6 +163,22 @@ export function Payment() {
             <StayBreakdown />
           </div>
         </div>
+
+        {/* Rassurance devise : la transaction se fait TOUJOURS en EUR — la devise choisie
+            n'est qu'un affichage approximatif. On rappelle le montant réel EUR + son
+            équivalent approximatif dans la devise sélectionnée. (Masqué en EUR.) */}
+        {currency !== "EUR" && (
+          <div className="flex items-center justify-between gap-4 rounded-xl2 border border-turquoise/30 bg-white p-4">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-ink/50">{t("payment.chargedInEur")}</p>
+              <p className="font-display text-xl text-teal-deep">{eur(grandTotal)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-ink/45">{t("payment.approxIn", { cur: currency })}</p>
+              <p className="text-sm font-semibold text-ink/70">{money(grandTotal)}</p>
+            </div>
+          </div>
+        )}
 
         {/* Mode de règlement */}
         <div className="rounded-xl2 border border-turquoise/30 bg-turquoise/5 p-5">

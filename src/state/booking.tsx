@@ -14,6 +14,13 @@ import { getUtms } from "../lib/utm";
 import { nights as countNights } from "../lib/format";
 import { buildRooms, shapeProducts, cheapestDrinkProduct } from "../lib/shaping";
 import { setQuebecLocale } from "../lib/quebec";
+import {
+  getCurrency,
+  setCurrency as setCurrencyModule,
+  setCurrencyByCountry,
+  setRates,
+  type Currency,
+} from "../lib/currency";
 import type { HotelConfig, ReservationCreateResult, ShapedProduct, ShapedRate, ShapedRoom } from "../types/mews";
 
 export type Step = "dates" | "results" | "guest" | "upgrade" | "extras" | "payment" | "confirmation";
@@ -223,6 +230,10 @@ interface BookingContextValue extends BookingState {
   setCreated: (r: ReservationCreateResult | null) => void;
   goTo: (step: Step) => void;
   resetAll: () => void;
+  // devise d'AFFICHAGE (EUR par défaut, pré-réglée par la géo IP). Purement cosmétique :
+  // la transaction Mews reste toujours en EUR (rappelé sur la step de paiement).
+  currency: Currency;
+  setCurrency: (c: Currency) => void;
   // suivi panier → n8n
   cartId: string;
   track: (status: CartStatus, extra?: Record<string, unknown>) => Promise<{ ok: boolean }>;
@@ -268,6 +279,13 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [hotelError, setHotelError] = useState(false);
   // Force un re-rendu quand la locale québécoise est activée (appellations des repas).
   const [, forceQc] = useState(0);
+  // Devise d'affichage : miroir React de l'état module (lib/currency). Changer de devise
+  // met à jour le module SYNCHRONE (money() lit le module) puis re-render via cet état.
+  const [currency, setCurrencyState] = useState<Currency>(() => getCurrency());
+  const setCurrency = useCallback((c: Currency) => {
+    setCurrencyModule(c);
+    setCurrencyState(c);
+  }, []);
 
   // garde l'URL synchronisée (état de résa + infos client saisies)
   useEffect(() => writeUrl(state, guest), [state, guest]);
@@ -487,6 +505,9 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         setQuebecLocale(true);
         forceQc((n) => n + 1);
       }
+      // Devise d'affichage pré-réglée par la géo (US→USD, CA→CAD) — SEULEMENT si le
+      // visiteur n'a rien choisi explicitement. Indépendant de « visite fraîche » (affichage).
+      if (setCurrencyByCountry(r.country)) setCurrencyState(getCurrency());
       if (!fresh || !r.country) return;
       // Indicatif : on n'écrase pas un choix explicite (uniquement si encore défaut FR).
       setGuestState((gg) => (gg.nationalityCode === "FR" ? { ...gg, nationalityCode: r.country as string } : gg));
@@ -499,6 +520,20 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Taux de change EUR→USD/CAD (BCE, via /api/mews/fx) pour l'affichage approximatif. La
+  // transaction reste en EUR. Best-effort : si indisponible, le repli statique tient.
+  useEffect(() => {
+    let alive = true;
+    void api.fx().then((r) => {
+      if (!alive || !r) return;
+      setRates(r);
+      forceQc((n) => n + 1); // re-render des prix convertis avec les taux à jour
+    });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // Preset boisson US/CA : dès qu'une chambre est choisie ET le catalogue chargé, ajoute
@@ -631,6 +666,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setCreated,
     goTo,
     resetAll,
+    currency,
+    setCurrency,
     cartId,
     track,
   };

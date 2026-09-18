@@ -1,4 +1,4 @@
-import { eur, imgUrl } from "../lib/format";
+import { money, imgUrl } from "../lib/format";
 import { spaceLabel } from "../lib/shaping";
 import type { ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
@@ -112,12 +112,12 @@ export function RoomCard({
         <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-4">
           <div>
             <div className="flex items-center gap-2">
-              {cheapest?.maxGross != null && <span className="text-sm text-ink/40 line-through">{eur(cheapest.maxGross)}</span>}
+              {cheapest?.maxGross != null && <span className="text-sm text-ink/40 line-through">{money(cheapest.maxGross)}</span>}
               <SavingsBadge from={room.fromGross} max={cheapest?.maxGross ?? null} />
             </div>
             <p className="flex items-baseline gap-1.5">
               <span className="text-[11px] uppercase tracking-wide text-ink/45">{t("roomCard.from")}</span>
-              <span className="font-display text-2xl text-teal-deep">{eur(room.fromGross)}</span>
+              <span className="font-display text-2xl text-teal-deep">{money(room.fromGross)}</span>
             </p>
             <p className="text-[11px] text-ink/45">
               {t("roomCard.totalLine", { nights: nightsCount, rates: room.rates.length })}

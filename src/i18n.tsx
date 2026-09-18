@@ -28,6 +28,7 @@ const DICT = {
   "footer.securePayment": { fr: "Paiement sécurisé", en: "Secure payment" },
   "footer.developedBy": { fr: "Développé par", en: "Built by" },
   "footer.language": { fr: "Langue", en: "Language" },
+  "footer.currency": { fr: "Devise", en: "Currency" },
 
   // ── Barre contact (appeler / partager / mail réception) ───────────────────
   "contact.open": { fr: "Aide & contact", en: "Help & contact" },
@@ -193,6 +194,8 @@ const DICT = {
   "payment.subtitleFinalize": { fr: "Finalisez votre réservation.", en: "Finalize your booking." },
   "payment.backLabel": { fr: "Retour aux extras", en: "Back to extras" },
   "payment.reassurance": { fr: "Confirmation immédiate · 0 € de frais et commission", en: "Instant confirmation · €0 fees or commission" },
+  "payment.chargedInEur": { fr: "Votre paiement se fera en EUR", en: "Your payment will be charged in EUR" },
+  "payment.approxIn": { fr: (p) => `Prix approximatif en ${p.cur}`, en: (p) => `Approximate price in ${p.cur}` },
   "payment.yourBooking": { fr: "Votre réservation", en: "Your booking" },
   "payment.recapAccommodation": { fr: "Hébergement", en: "Accommodation" },
   "payment.recapRate": { fr: "Tarif", en: "Rate" },

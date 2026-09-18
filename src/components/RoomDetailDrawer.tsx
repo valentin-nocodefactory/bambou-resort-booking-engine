@@ -1,6 +1,6 @@
 import { useEffect, useState, type ComponentType, type SVGProps } from "react";
 import { api } from "../lib/api";
-import { eur, imgUrl } from "../lib/format";
+import { money, imgUrl } from "../lib/format";
 import { spaceLabel } from "../lib/shaping";
 import type { ShapedRate, ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
@@ -234,11 +234,11 @@ export function RoomDetailDrawer({
                           </p>
                         </div>
                         <div className="shrink-0 text-right">
-                          {rate.maxGross != null && <p className="text-xs text-ink/40 line-through">{eur(rate.maxGross)}</p>}
-                          <p className="font-display text-2xl text-teal-deep">{eur(total)}</p>
+                          {rate.maxGross != null && <p className="text-xs text-ink/40 line-through">{money(rate.maxGross)}</p>}
+                          <p className="font-display text-2xl text-teal-deep">{money(total)}</p>
                           {rate.perNightGross != null && (
                             <p className="text-[11px] text-ink/45">
-                              {eur(rate.perNightGross)}{t("roomDetail.perNightNights", { count: nightsCount })}
+                              {money(rate.perNightGross)}{t("roomDetail.perNightNights", { count: nightsCount })}
                             </p>
                           )}
                         </div>

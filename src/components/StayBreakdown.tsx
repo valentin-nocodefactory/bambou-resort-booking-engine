@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useBooking, productLineTotal } from "../state/booking";
-import { eur } from "../lib/format";
+import { money } from "../lib/format";
 import { includedMeals, stayCoversNight } from "../lib/shaping";
 import { qcMeal } from "../lib/quebec";
 import { IconCloche, IconCroissant, IconSparkles } from "./icons";
@@ -33,7 +33,7 @@ export function StayBreakdown() {
 
   return (
     <dl className="space-y-1.5 text-sm">
-      <Row label={t("breakdown.accommodation", { nights: nightsCount })} value={eur(accommodation)} />
+      <Row label={t("breakdown.accommodation", { nights: nightsCount })} value={money(accommodation)} />
       {meals.includes("breakfast") && (
         <Row
           icon={<IconCroissant className="h-4 w-4" />}
@@ -52,11 +52,11 @@ export function StayBreakdown() {
         <Row icon={<IconSparkles className="h-4 w-4" />} label={qcMeal(t(reveillonKey))} note={t("breakdown.included")} />
       )}
       {selectedProducts.map((p) => (
-        <Row key={p.id} label={qcMeal(p.name)} value={eur(productLineTotal(p, nightsCount, guestsCount))} />
+        <Row key={p.id} label={qcMeal(p.name)} value={money(productLineTotal(p, nightsCount, guestsCount))} />
       ))}
-      {taxe > 0 && <Row label={t("breakdown.cityTax")} value={eur(taxe)} />}
+      {taxe > 0 && <Row label={t("breakdown.cityTax")} value={money(taxe)} />}
       <div className="mt-1.5 border-t border-ink/10 pt-2.5">
-        <Row label={t("breakdown.total")} value={eur(grandTotal)} strong />
+        <Row label={t("breakdown.total")} value={money(grandTotal)} strong />
       </div>
     </dl>
   );

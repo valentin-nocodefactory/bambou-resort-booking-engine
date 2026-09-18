@@ -13,6 +13,7 @@ import { Confirmation } from "./steps/Confirmation";
 import { IconLeaf, IconTag } from "./components/icons";
 import { t } from "./i18n";
 import { getLang, setLangAndReload, type Lang } from "./lib/lang";
+import type { Currency } from "./lib/currency";
 
 const STEP_COMPONENTS: Record<Step, () => JSX.Element | null> = {
   dates: Dates,
@@ -118,7 +119,10 @@ function Footer() {
           <p className="mt-2 max-w-sm text-sm text-cream/60">{t("footer.tagline")}</p>
         </div>
         <div className="space-y-2.5 text-sm sm:text-right">
-          <LangSwitcher />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:justify-end">
+            <CurrencySwitcher />
+            <LangSwitcher />
+          </div>
           <p className="inline-flex items-center gap-1.5 text-cream/60">
             <IconLeaf className="h-4 w-4 text-creole-soft" /> {t("footer.securePayment")}
           </p>
@@ -161,6 +165,34 @@ function LangSwitcher() {
             }`}
           >
             {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// Sélecteur de devise d'AFFICHAGE (EUR / USD / CAD) — purement cosmétique : la transaction
+// reste en EUR (rappelée sur la step de paiement). Pré-réglé par la géo IP (US→USD, CA→CAD).
+// Contrairement à la langue, PAS de reload : les prix se convertissent instantanément.
+function CurrencySwitcher() {
+  const { currency, setCurrency } = useBooking();
+  const opts: Currency[] = ["EUR", "USD", "CAD"];
+  return (
+    <div className="flex items-center gap-1.5 sm:justify-end" role="group" aria-label={t("footer.currency")}>
+      {opts.map((c) => {
+        const on = c === currency;
+        return (
+          <button
+            key={c}
+            type="button"
+            onClick={() => setCurrency(c)}
+            aria-pressed={on}
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+              on ? "bg-cream text-teal-deep" : "text-cream/60 hover:bg-cream/10 hover:text-cream"
+            }`}
+          >
+            {c}
           </button>
         );
       })}
