@@ -72,6 +72,19 @@ const DICT = {
   "dates.directBooking": { fr: "Réservation en direct, sans frais ni commissions des plateformes", en: "Book direct, no platform fees or commissions" },
   "hero.goToSlide": { fr: (p) => `Voir la photo ${p.n} sur ${p.total}`, en: (p) => `View photo ${p.n} of ${p.total}` },
   "dates.search": { fr: "Rechercher", en: "Search" },
+  // Switcher horizontal Hébergement / Villas (les villas mènent à un formulaire dédié).
+  "dates.stayType": { fr: "Type de séjour", en: "Stay type" },
+  "dates.tabStay": { fr: "Hébergement", en: "Accommodation" },
+  "dates.tabVillas": { fr: "Villas", en: "Villas" },
+  "dates.villasCta": { fr: "Découvrir les villas", en: "Explore the villas" },
+  // Page /villa (placeholder — vrai formulaire à venir).
+  "villa.title": { fr: "Villas d'exception", en: "Exceptional villas" },
+  "villa.comingSoon": { fr: "Formulaire à venir", en: "Form coming soon" },
+  "villa.lead": {
+    fr: "La réservation de nos villas privées arrive bientôt en ligne. En attendant, notre équipe reste à votre écoute.",
+    en: "Online booking for our private villas is coming soon. In the meantime, our team is here to help.",
+  },
+  "villa.back": { fr: "Retour à l'accueil", en: "Back to home" },
   "dates.errorSelectDates": { fr: "Sélectionnez vos dates d'arrivée et de départ.", en: "Please select your check-in and check-out dates." },
   "dates.errorCheckoutAfter": { fr: "La date de départ doit être postérieure à l'arrivée.", en: "Check-out must be after check-in." },
   "dates.nightsGuests": { fr: (p) => `${p.nights} nuit${Number(p.nights) > 1 ? "s" : ""} · ${p.guests} voyageur${Number(p.guests) > 1 ? "s" : ""}`, en: (p) => `${p.nights} night${Number(p.nights) > 1 ? "s" : ""} · ${p.guests} guest${Number(p.guests) > 1 ? "s" : ""}` },

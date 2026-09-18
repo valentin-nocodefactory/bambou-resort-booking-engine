@@ -10,6 +10,7 @@ import { Upgrade } from "./steps/Upgrade";
 import { Extras } from "./steps/Extras";
 import { Payment } from "./steps/Payment";
 import { Confirmation } from "./steps/Confirmation";
+import { VillaPage } from "./steps/VillaPage";
 import { IconLeaf, IconTag } from "./components/icons";
 import { t } from "./i18n";
 import { getLang, setLangAndReload, type Lang } from "./lib/lang";
@@ -200,7 +201,13 @@ function CurrencySwitcher() {
   );
 }
 
+// Route pathname /villa (servie par le fallback SPA) → page villas dédiée, HORS moteur de
+// réservation (pas de BookingProvider nécessaire). Le reste passe par le flux d'étapes.
+const isVillaRoute = () =>
+  typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "").toLowerCase() === "/villa";
+
 export default function App() {
+  if (isVillaRoute()) return <VillaPage />;
   return (
     <BookingProvider>
       <Shell />

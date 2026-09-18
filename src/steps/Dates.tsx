@@ -41,12 +41,20 @@ export function Dates() {
     infants: infants || 0,
     properties: properties?.length ? properties : DEFAULT_PROPERTIES,
   });
+  // Type de séjour : « stay » = Hôtel Bambou / Culture Créole (moteur Mews), « villas » =
+  // formulaire dédié (page /villa). En mode villas, pas de sélecteur d'hébergement.
+  const [stayType, setStayType] = useState<"stay" | "villas">("stay");
   const [error, setError] = useState("");
 
   const n = nights(form.checkIn, form.checkOut);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    // Villas → page dédiée (formulaire à venir). On conserve ?lang=/?cur= (langue & devise).
+    if (stayType === "villas") {
+      window.location.assign(`/villa${window.location.search}`);
+      return;
+    }
     if (!form.checkIn || !form.checkOut) return setError(t("dates.errorSelectDates"));
     if (form.checkOut <= form.checkIn) return setError(t("dates.errorCheckoutAfter"));
     setError("");
@@ -87,13 +95,23 @@ export function Dates() {
         {/* Moteur de recherche — juste sous le titre (remonté pour que le calendrier
             s'ouvre dans l'espace libre en dessous, sans scroll) */}
         <form onSubmit={submit} className="relative z-20 mt-6 max-w-4xl rounded-3xl border border-white/50 bg-white/95 p-2.5 shadow-float backdrop-blur sm:p-4">
-          <div className="grid gap-3 lg:grid-cols-[1.1fr_1.6fr_1fr_auto] lg:items-stretch">
-            {/* Hébergements (multi-sélection : 1, 2 ou 3) → filtre les logements */}
-            <PropertiesField
-              options={PROPERTY_OPTIONS}
-              selected={form.properties}
-              onChange={(props) => setForm((f) => ({ ...f, properties: props }))}
-            />
+          {/* Switcher Hébergement / Villas — les villas mènent à un formulaire dédié (/villa). */}
+          <StayTypeSwitcher value={stayType} onChange={setStayType} />
+
+          <div
+            className={`grid gap-3 lg:items-stretch ${
+              stayType === "villas" ? "lg:grid-cols-[1.6fr_1fr_auto]" : "lg:grid-cols-[1.1fr_1.6fr_1fr_auto]"
+            }`}
+          >
+            {/* Hébergements (multi-sélection : 1, 2 ou 3) → filtre les logements. Masqué en
+                mode villas (pas de dropdown : la sélection se fait sur la page /villa). */}
+            {stayType === "stay" && (
+              <PropertiesField
+                options={PROPERTY_OPTIONS}
+                selected={form.properties}
+                onChange={(props) => setForm((f) => ({ ...f, properties: props }))}
+              />
+            )}
 
             {/* Dates (range picker) */}
             <DateRangePicker
@@ -110,9 +128,9 @@ export function Dates() {
               onChange={(a, c, i) => setForm((f) => ({ ...f, adults: a, children: c, infants: i }))}
             />
 
-            {/* Rechercher */}
+            {/* Rechercher (hébergement) / Découvrir les villas → /villa */}
             <button type="submit" className="btn-primary h-full min-h-[3.4rem] w-full px-6 lg:w-auto">
-              {t("dates.search")} <IconArrowRight className="h-4 w-4" />
+              {stayType === "villas" ? t("dates.villasCta") : t("dates.search")} <IconArrowRight className="h-4 w-4" />
             </button>
           </div>
 
@@ -162,6 +180,41 @@ function HeroPromises() {
           </p>
         </div>
       ))}
+    </div>
+  );
+}
+
+// Switcher horizontal « Hébergement / Villas » (segmented control). Le mode villas
+// masque le sélecteur d'hébergement et redirige vers la page /villa au submit.
+function StayTypeSwitcher({
+  value,
+  onChange,
+}: {
+  value: "stay" | "villas";
+  onChange: (v: "stay" | "villas") => void;
+}) {
+  const opts: { key: "stay" | "villas"; label: TKey }[] = [
+    { key: "stay", label: "dates.tabStay" },
+    { key: "villas", label: "dates.tabVillas" },
+  ];
+  return (
+    <div role="group" aria-label={t("dates.stayType")} className="mb-3 inline-flex rounded-full bg-marine/[0.06] p-1">
+      {opts.map((o) => {
+        const on = o.key === value;
+        return (
+          <button
+            key={o.key}
+            type="button"
+            onClick={() => onChange(o.key)}
+            aria-pressed={on}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+              on ? "bg-marine text-white shadow-sm" : "text-marine/55 hover:text-marine"
+            }`}
+          >
+            {t(o.label)}
+          </button>
+        );
+      })}
     </div>
   );
 }
