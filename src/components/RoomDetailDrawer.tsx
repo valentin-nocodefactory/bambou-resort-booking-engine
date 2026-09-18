@@ -6,19 +6,21 @@ import type { ShapedRate, ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
 import { RoomTagsPanel } from "./RoomTags";
 import { FavoriteBadge, ScarcityBadge, ViewersNudge } from "./conversion";
-import { IconBed, IconCheck, IconClose, IconLeaf, IconShield, IconSnow, IconSun, IconUsers, IconWave, IconWifi } from "./icons";
+import { IconBed, IconCheck, IconClose, IconLeaf, IconShield, IconSnow, IconStar, IconSun, IconUsers, IconWave, IconWifi } from "./icons";
 import { t, type TKey } from "../i18n";
 
 // Équipements — RÈGLE EN DUR par nom de chambre (Mews n'expose pas d'équipements
-// structurés ici). VUE : Gran Kay → jardin/cour ; Infini/Panorama → mer ; sinon jardin.
-// Terrasse privative, Climatisation, Wi-Fi gratuit : TOUTES les chambres.
+// structurés ici). VUE : Gran Kay → jardin/cour ; Panorama → exceptionnelle ; Infini → mer ;
+// sinon jardin. Terrasse privative, Climatisation, Wi-Fi gratuit : TOUTES les chambres.
 function roomAmenities(room: { name: string }): { icon: ComponentType<SVGProps<SVGSVGElement>>; key: TKey }[] {
   const name = room.name;
   const view = /gran\s*kay/i.test(name)
     ? { icon: IconLeaf, key: "roomDetail.amenityViewGardenCourt" as TKey }
-    : /infini|panorama/i.test(name)
-      ? { icon: IconWave, key: "roomDetail.amenityViewSea" as TKey }
-      : { icon: IconLeaf, key: "roomDetail.amenityViewGarden" as TKey };
+    : /panorama/i.test(name)
+      ? { icon: IconStar, key: "roomDetail.amenityViewExceptional" as TKey }
+      : /infini/i.test(name)
+        ? { icon: IconWave, key: "roomDetail.amenityViewSea" as TKey }
+        : { icon: IconLeaf, key: "roomDetail.amenityViewGarden" as TKey };
   return [
     view,
     { icon: IconSun, key: "roomDetail.amenityTerrace" },

@@ -2,17 +2,20 @@ import type { ComponentType, SVGProps } from "react";
 import { includedMeals, roomBenefits } from "../lib/shaping";
 import { qcMeal } from "../lib/quebec";
 import type { ShapedRoom } from "../types/mews";
-import { IconWave, IconLeaf, IconStairs, IconGroundFloor, IconCroissant, IconCloche } from "./icons";
+import { IconWave, IconLeaf, IconStairs, IconGroundFloor, IconCroissant, IconCloche, IconStar, IconPalm } from "./icons";
 import { t, type TKey } from "../i18n";
 
 type IconC = ComponentType<SVGProps<SVGSVGElement>>;
 type Tag = { key: string; label: string; Icon: IconC };
 
 // Mapping clé → libellé (i18n) + picto SVG. Règle en dur côté roomBenefits (par nom) :
-// Panorama→Vue mer, Sérénité→Sans vis-à-vis, Harmonie→1er étage.
+// Panorama→Vue exceptionnelle, Infini→Vue mer, Évasion→Vue jardin, Sérénité→Sans vis-à-vis,
+// Harmonie→1er étage, Découverte→Plain-pied. Un picto DISTINCT par bénéfice.
 const BENEFIT: Record<string, { key: TKey; Icon: IconC }> = {
   sea: { key: "benefit.sea", Icon: IconWave },
-  quiet: { key: "benefit.quiet", Icon: IconLeaf },
+  exceptional: { key: "benefit.exceptional", Icon: IconStar },
+  garden: { key: "benefit.garden", Icon: IconLeaf },
+  quiet: { key: "benefit.quiet", Icon: IconPalm },
   floor: { key: "benefit.floor", Icon: IconStairs },
   ground: { key: "benefit.ground", Icon: IconGroundFloor },
 };

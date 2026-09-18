@@ -215,8 +215,10 @@ const SPACE_LABELS: Record<string, { fr: string; en: string }> = {
 export const spaceLabel = (s: string) => SPACE_LABELS[s]?.[getLang()] ?? s;
 
 // Tags « bénéfice client » d'une chambre — RÈGLE EN DUR, basée sur le NOM de la chambre
-// UNIQUEMENT (on n'en invente pas d'autres) :
-//   • nom contient « Panorama »               → Vue mer        (picto vagues)
+// UNIQUEMENT (on n'en invente pas d'autres). Un bungalow = UN tag distinctif :
+//   • nom contient « Panorama »               → Vue exceptionnelle (picto étincelles)
+//   • nom contient « Infini »                 → Vue mer         (picto vagues)
+//   • nom contient « Évasion »                → Vue jardin      (picto feuille)
 //   • nom contient « Sérénité »               → Sans vis-à-vis  (picto feuille)
 //   • nom contient « Harmonie »               → 1er étage       (picto escalier)
 //   • nom contient « Découverte »/« Accessibilité » → Plain-pied (picto maison)
@@ -224,7 +226,9 @@ export const spaceLabel = (s: string) => SPACE_LABELS[s]?.[getLang()] ?? s;
 export function roomBenefits(room: { name: string }): string[] {
   const name = room.name;
   const out: string[] = [];
-  if (/panorama/i.test(name)) out.push("sea");
+  if (/panorama/i.test(name)) out.push("exceptional");
+  if (/infini/i.test(name)) out.push("sea");
+  if (/[ée]vasion/i.test(name)) out.push("garden");
   if (/s[ée]r[ée]nit[ée]/i.test(name)) out.push("quiet");
   if (/harmonie/i.test(name)) out.push("floor");
   if (/d[ée]couverte|accessibilit[ée]/i.test(name)) out.push("ground");
