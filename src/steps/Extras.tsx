@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useBooking } from "../state/booking";
 import { t } from "../i18n";
 import { eur } from "../lib/format";
-import { groupProducts, upgradeRooms, isHotelIncludedMeal, mandatoryReveillon, isReveillonProduct } from "../lib/shaping";
+import { groupProducts, upgradeRooms, isHotelIncludedMeal } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
 import { UpsellCard } from "../components/UpsellCard";
 import { DataBadge } from "../components/DataBadge";
@@ -18,8 +18,6 @@ export function Extras() {
     imageBaseUrl,
     nightsCount,
     guestsCount,
-    checkIn,
-    checkOut,
     selectedRoom,
     selectedRate,
     availableRooms,
@@ -31,35 +29,19 @@ export function Extras() {
     if (!selectedRoom || !selectedRate) goTo("results");
   }, [selectedRoom, selectedRate, goTo]);
 
-  // Réveillons OBLIGATOIRES pour ces dates + hébergement (soir du 24/12 = Noël, soir du
-  // 31/12 = Saint-Sylvestre) → affichés verrouillés ; les autres réveillons sont masqués.
-  const forcedReveillonIds = useMemo(() => {
-    const prop = selectedRoom?.property ?? null;
-    return new Set(
-      [
-        mandatoryReveillon(products, prop, "noel", checkIn, checkOut),
-        mandatoryReveillon(products, prop, "sylvestre", checkIn, checkOut),
-      ]
-        .filter((p): p is NonNullable<typeof p> => !!p)
-        .map((p) => p.id),
-    );
-  }, [products, selectedRoom, checkIn, checkOut]);
-
   // On n'affiche QUE les extras de l'hébergement de la chambre choisie (step 2) :
   // un produit d'une autre config Mews est refusé à la réservation. De plus, à l'Hôtel
   // Bambou (demi-pension incluse), on masque les extras petit-déjeuner / dîner redondants
-  // — sauf le petit-déjeuner flottant. Culture Créole & Villas montrent tout. Enfin, un
-  // réveillon hors de ses dates (24/12 · 31/12) est masqué.
+  // — sauf le petit-déjeuner flottant. Culture Créole & Villas montrent tout.
   const groups = useMemo(() => {
     const isHotel = selectedRoom?.property === "hotel";
     const visible = products.filter(
       (p) =>
         (!p.property || p.property === selectedRoom?.property) &&
-        !(isHotel && isHotelIncludedMeal(p)) &&
-        (!isReveillonProduct(p) || forcedReveillonIds.has(p.id)),
+        !(isHotel && isHotelIncludedMeal(p)),
     );
     return groupProducts(visible);
-  }, [products, selectedRoom, forcedReveillonIds]);
+  }, [products, selectedRoom]);
 
   // Retour : vers le surclassement s'il y en avait, sinon vers les infos.
   const currentTotal = selectedRate?.totalGross ?? selectedRoom?.fromGross ?? 0;
@@ -140,7 +122,6 @@ export function Extras() {
                       product={p}
                       imageBaseUrl={imageBaseUrl}
                       selected={productIds.includes(p.id)}
-                      locked={forcedReveillonIds.has(p.id)}
                       nightsCount={nightsCount}
                       guestsCount={guestsCount}
                       onToggle={() => toggleProduct(p.id)}

@@ -20,14 +20,16 @@ export function StayBreakdown() {
   const taxe = selectedRate.citySejour ?? 0;
   // Supplément réveillon inclus dans le tarif (ligne TVA 8,5 %) → itemisé, et nommé selon la
   // nuit couverte (l'API Distributor ne renvoie pas le nom du produit inclus).
-  // On n'itemise le supplément 8,5 % QUE sur une vraie nuit de réveillon (24/12 ou 31/12).
-  // Ailleurs cette ligne peut être un repas inclus (ex. dîner demi-pension à l'Hôtel, taxé
-  // 8,5 %) → surtout pas l'étiqueter « réveillon ». (Vérifié : Créole hors réveillon → 8,5 % = 0.)
+  // Dîner de réveillon (Noël 24/12 / St-Sylvestre 31/12) : affiché « inclus » SANS montant
+  // (le prix, côté Mews, peut changer — on ne le maîtrise pas) quand le séjour couvre la nuit
+  // ET que le tarif porte bien le supplément (ligne TVA 8,5 % > 0). Il reste fondu dans
+  // l'hébergement, comme les repas inclus. (Le 8,5 % seul ne suffit pas : c'est aussi le dîner
+  // de demi-pension de l'Hôtel → garde-fou par dates.)
   const coversNoel = stayCoversNight(checkIn, checkOut, 12, 24);
   const coversSylvestre = stayCoversNight(checkIn, checkOut, 12, 31);
-  const reveillon = coversNoel || coversSylvestre ? selectedRate.reveillonGross ?? 0 : 0;
+  const showReveillon = (coversNoel || coversSylvestre) && (selectedRate.reveillonGross ?? 0) > 0;
   const reveillonKey = coversNoel ? "breakdown.reveillonNoel" : "breakdown.reveillonSylvestre";
-  const accommodation = Math.max(0, roomTotal - taxe - reveillon);
+  const accommodation = Math.max(0, roomTotal - taxe);
 
   return (
     <dl className="space-y-1.5 text-sm">
@@ -46,8 +48,8 @@ export function StayBreakdown() {
           note={t("breakdown.included")}
         />
       )}
-      {reveillon > 0 && (
-        <Row icon={<IconSparkles className="h-4 w-4" />} label={t(reveillonKey)} value={eur(reveillon)} />
+      {showReveillon && (
+        <Row icon={<IconSparkles className="h-4 w-4" />} label={t(reveillonKey)} note={t("breakdown.included")} />
       )}
       {selectedProducts.map((p) => (
         <Row key={p.id} label={qcMeal(p.name)} value={eur(productLineTotal(p, nightsCount, guestsCount))} />
