@@ -40,7 +40,7 @@ const DICT = {
   "contact.email": { fr: "Écrire un e-mail", en: "Send an email" },
   "contact.share": { fr: "Partager ma sélection", en: "Share my selection" },
   "contact.copied": { fr: "Lien copié ✓", en: "Link copied ✓" },
-  "contact.shareTitle": { fr: "Ma sélection — Bambou Resort", en: "My selection — Bambou Resort" },
+  "contact.shareTitle": { fr: "Ma sélection · Bambou Resort", en: "My selection · Bambou Resort" },
   "contact.shareText": {
     fr: "Voici ma sélection de séjour au Bambou Resort :",
     en: "Here's my stay selection at Bambou Resort:",
@@ -68,7 +68,7 @@ const DICT = {
   // ── Écran de recherche (Dates) ────────────────────────────────────────────
   "dates.title": { fr: "Réservez votre séjour", en: "Book your stay" },
   "dates.subtitle": { fr: "Hôtels & villas d'exception en Martinique", en: "Exceptional hotels & villas in Martinique" },
-  "dates.directBooking": { fr: "Réservation en direct, sans frais ni commissions des plateformes", en: "Book direct — no platform fees or commissions" },
+  "dates.directBooking": { fr: "Réservation en direct, sans frais ni commissions des plateformes", en: "Book direct, no platform fees or commissions" },
   "hero.goToSlide": { fr: (p) => `Voir la photo ${p.n} sur ${p.total}`, en: (p) => `View photo ${p.n} of ${p.total}` },
   "dates.search": { fr: "Rechercher", en: "Search" },
   "dates.errorSelectDates": { fr: "Sélectionnez vos dates d'arrivée et de départ.", en: "Please select your check-in and check-out dates." },
@@ -117,7 +117,7 @@ const DICT = {
   "stepProgress.confirmation": { fr: "Confirmation", en: "Confirmation" },
   "stepProgress.navLabel": { fr: "Progression de la réservation", en: "Booking progress" },
   "stepProgress.done": { fr: "Terminé", en: "Done" },
-  "stepProgress.stepAria": { fr: (p) => `Étape ${p.index} sur ${p.total} : ${p.label}${p.status === "done" ? " — terminée, revenir" : p.status === "active" ? " — en cours" : ""}`, en: (p) => `Step ${p.index} of ${p.total}: ${p.label}${p.status === "done" ? " — completed, go back" : p.status === "active" ? " — current" : ""}` },
+  "stepProgress.stepAria": { fr: (p) => `Étape ${p.index} sur ${p.total} : ${p.label}${p.status === "done" ? ", terminée, revenir" : p.status === "active" ? ", en cours" : ""}`, en: (p) => `Step ${p.index} of ${p.total}: ${p.label}${p.status === "done" ? ", completed, go back" : p.status === "active" ? ", current" : ""}` },
 
   // ── Guest / Upgrade / Extras ──────────────────────────────────────────────
   "guest.err.firstName": { fr: "Prénom requis.", en: "First name required." },
@@ -164,9 +164,8 @@ const DICT = {
   "extras.subtitle": { fr: "Ajoutez des expériences et services pour sublimer votre escapade.", en: "Add experiences and services to elevate your getaway." },
   "extras.backLabel": { fr: "Retour", en: "Back" },
   "extras.selectedCount": { fr: (p) => `${p.count} extra${Number(p.count) > 1 ? "s" : ""} sélectionné${Number(p.count) > 1 ? "s" : ""}`, en: (p) => `${p.count} extra${Number(p.count) > 1 ? "s" : ""} selected` },
-  "extras.optional": { fr: "Optionnel — passez si vous préférez l'essentiel.", en: "Optional — skip it if you'd rather keep things simple." },
   "extras.optionCount": { fr: (p) => `${p.count} option${Number(p.count) > 1 ? "s" : ""}`, en: (p) => `${p.count} option${Number(p.count) > 1 ? "s" : ""}` },
-  "extras.none": { fr: "Aucun extra disponible pour le moment — vous pouvez continuer.", en: "No extras available right now — you can continue." },
+  "extras.none": { fr: "Aucun extra disponible pour le moment, vous pouvez continuer.", en: "No extras available right now, you can continue." },
   "extras.total": { fr: "Total ", en: "Total " },
   "extras.taxesIncl": { fr: "taxes incl.", en: "incl. taxes" },
   "extras.skip": { fr: "Passer", en: "Skip" },
@@ -245,7 +244,7 @@ const DICT = {
   },
   "confirmation.shuttleCta": { fr: "Réserver ma navette", en: "Book my shuttle" },
   "confirmation.newSearch": { fr: "Effectuer une nouvelle recherche", en: "Start a new search" },
-  "confirmation.footer": { fr: "Bambou Resort · Martinique — au plaisir de vous accueillir les pieds dans l'eau.", en: "Bambou Resort · Martinique — we can't wait to welcome you, steps from the water." },
+  "confirmation.footer": { fr: "Bambou Resort · Martinique. Au plaisir de vous accueillir les pieds dans l'eau.", en: "Bambou Resort · Martinique. We can't wait to welcome you, steps from the water." },
   "confirmation.verifyingPayment": { fr: "Vérification du paiement…", en: "Verifying payment…" },
   "results.nights": { fr: (p) => `${p.count} nuit${Number(p.count) > 1 ? "s" : ""}`, en: (p) => `${p.count} night${Number(p.count) > 1 ? "s" : ""}` },
   "results.adults": { fr: (p) => `${p.count} adulte${Number(p.count) > 1 ? "s" : ""}`, en: (p) => `${p.count} adult${Number(p.count) > 1 ? "s" : ""}` },
@@ -257,10 +256,10 @@ const DICT = {
   "results.subtitle": { fr: "Choisissez votre cocon, comparez les tarifs.", en: "Choose your cocoon, compare the rates." },
   "results.retry": { fr: "Réessayer", en: "Try again" },
   "results.emptyTitle": { fr: "Aucune disponibilité pour ces dates", en: "No availability for these dates" },
-  "results.emptyBody": { fr: "Essayez d'autres dates ou ajustez le nombre de voyageurs — nos plus beaux bungalows partent vite.", en: "Try other dates or adjust the number of guests — our finest bungalows go fast." },
+  "results.emptyBody": { fr: "Essayez d'autres dates ou ajustez le nombre de voyageurs. Nos plus beaux bungalows partent vite.", en: "Try other dates or adjust the number of guests. Our finest bungalows go fast." },
 
   // ── RoomCard / RoomDetailDrawer / UpsellCard / BookingSummary ──────────────
-  "roomCard.viewPhotosAria": { fr: (p) => `Voir les photos — ${p.name}`, en: (p) => `View photos — ${p.name}` },
+  "roomCard.viewPhotosAria": { fr: (p) => `Voir les photos de ${p.name}`, en: (p) => `View photos of ${p.name}` },
   "roomCard.photos": { fr: (p) => `${p.count} photos`, en: (p) => `${p.count} photos` },
   "roomCard.persons": { fr: (p) => `${p.count} pers.`, en: (p) => `${p.count} guests` },
   "roomCard.beds": { fr: (p) => `${p.count} lit${(p.count as number) > 1 ? "s" : ""}${(p.extra as number) > 0 ? ` +${p.extra}` : ""}`, en: (p) => `${p.count} bed${(p.count as number) > 1 ? "s" : ""}${(p.extra as number) > 0 ? ` +${p.extra}` : ""}` },
@@ -269,6 +268,8 @@ const DICT = {
   "roomCard.breakfastIncl": { fr: "Petit-déj inclus", en: "Breakfast included" },
   "roomCard.dinnerIncl": { fr: "Dîner inclus", en: "Dinner included" },
   "benefit.sea": { fr: "Vue mer", en: "Sea view" },
+  "benefit.exceptional": { fr: "Vue exceptionnelle", en: "Exceptional view" },
+  "benefit.garden": { fr: "Vue jardin", en: "Garden view" },
   "benefit.quiet": { fr: "Sans vis-à-vis", en: "Not overlooked" },
   "benefit.floor": { fr: "1er étage", en: "Upper floor" },
   "benefit.ground": { fr: "Plain-pied", en: "Ground floor" },
@@ -279,11 +280,12 @@ const DICT = {
   "roomDetail.amenityViewGarden": { fr: "Vue jardin", en: "Garden view" },
   "roomDetail.amenityViewGardenCourt": { fr: "Vue jardin / cour", en: "Garden / courtyard view" },
   "roomDetail.amenityViewSea": { fr: "Vue mer", en: "Sea view" },
+  "roomDetail.amenityViewExceptional": { fr: "Vue exceptionnelle", en: "Exceptional view" },
   "roomDetail.amenityTerrace": { fr: "Terrasse privative", en: "Private terrace" },
   "roomDetail.amenityAc": { fr: "Climatisation", en: "Air conditioning" },
   "roomDetail.amenityWifi": { fr: "Wi-Fi gratuit", en: "Free Wi-Fi" },
-  "roomDetail.dialogAria": { fr: (p) => `Détails — ${p.name}`, en: (p) => `Details — ${p.name}` },
-  "roomDetail.photoAlt": { fr: (p) => `${p.name} — photo ${p.n}`, en: (p) => `${p.name} — photo ${p.n}` },
+  "roomDetail.dialogAria": { fr: (p) => `Détails : ${p.name}`, en: (p) => `Details: ${p.name}` },
+  "roomDetail.photoAlt": { fr: (p) => `${p.name}, photo ${p.n}`, en: (p) => `${p.name}, photo ${p.n}` },
   "roomDetail.close": { fr: "Fermer", en: "Close" },
   "roomDetail.photoAria": { fr: (p) => `Photo ${p.n}`, en: (p) => `Photo ${p.n}` },
   "roomDetail.persons": { fr: (p) => `${p.count} pers.`, en: (p) => `${p.count} guests` },
@@ -338,7 +340,7 @@ const DICT = {
   "conv.viewers": { fr: (p) => `${p.count} personnes consultent ce séjour`, en: (p) => `${p.count} people are viewing this stay` },
   "conv.bookedTimes": { fr: (p) => `réservé ${p.count} fois cette semaine`, en: (p) => `booked ${p.count} times this week` },
   "conv.urgencyTitle": { fr: "Forte demande pour vos dates.", en: "High demand for your dates." },
-  "conv.urgencyBody": { fr: "Nos plus beaux bungalows partent vite — réservez sans frais, annulez gratuitement.", en: "Our finest bungalows go fast — book with no fees, cancel free." },
+  "conv.urgencyBody": { fr: "Nos plus beaux bungalows partent vite. Réservez sans frais, annulez gratuitement.", en: "Our finest bungalows go fast. Book with no fees, cancel free." },
   "conv.savings": { fr: (p) => `Vous économisez ${p.amount}`, en: (p) => `You save ${p.amount}` },
   "conv.holdTimer": { fr: (p) => `Nous gardons votre chambre ${p.time}`, en: (p) => `We're holding your room ${p.time}` },
   "dataBadge.live": { fr: "Données en direct · Mews", en: "Live data · Mews" },
@@ -357,8 +359,8 @@ const DICT = {
 
   // ── Méta (titre d'onglet) ─────────────────────────────────────────────────
   "meta.title": {
-    fr: "Bambou Resort — Réservez votre séjour les pieds dans l'eau",
-    en: "Bambou Resort — Book your stay, steps from the water",
+    fr: "Bambou Resort · Réservez votre séjour les pieds dans l'eau",
+    en: "Bambou Resort · Book your stay, steps from the water",
   },
 
   // ── Messages d'erreur API (api.ts) ────────────────────────────────────────

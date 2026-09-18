@@ -5,7 +5,6 @@ import { eur } from "../lib/format";
 import { layoutProducts, upgradeRooms, isIncludedMealExtra } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
 import { UpsellCard } from "../components/UpsellCard";
-import { DataBadge } from "../components/DataBadge";
 import { IconArrowRight, IconCheck, IconSparkles } from "../components/icons";
 
 export function Extras() {
@@ -54,15 +53,12 @@ export function Extras() {
       backLabel={t("extras.backLabel")}
     >
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        {productIds.length > 0 && (
           <p className="inline-flex items-center gap-2 text-sm text-ink/60">
             <IconSparkles className="h-4 w-4 text-creole" />
-            {productIds.length > 0
-              ? t("extras.selectedCount", { count: productIds.length })
-              : t("extras.optional")}
+            {t("extras.selectedCount", { count: productIds.length })}
           </p>
-          <DataBadge label="Extras · Mews" />
-        </div>
+        )}
 
         {/* Service Bambou (HORS Mews) : simple case à cocher « transfert aéroport ».
             N'entre pas dans le total ni la résa Mews — booléen envoyé à n8n (relance). */}

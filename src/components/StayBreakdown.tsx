@@ -49,7 +49,7 @@ export function StayBreakdown() {
         />
       )}
       {showReveillon && (
-        <Row icon={<IconSparkles className="h-4 w-4" />} label={t(reveillonKey)} note={t("breakdown.included")} />
+        <Row icon={<IconSparkles className="h-4 w-4" />} label={qcMeal(t(reveillonKey))} note={t("breakdown.included")} />
       )}
       {selectedProducts.map((p) => (
         <Row key={p.id} label={qcMeal(p.name)} value={eur(productLineTotal(p, nightsCount, guestsCount))} />
