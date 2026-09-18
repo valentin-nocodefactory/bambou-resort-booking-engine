@@ -71,6 +71,10 @@ const emptyGuest: Guest = {
   notes: "",
 };
 
+// Note ajoutée AUTOMATIQUEMENT dans les notes de réservation dès qu'il y a un bébé en berceau
+// (cf. effet dans BookingProvider). Retirée si le bébé est enlevé.
+const BABY_PACK_NOTE = "Pack bébé";
+
 // ⏸️ Hébergements MASQUÉS temporairement côté front : retirés des cases à cocher, des
 // résultats ET des recommandations (teasers). Pour tout réactiver : remettre ce tableau
 // à [] (un seul endroit — Dates.tsx et Results.tsx s'appuient dessus).
@@ -506,6 +510,21 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     naDrinkDoneRef.current = true;
     setState((s) => (s.productIds.includes(drink.id) ? s : { ...s, productIds: [...s.productIds, drink.id] }));
   }, [selectedRoom, products]);
+
+  // Bébé(s) en berceau → « Pack bébé » ajouté AUTOMATIQUEMENT en tête des notes (visible pour
+  // le client et transmis à la réservation) ; retiré si le bébé est enlevé. Le reste des notes
+  // saisies par le client n'est pas touché.
+  useEffect(() => {
+    setGuestState((g) => {
+      const lines = g.notes.split("\n");
+      const has = lines.some((l) => l.trim() === BABY_PACK_NOTE);
+      if (state.infants > 0 && !has)
+        return { ...g, notes: g.notes.trim() ? `${BABY_PACK_NOTE}\n${g.notes}` : BABY_PACK_NOTE };
+      if (state.infants === 0 && has)
+        return { ...g, notes: lines.filter((l) => l.trim() !== BABY_PACK_NOTE).join("\n").trim() };
+      return g;
+    });
+  }, [state.infants]);
 
   // ── dérivés ────────────────────────────────────────────────────────────────
   const nightsCount = useMemo(
