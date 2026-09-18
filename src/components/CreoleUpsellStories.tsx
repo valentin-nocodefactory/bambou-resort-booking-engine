@@ -65,7 +65,6 @@ export function CreoleUpsellStories() {
         <h2 className="inline-flex items-center gap-2 font-display text-lg text-creole">
           <IconSparkles className="h-4 w-4" /> {t("creoleUp.title")}
         </h2>
-        <p className="mt-0.5 text-xs text-ink/55">{t("creoleUp.subtitle")}</p>
       </div>
 
       {/* Rangée scrollable de cartes verticales (stories). px/py = marge de sécurité pour

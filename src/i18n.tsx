@@ -139,7 +139,6 @@ const DICT = {
   "guest.marketing": { fr: "Je souhaite recevoir les offres et nouvelles du Bambou Resort par e-mail.", en: "I'd like to receive offers and news from Bambou Resort by email." },
   "guest.continue": { fr: "Continuer", en: "Continue" },
   "creoleUp.title": { fr: "Composez votre expérience créole", en: "Craft your Creole experience" },
-  "creoleUp.subtitle": { fr: "Ajoutez maintenant — pré-coché à l'étape suivante.", en: "Add now — pre-selected at the next step." },
   "creoleUp.dinnerTitle": { fr: "Dîner au restaurant", en: "Restaurant dinner" },
   "creoleUp.dinnerDesc": { fr: "Buffet ou à la carte au restaurant O'Deck, chaque soir", en: "Buffet or à la carte at the O'Deck restaurant, every evening" },
   "creoleUp.romanticTitle": { fr: "Pack romantique", en: "Romantic package" },
@@ -185,7 +184,8 @@ const DICT = {
   "prodCat.wellness": { fr: "Bien-être & Spa", en: "Wellness & Spa" },
   "prodCat.activities": { fr: "Activités & Excursions", en: "Activities & Excursions" },
   "prodCat.transfer": { fr: "Transferts & Mobilité", en: "Transfers & Mobility" },
-  "prodCat.services": { fr: "Services & Confort", en: "Services & Comfort" },
+  "prodCat.comfort": { fr: "Confort", en: "Comfort" },
+  "prodCat.services": { fr: "Services", en: "Services" },
   "prodCat.other": { fr: "Autres extras", en: "Other extras" },
 
   // ── Payment / Confirmation / Results ──────────────────────────────────────

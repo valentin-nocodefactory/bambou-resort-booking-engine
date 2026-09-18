@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useBooking } from "../state/booking";
 import { t } from "../i18n";
 import { eur } from "../lib/format";
-import { groupProducts, upgradeRooms, isHotelIncludedMeal } from "../lib/shaping";
+import { layoutProducts, upgradeRooms, isIncludedMealExtra } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
 import { UpsellCard } from "../components/UpsellCard";
 import { DataBadge } from "../components/DataBadge";
@@ -34,13 +34,12 @@ export function Extras() {
   // Bambou (demi-pension incluse), on masque les extras petit-déjeuner / dîner redondants
   // — sauf le petit-déjeuner flottant. Culture Créole & Villas montrent tout.
   const groups = useMemo(() => {
-    const isHotel = selectedRoom?.property === "hotel";
     const visible = products.filter(
       (p) =>
         (!p.property || p.property === selectedRoom?.property) &&
-        !(isHotel && isHotelIncludedMeal(p)),
+        !isIncludedMealExtra(p, selectedRoom?.property),
     );
-    return groupProducts(visible);
+    return layoutProducts(visible, selectedRoom?.property);
   }, [products, selectedRoom]);
 
   // Retour : vers le surclassement s'il y en avait, sinon vers les infos.

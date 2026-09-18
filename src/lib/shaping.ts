@@ -305,13 +305,19 @@ export function cheapestDrinkProduct(products: ShapedProduct[], property: string
 // repas) : petit-déjeuner FLOTTANT en mer et dîner SUR LA PLAGE. Le déjeuner / pension
 // complète (midi) N'est PAS inclus → conservé. Culture Créole & Villas (demi-pension NON
 // incluse) montrent tous les extras.
-const MEAL_KEEP = /flottant|floating|plage|beach/i; // expériences premium : gardées même à l'Hôtel
-const BREAKFAST_OR_DINNER = /petit.?d[ée]j|breakfast|fr[üu]hst[üu]ck|d[îi]ner|dinner/i;
+const MEAL_KEEP = /flottant|floating|plage|beach/i; // expériences premium : jamais masquées
+const IS_BREAKFAST = /petit.?d[ée]j|breakfast|fr[üu]hst[üu]ck/i;
+const IS_DINNER = /d[îi]ner|dinner/i;
 
-export function isHotelIncludedMeal(p: ShapedProduct): boolean {
+// Un extra repas est-il REDONDANT car déjà inclus dans le tarif de l'hébergement (cf.
+// includedMeals) → à masquer des extras ? Hôtel : petit-déj + dîner ; Culture Créole :
+// petit-déj ; Villas : rien. Le déjeuner (midi) n'est jamais inclus → conservé. Exceptions
+// premium (petit-déj flottant, dîner sur la plage) : toujours gardées.
+export function isIncludedMealExtra(p: ShapedProduct, property: string | null | undefined): boolean {
   const hay = `${p.name} ${p.description}`;
   if (MEAL_KEEP.test(hay)) return false;
-  return BREAKFAST_OR_DINNER.test(hay);
+  const meals = includedMeals({ property });
+  return (meals.includes("breakfast") && IS_BREAKFAST.test(hay)) || (meals.includes("dinner") && IS_DINNER.test(hay));
 }
 
 // ── Nuits de réveillon (Noël 24/12, Saint-Sylvestre 31/12) ──────────────────
@@ -346,6 +352,68 @@ export function groupProducts(products: ShapedProduct[]): { key: string; label: 
     map.set(c.key, g);
   }
   return [...map.values()].sort((a, b) => a.order - b.order).map(({ key, label, items }) => ({ key, label, items }));
+}
+
+// ── Organisation des extras par hébergement (Restauration / Confort / Services) ──────────────
+// ⭐ CONFIG À RÉORDONNER FACILEMENT : l'ordre d'affichage = l'ordre des sections PUIS des motifs
+// ci-dessous → pour réordonner, il suffit de déplacer les lignes. Chaque motif (regex) repère un
+// produit par son NOM Mews (le commentaire = produit visé). Un produit absent du catalogue est
+// simplement ignoré ; un produit non prévu ici retombe sur le classement auto (en fin de liste).
+const EXTRAS_LAYOUT: Record<string, { label: TKey; items: RegExp[] }[]> = {
+  hotel: [
+    { label: "prodCat.food", items: [
+      /pension compl/i,            // Déjeuner de pension complète
+      /flottant/i,                 // Supplément Petit déjeuner flottant en mer
+      /plage/i,                    // Supplément Dîner sur la plage
+    ] },
+    { label: "prodCat.comfort", items: [
+      /douce escale|romantique/i,  // Douce escale – Accueil romantique
+      /champagne/i,                // Champagne Collet
+      /anniversaire/i,             // Joyeux Séjour – Anniversaire (Enfant & Adulte)
+    ] },
+    { label: "prodCat.services", items: [
+      /facilit/i,                  // Crédit boisson – Facilité (60 €)
+      /libert/i,                   // Crédit boisson – Liberté (100 €)
+    ] },
+  ],
+  creole: [
+    { label: "prodCat.food", items: [
+      /demi.?pension/i,            // Dîner de demi-pension
+      /pension compl/i,            // Déjeuner de pension complète
+      /flottant/i,                 // Supplément Petit déjeuner flottant en mer
+      /plage/i,                    // Dîner sur la plage
+    ] },
+    { label: "prodCat.comfort", items: [
+      /douce escale|romantique/i,  // Douce escale – Accueil romantique
+      /champagne/i,                // Champagne Jacquart
+      /anniversaire/i,             // Joyeux séjour – Anniversaire
+    ] },
+    { label: "prodCat.services", items: [
+      /facilit/i,                  // Crédit boisson – Facilité (60 €)
+      /libert/i,                   // Crédit boisson – Liberté (100 €)
+    ] },
+  ],
+};
+
+// Regroupe + ORDONNE les extras selon EXTRAS_LAYOUT de l'hébergement. Chaque motif prend TOUS les
+// produits (encore libres) qui matchent, dans l'ordre du catalogue. Hébergement non listé (Villas)
+// ou produits imprévus → repli sur le classement auto par mots-clés (groupProducts), en fin.
+export function layoutProducts(
+  products: ShapedProduct[],
+  property: string | null | undefined,
+): { key: string; label: string; items: ShapedProduct[] }[] {
+  const layout = property ? EXTRAS_LAYOUT[property] : undefined;
+  if (!layout) return groupProducts(products);
+  const used = new Set<string>();
+  const out: { key: string; label: string; items: ShapedProduct[] }[] = [];
+  layout.forEach((sec, i) => {
+    const items: ShapedProduct[] = [];
+    for (const re of sec.items)
+      for (const p of products) if (!used.has(p.id) && re.test(p.name)) { items.push(p); used.add(p.id); }
+    if (items.length) out.push({ key: `${sec.label}-${i}`, label: t(sec.label), items });
+  });
+  const rest = products.filter((p) => !used.has(p.id));
+  return rest.length ? [...out, ...groupProducts(rest)] : out;
 }
 
 // Libellé localisé (FR/EN) du mode de facturation d'un produit.
