@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useBooking, productLineTotal } from "../state/booking";
 import { eur } from "../lib/format";
+import { includedMeals } from "../lib/shaping";
 import { qcMeal } from "../lib/quebec";
 import { IconCloche, IconCroissant } from "./icons";
 import { t } from "../i18n";
@@ -15,26 +16,26 @@ export function StayBreakdown() {
     useBooking();
   if (!selectedRoom || !selectedRate) return null;
 
-  const isHotel = selectedRoom.property === "hotel";
+  const meals = includedMeals(selectedRoom); // repas inclus dans le tarif (Hôtel: petit-déj + dîner ; Créole: petit-déj)
   const taxe = selectedRate.citySejour ?? 0;
   const accommodation = Math.max(0, roomTotal - taxe);
 
   return (
     <dl className="space-y-1.5 text-sm">
       <Row label={t("breakdown.accommodation", { nights: nightsCount })} value={eur(accommodation)} />
-      {isHotel && (
-        <>
-          <Row
-            icon={<IconCroissant className="h-4 w-4" />}
-            label={qcMeal(t("breakdown.breakfast", { count: nightsCount }))}
-            note={t("breakdown.included")}
-          />
-          <Row
-            icon={<IconCloche className="h-4 w-4" />}
-            label={qcMeal(t("breakdown.dinner", { count: nightsCount }))}
-            note={t("breakdown.included")}
-          />
-        </>
+      {meals.includes("breakfast") && (
+        <Row
+          icon={<IconCroissant className="h-4 w-4" />}
+          label={qcMeal(t("breakdown.breakfast", { count: nightsCount }))}
+          note={t("breakdown.included")}
+        />
+      )}
+      {meals.includes("dinner") && (
+        <Row
+          icon={<IconCloche className="h-4 w-4" />}
+          label={qcMeal(t("breakdown.dinner", { count: nightsCount }))}
+          note={t("breakdown.included")}
+        />
       )}
       {selectedProducts.map((p) => (
         <Row key={p.id} label={qcMeal(p.name)} value={eur(productLineTotal(p, nightsCount, guestsCount))} />

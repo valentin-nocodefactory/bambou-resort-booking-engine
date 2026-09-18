@@ -19,19 +19,23 @@ export function CreoleUpsellStories() {
   const find = (re: RegExp, exclude?: RegExp) =>
     products.find((p) => (!p.property || p.property === "creole") && re.test(p.name) && (!exclude || !exclude.test(p.name)));
 
-  const halfboard = find(/demi-?pension/i, /petit\s*d[ée]j/i);
+  // Dîner (Culture Créole) : produit Mews « Dîner de demi-pension » — id
+  // f1040dc5-edc6-4bc8-8992-b39b0153b569, dîner servi chaque soir au restaurant O'Deck.
+  // Le petit-déjeuner étant désormais INCLUS, on ne propose plus que le dîner (fini la
+  // demi-pension). On exclut les dîners « expérience » (plage/flottant) → dîner standard.
+  const dinner = find(/d[îi]ner/i, /plage|flottant|beach/i);
   const champagne = find(/champagne/i);
   const escale = find(/escale|romantique/i);
 
   const offers: Offer[] = [];
-  if (halfboard)
+  if (dinner)
     offers.push({
-      key: "halfboard",
-      title: t("creoleUp.halfboardTitle"),
-      desc: t("creoleUp.halfboardDesc"),
-      imageId: halfboard.imageId,
-      priceLabel: `+${eur(halfboard.priceEur)} ${chargingLabel(halfboard.chargingMode)}`.trim(),
-      products: [halfboard],
+      key: "dinner",
+      title: t("creoleUp.dinnerTitle"),
+      desc: t("creoleUp.dinnerDesc"),
+      imageId: dinner.imageId,
+      priceLabel: `+${eur(dinner.priceEur)} ${chargingLabel(dinner.chargingMode)}`.trim(),
+      products: [dinner],
     });
   if (champagne && escale)
     offers.push({
