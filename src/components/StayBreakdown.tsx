@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import { useBooking, productLineTotal } from "../state/booking";
 import { eur } from "../lib/format";
-import { includedMeals } from "../lib/shaping";
+import { includedMeals, stayCoversNight } from "../lib/shaping";
 import { qcMeal } from "../lib/quebec";
-import { IconCloche, IconCroissant } from "./icons";
+import { IconCloche, IconCroissant, IconSparkles } from "./icons";
 import { t } from "../i18n";
 
 // Détail du prix (récap). Pour l'Hôtel Bambou (demi-pension incluse) : hébergement +
@@ -12,13 +12,21 @@ import { t } from "../i18n";
 // elle s'adapte à chaque hébergement (Hôtel 1,20 € / Créole 1,70 €/adulte/nuit…). Le total
 // affiché reste STRICTEMENT celui de Mews (hébergement = tarif − taxe de séjour).
 export function StayBreakdown() {
-  const { selectedRoom, selectedRate, nightsCount, guestsCount, selectedProducts, roomTotal, grandTotal } =
+  const { selectedRoom, selectedRate, checkIn, checkOut, nightsCount, guestsCount, selectedProducts, roomTotal, grandTotal } =
     useBooking();
   if (!selectedRoom || !selectedRate) return null;
 
   const meals = includedMeals(selectedRoom); // repas inclus dans le tarif (Hôtel: petit-déj + dîner ; Créole: petit-déj)
   const taxe = selectedRate.citySejour ?? 0;
-  const accommodation = Math.max(0, roomTotal - taxe);
+  // Supplément réveillon inclus dans le tarif (ligne TVA 8,5 %) → itemisé, et nommé selon la
+  // nuit couverte (l'API Distributor ne renvoie pas le nom du produit inclus).
+  const reveillon = selectedRate.reveillonGross ?? 0;
+  const reveillonKey = stayCoversNight(checkIn, checkOut, 12, 24)
+    ? "breakdown.reveillonNoel"
+    : stayCoversNight(checkIn, checkOut, 12, 31)
+      ? "breakdown.reveillonSylvestre"
+      : "breakdown.reveillon";
+  const accommodation = Math.max(0, roomTotal - taxe - reveillon);
 
   return (
     <dl className="space-y-1.5 text-sm">
@@ -36,6 +44,9 @@ export function StayBreakdown() {
           label={qcMeal(t("breakdown.dinner", { count: nightsCount }))}
           note={t("breakdown.included")}
         />
+      )}
+      {reveillon > 0 && (
+        <Row icon={<IconSparkles className="h-4 w-4" />} label={t(reveillonKey)} value={eur(reveillon)} />
       )}
       {selectedProducts.map((p) => (
         <Row key={p.id} label={qcMeal(p.name)} value={eur(productLineTotal(p, nightsCount, guestsCount))} />

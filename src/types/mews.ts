@@ -168,6 +168,10 @@ export interface ShapedRate {
   // Taxe de séjour incluse dans le tarif (ligne TVA 0 % renvoyée par Mews), pour
   // l'occupation recherchée. null si aucune. Sert à détailler le prix sur le récap.
   citySejour: number | null;
+  // Supplément « réveillon » inclus dans le tarif = ligne TVA 8,5 % renvoyée par Mews : 0
+  // hors période, > 0 sur une nuit de réveillon (Noël 24/12, St-Sylvestre 31/12). Nommé via
+  // les dates dans le récap — l'API Distributor ne renvoie pas le nom du produit inclus.
+  reveillonGross: number | null;
   settlement: { type: string; action: string; isAutomatic: boolean };
 }
 
