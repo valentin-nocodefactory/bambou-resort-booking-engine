@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { fmtDate, isoDay, nights } from "../lib/format";
+import { stayCoversHoliday, HOLIDAY_MIN_NIGHTS } from "../lib/shaping";
 import { t } from "../i18n";
 import { getLang, LOCALE } from "../lib/lang";
 import { IconCalendar, IconChevron } from "./icons";
@@ -65,19 +66,32 @@ export function DateRangePicker({
   const n = checkIn && checkOut ? nights(checkIn, checkOut) : 0;
   const weekdays = getLang() === "en" ? WEEKDAYS_EN : WEEKDAYS_FR;
 
+  // Fêtes (Noël / jour de l'an) : minimum 4 nuits. Pendant la sélection du DÉPART, toute fin
+  // qui couvrirait les fêtes avec moins de 4 nuits est refusée (grisée) → les 3 lendemains de
+  // l'arrivée sont disable, le minimum devient 4 nuits.
+  const holidayBlocks = (candidateEnd: string) =>
+    !!checkIn &&
+    !checkOut &&
+    candidateEnd > checkIn &&
+    nights(checkIn, candidateEnd) < HOLIDAY_MIN_NIGHTS &&
+    stayCoversHoliday(checkIn, candidateEnd);
+
   function pick(day: string) {
     if (day < minDate) return;
     if (!checkIn || (checkIn && checkOut)) {
       onChange(day, ""); // démarre une nouvelle plage
     } else if (day <= checkIn) {
       onChange(day, ""); // recommence si on clique avant l'arrivée
+    } else if (holidayBlocks(day)) {
+      return; // garde-fou : séjour minimum de 4 nuits pendant les fêtes
     } else {
       onChange(checkIn, day); // fin de plage
       setTimeout(() => setOpen(false), 180);
     }
   }
 
-  const previewEnd = !checkOut && hover && checkIn && hover > checkIn ? hover : checkOut;
+  // Pas d'aperçu de plage sur une fin refusée (fêtes < 4 nuits).
+  const previewEnd = !checkOut && hover && checkIn && hover > checkIn && !holidayBlocks(hover) ? hover : checkOut;
 
   const inRange = (d: string) =>
     checkIn && previewEnd && d > checkIn && d < previewEnd;
@@ -140,7 +154,8 @@ export function DateRangePicker({
                   ))}
                   {monthCells(mv.y, mv.m).map((day, i) => {
                     if (!day) return <span key={`b${i}`} className="h-8" />;
-                    const disabled = day < minDate;
+                    const holidayBlocked = holidayBlocks(day);
+                    const disabled = day < minDate || holidayBlocked;
                     const isStart = !!checkIn && day === checkIn;
                     const isEnd = !!previewEnd && day === previewEnd && day !== checkIn;
                     const between = inRange(day);
@@ -155,7 +170,7 @@ export function DateRangePicker({
                           ? "bg-[linear-gradient(to_right,#061a2d26_50%,transparent_50%)]"
                           : "";
                     return (
-                      <div key={day} onMouseEnter={() => setHover(day)} className="relative h-8">
+                      <div key={day} onMouseEnter={() => setHover(day)} className="group relative h-8">
                         {band && (
                           <span
                             className={`pointer-events-none absolute inset-x-0 top-1/2 h-7 -translate-y-1/2 ${band}`}
@@ -178,6 +193,15 @@ export function DateRangePicker({
                         >
                           {parseInt(day.slice(8), 10)}
                         </button>
+                        {/* Info-bulle au survol d'une fin refusée pendant les fêtes. */}
+                        {holidayBlocked && (
+                          <span
+                            role="tooltip"
+                            className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1.5 hidden w-36 -translate-x-1/2 rounded-lg bg-marine px-2 py-1.5 text-center text-[11px] font-medium leading-tight text-cream shadow-float group-hover:block"
+                          >
+                            {t("datePicker.holidayMin")}
+                          </span>
+                        )}
                       </div>
                     );
                   })}

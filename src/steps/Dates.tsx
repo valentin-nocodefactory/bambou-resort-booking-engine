@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useBooking, DEFAULT_PROPERTIES, HIDDEN_PROPERTIES } from "../state/booking";
 import { nights } from "../lib/format";
+import { stayCoversHoliday, HOLIDAY_MIN_NIGHTS } from "../lib/shaping";
 import { t, type TKey } from "../i18n";
 import { DateRangePicker } from "../components/DateRangePicker";
 import { HeroCarousel } from "../components/HeroCarousel";
@@ -57,6 +58,9 @@ export function Dates() {
     }
     if (!form.checkIn || !form.checkOut) return setError(t("dates.errorSelectDates"));
     if (form.checkOut <= form.checkIn) return setError(t("dates.errorCheckoutAfter"));
+    // Fêtes de fin d'année : séjour minimum de 4 nuits (garde-fou si dates restaurées via URL).
+    if (nights(form.checkIn, form.checkOut) < HOLIDAY_MIN_NIGHTS && stayCoversHoliday(form.checkIn, form.checkOut))
+      return setError(t("dates.errorHolidayMin"));
     setError("");
     setSearch({
       checkIn: form.checkIn,

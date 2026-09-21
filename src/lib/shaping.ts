@@ -339,6 +339,21 @@ export function stayCoversNight(checkIn: string, checkOut: string, month: number
   return false;
 }
 
+// Le séjour touche-t-il les fêtes (Noël / jour de l'an) ? Vrai si l'une des nuits « pic »
+// est passée sur place : réveillon de Noël (24/12) ou nuit de Noël (25/12), réveillon de la
+// Saint-Sylvestre (31/12) ou nuit du jour de l'an (01/01). Sert à imposer un séjour minimum.
+export function stayCoversHoliday(checkIn: string, checkOut: string): boolean {
+  return (
+    stayCoversNight(checkIn, checkOut, 12, 24) ||
+    stayCoversNight(checkIn, checkOut, 12, 25) ||
+    stayCoversNight(checkIn, checkOut, 12, 31) ||
+    stayCoversNight(checkIn, checkOut, 1, 1)
+  );
+}
+
+// Séjour minimum (nuits) imposé sur les fêtes de fin d'année (cf. règle métier client).
+export const HOLIDAY_MIN_NIGHTS = 4;
+
 export function productCategory(p: ShapedProduct): { key: string; label: string; order: number } {
   const hay = `${p.name} ${p.description}`;
   for (let i = 0; i < PRODUCT_CATEGORIES.length; i++) {
