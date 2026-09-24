@@ -7,7 +7,7 @@ import type { ShapedRate, ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
 import { RoomTagsPanel } from "./RoomTags";
 import { FavoriteBadge, ScarcityBadge, ViewersNudge } from "./conversion";
-import { IconBed, IconCheck, IconClose, IconLeaf, IconShield, IconSnow, IconStar, IconSun, IconUsers, IconWave, IconWifi } from "./icons";
+import { IconBed, IconCheck, IconClose, IconLeaf, IconShield, IconSnow, IconStar, IconSun, IconWave, IconWifi } from "./icons";
 import { t, type TKey } from "../i18n";
 
 // Équipements — RÈGLE EN DUR par nom de chambre (Mews n'expose pas d'équipements
@@ -165,12 +165,9 @@ export function RoomDetailDrawer({
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-teal-deep/85">
                 {room.capacity > 0 && (
                   <span className="inline-flex items-center gap-1.5">
-                    <IconUsers className="h-4 w-4 text-turquoise" /> {t("roomDetail.persons", { count: room.capacity })}
+                    <IconBed className="h-4 w-4 text-turquoise" /> {t("roomDetail.beds", { count: room.normalBedCount, extra: room.extraBedCount })}
                   </span>
                 )}
-                <span className="inline-flex items-center gap-1.5">
-                  <IconBed className="h-4 w-4 text-turquoise" /> {t("roomDetail.beds", { count: room.normalBedCount, extra: room.extraBedCount })}
-                </span>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <FavoriteBadge />

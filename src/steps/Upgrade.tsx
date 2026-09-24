@@ -6,7 +6,7 @@ import { spaceLabel, upgradeBenefits, upgradeRooms } from "../lib/shaping";
 import { StepLayout } from "../components/StepLayout";
 import { CreoleUpsellStories } from "../components/CreoleUpsellStories";
 import { Photo } from "../components/Photo";
-import { IconArrowRight, IconBed, IconCheck, IconSparkles, IconUsers } from "../components/icons";
+import { IconArrowRight, IconBed, IconCheck, IconSparkles } from "../components/icons";
 
 // Étape de surclassement (upsell chambre) — proposée APRÈS les infos client.
 // On part du choix initial (le moins cher si l'utilisateur a cliqué « Choisir »)
@@ -104,9 +104,6 @@ export function Upgrade() {
                         ))}
                       </ul>
                       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-teal-deep/75">
-                        <span className="inline-flex items-center gap-1">
-                          <IconUsers className="h-3.5 w-3.5 text-turquoise" /> {t("upgrade.persons", { count: room.capacity })}
-                        </span>
                         <span className="inline-flex items-center gap-1">
                           <IconBed className="h-3.5 w-3.5 text-turquoise" /> {t("upgrade.beds", { count: room.normalBedCount })}
                           {room.extraBedCount > 0 ? ` +${room.extraBedCount}` : ""}

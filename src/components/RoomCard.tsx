@@ -5,7 +5,7 @@ import type { ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
 import { RoomBenefitsOverlay, mealTags } from "./RoomTags";
 import { FavoriteBadge, HotBadge, SavingsBadge, ScarcityBadge, ViewersNudge, seeded } from "./conversion";
-import { IconArrowRight, IconBed, IconCheck, IconUsers } from "./icons";
+import { IconArrowRight, IconBed, IconCheck } from "./icons";
 import { t } from "../i18n";
 
 // Libellés d'hébergement (pour le badge sur la carte, quand plusieurs sont affichés).
@@ -71,14 +71,13 @@ export function RoomCard({
           <div className="min-w-0">
             <h3 className="line-clamp-2 font-display text-xl text-ink">{room.name}</h3>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-teal-deep/80">
+              {/* Couchages seuls (capacité + capacité supplémentaire Mews) — plus de « X pers. »
+                  (doublon avec les couchages). */}
               {room.capacity > 0 && (
                 <span className="inline-flex items-center gap-1">
-                  <IconUsers className="h-3.5 w-3.5 text-turquoise" /> {t("roomCard.persons", { count: room.capacity })}
+                  <IconBed className="h-3.5 w-3.5 text-turquoise" /> {t("roomCard.beds", { count: room.normalBedCount, extra: room.extraBedCount })}
                 </span>
               )}
-              <span className="inline-flex items-center gap-1">
-                <IconBed className="h-3.5 w-3.5 text-turquoise" /> {t("roomCard.beds", { count: room.normalBedCount, extra: room.extraBedCount })}
-              </span>
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
