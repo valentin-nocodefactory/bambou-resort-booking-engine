@@ -51,9 +51,21 @@ export function Dates() {
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    // Villas → page dédiée (formulaire à venir). On conserve ?lang=/?cur= (langue & devise).
+    // Villas → page dédiée. On reprend les dates + voyageurs saisis (évite la double saisie)
+    // et on conserve ?lang=/?cur= (langue & devise).
     if (stayType === "villas") {
-      window.location.assign(`/villa${window.location.search}`);
+      const cur = new URLSearchParams(window.location.search);
+      const q = new URLSearchParams();
+      if (form.checkIn) q.set("in", form.checkIn);
+      if (form.checkOut) q.set("out", form.checkOut);
+      q.set("adults", String(form.adults));
+      if (form.children) q.set("children", String(form.children));
+      if (form.infants) q.set("babies", String(form.infants));
+      for (const k of ["lang", "cur"] as const) {
+        const v = cur.get(k);
+        if (v) q.set(k, v);
+      }
+      window.location.assign(`/villa?${q.toString()}`);
       return;
     }
     if (!form.checkIn || !form.checkOut) return setError(t("dates.errorSelectDates"));

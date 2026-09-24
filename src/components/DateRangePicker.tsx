@@ -32,11 +32,15 @@ export function DateRangePicker({
   checkOut,
   onChange,
   minDate = isoDay(0),
+  blockHolidayMin = true,
 }: {
   checkIn: string;
   checkOut: string;
   onChange: (checkIn: string, checkOut: string) => void;
   minDate?: string;
+  // Applique le minimum 4 nuits pendant les fêtes (moteur Mews). Désactivé pour la demande
+  // de villa (formulaire libre, « pas de blocages de dates »).
+  blockHolidayMin?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [hover, setHover] = useState<string | null>(null);
@@ -70,6 +74,7 @@ export function DateRangePicker({
   // qui couvrirait les fêtes avec moins de 4 nuits est refusée (grisée) → les 3 lendemains de
   // l'arrivée sont disable, le minimum devient 4 nuits.
   const holidayBlocks = (candidateEnd: string) =>
+    blockHolidayMin &&
     !!checkIn &&
     !checkOut &&
     candidateEnd > checkIn &&

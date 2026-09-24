@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Brand } from "../components/Brand";
-import { IconArrowRight, IconCheck, IconMinus, IconPlus, IconUsers } from "../components/icons";
-import { EMAIL_RE, isoDay } from "../lib/format";
+import { DateRangePicker } from "../components/DateRangePicker";
+import { IconArrowRight, IconCheck, IconClose, IconMinus, IconPlus, IconUsers } from "../components/icons";
+import { EMAIL_RE } from "../lib/format";
 import { getLang } from "../lib/lang";
 import { api } from "../lib/api";
 import type { Villa } from "../lib/villas";
@@ -44,10 +45,33 @@ const EMPTY: VillaForm = {
   message: "",
 };
 
+// Pré-remplissage depuis l'étape 1 (dates + voyageurs passés dans l'URL) → évite la double
+// saisie. `people` = adultes + enfants (4 ans et +) ; `baby` = au moins un bébé (<4 ans).
+function initialForm(): VillaForm {
+  try {
+    const p = new URLSearchParams(window.location.search);
+    const num = (k: string) => {
+      const n = parseInt(p.get(k) ?? "", 10);
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    };
+    const people = num("adults") + num("children");
+    return {
+      ...EMPTY,
+      checkIn: p.get("in") ?? "",
+      checkOut: p.get("out") ?? "",
+      people: people > 0 ? people : EMPTY.people,
+      baby: num("babies") > 0,
+    };
+  } catch {
+    return EMPTY;
+  }
+}
+
 export function VillaPage() {
   const [geoCountry, setGeoCountry] = useState<string | undefined>();
   const [villas, setVillas] = useState<Villa[]>([]);
-  const [form, setForm] = useState<VillaForm>(EMPTY);
+  const [form, setForm] = useState<VillaForm>(initialForm);
+  const [openVilla, setOpenVilla] = useState<Villa | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sent, setSent] = useState(false);
   const set = (patch: Partial<VillaForm>) => setForm((f) => ({ ...f, ...patch }));
@@ -180,24 +204,12 @@ export function VillaPage() {
             {/* Votre séjour */}
             <Section title={t("villaForm.sectionStay")}>
               <Field label={t("villaForm.dates")} required error={errors.dates}>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <input
-                    type="date"
-                    className="field-input"
-                    aria-label={t("villaForm.checkIn")}
-                    min={isoDay(0)}
-                    value={form.checkIn}
-                    onChange={(e) => set({ checkIn: e.target.value })}
-                  />
-                  <input
-                    type="date"
-                    className="field-input"
-                    aria-label={t("villaForm.checkOut")}
-                    min={form.checkIn || isoDay(0)}
-                    value={form.checkOut}
-                    onChange={(e) => set({ checkOut: e.target.value })}
-                  />
-                </div>
+                <DateRangePicker
+                  checkIn={form.checkIn}
+                  checkOut={form.checkOut}
+                  onChange={(ci, co) => set({ checkIn: ci, checkOut: co })}
+                  blockHolidayMin={false}
+                />
                 <Check checked={form.flexible} onChange={(v) => set({ flexible: v })} label={t("villaForm.flexible")} className="mt-3" />
               </Field>
 
@@ -221,8 +233,9 @@ export function VillaPage() {
                     <button
                       key={v.id}
                       type="button"
-                      onClick={() => set({ villaId: on ? "" : v.id })}
+                      onClick={() => setOpenVilla(v)}
                       aria-pressed={on}
+                      aria-label={t("villaForm.villaDetailsAria", { name: v.name })}
                       className={`overflow-hidden rounded-xl2 border text-left transition ${
                         on ? "border-corail ring-1 ring-corail" : "border-ink/12 hover:border-turquoise/60"
                       }`}
@@ -238,8 +251,13 @@ export function VillaPage() {
                       <span className="block p-3">
                         <span className="block font-semibold text-marine">{v.name}</span>
                         <span className="mt-0.5 block text-xs leading-snug text-ink/55">{v.tagline}</span>
-                        <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-teal-deep/70">
-                          <IconUsers className="h-3 w-3" /> {t("villaForm.villaCapacity", { count: v.capacity })}
+                        <span className="mt-1.5 flex items-center justify-between gap-2 text-[11px] font-medium">
+                          <span className="inline-flex items-center gap-1 text-teal-deep/70">
+                            <IconUsers className="h-3 w-3" /> {t("villaForm.villaCapacity", { count: v.capacity })}
+                          </span>
+                          <span className="inline-flex shrink-0 items-center gap-0.5 text-corail">
+                            {on ? t("villaForm.villaChosen") : t("villaForm.villaDetails")} <IconArrowRight className="h-3 w-3" />
+                          </span>
                         </span>
                       </span>
                     </button>
@@ -267,6 +285,91 @@ export function VillaPage() {
           </form>
         )}
       </main>
+
+      {/* Side panel : détails d'une villa (infos principales) */}
+      {openVilla && !sent && (
+        <VillaDetailDrawer
+          villa={openVilla}
+          selected={form.villaId === openVilla.id}
+          onToggle={() => {
+            set({ villaId: form.villaId === openVilla.id ? "" : openVilla.id });
+            setOpenVilla(null);
+          }}
+          onClose={() => setOpenVilla(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// Panneau latéral (droite) : photo + infos principales de la villa + choix.
+function VillaDetailDrawer({
+  villa,
+  selected,
+  onToggle,
+  onClose,
+}: {
+  villa: Villa;
+  selected: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+}) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    setShown(true);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={villa.name}>
+      <button
+        type="button"
+        aria-label={t("villaForm.close")}
+        onClick={onClose}
+        className={`absolute inset-0 bg-marine/50 backdrop-blur-sm transition-opacity duration-300 ${shown ? "opacity-100" : "opacity-0"}`}
+      />
+      <div
+        className={`absolute right-0 top-0 flex h-full w-full max-w-md flex-col overflow-y-auto bg-cream shadow-float transition-transform duration-300 ${
+          shown ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="relative h-56 w-full shrink-0">
+          <img src={villa.image} alt={villa.name} className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-marine/40 to-transparent" />
+          <button
+            type="button"
+            aria-label={t("villaForm.close")}
+            onClick={onClose}
+            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-marine shadow-card transition hover:bg-white"
+          >
+            <IconClose className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="flex flex-1 flex-col p-5 sm:p-6">
+          <h2 className="font-display text-2xl leading-tight text-teal-deep">{villa.name}</h2>
+          <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-medium text-teal-deep/70">
+            <IconUsers className="h-4 w-4 text-turquoise" /> {t("villaForm.villaCapacity", { count: villa.capacity })}
+          </p>
+          {villa.description && (
+            <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-ink/75">{villa.description}</p>
+          )}
+          <div className="mt-auto pt-6">
+            <button type="button" onClick={onToggle} className={selected ? "btn-ghost w-full" : "btn-accent w-full"}>
+              {selected ? (
+                <>
+                  <IconCheck className="h-4 w-4" /> {t("villaForm.villaRemove")}
+                </>
+              ) : (
+                <>
+                  {t("villaForm.villaChoose")} <IconCheck className="h-4 w-4" />
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
