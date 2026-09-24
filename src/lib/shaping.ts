@@ -172,20 +172,36 @@ export function buildRooms(
   return rooms;
 }
 
-// Chambres proposées en surclassement : plus chères que le total courant, triées,
-// limitées aux 4 meilleures. (Différentiel = room.fromGross - currentTotal.)
-export function upgradeRooms(rooms: ShapedRoom[], current: ShapedRoom | null, currentTotal: number): ShapedRoom[] {
-  if (!current) return [];
+// Option de surclassement : la chambre + le tarif du MÊME palier que celui choisi.
+export type UpgradeOption = { room: ShapedRoom; rate: ShapedRate };
+
+// Chambres proposées en surclassement : dans le même hébergement, plus chères que le tarif
+// choisi À PALIER ÉGAL (ex. si l'on a pris Flexible, on compare au Flexible des autres
+// chambres — pas à leur tarif le moins cher). Triées, limitées aux 4 meilleures.
+// Différentiel = tarif iso-palier de l'autre chambre − tarif choisi.
+export function upgradeRooms(
+  rooms: ShapedRoom[],
+  current: ShapedRoom | null,
+  selected: ShapedRate | null,
+): UpgradeOption[] {
+  if (!current || !selected) return [];
+  const currentTotal = selected.totalGross ?? 0;
   return rooms
-    .filter(
-      (r) =>
-        r.categoryId !== current.categoryId &&
-        // Surclassement DANS le même groupe (Hôtel Bambou / Culture Créole / Villas) — pas de croisement.
-        r.property === current.property &&
-        r.fromGross != null &&
-        r.fromGross > currentTotal + 0.5,
-    )
-    .sort((a, b) => (a.fromGross ?? 0) - (b.fromGross ?? 0))
+    // Surclassement DANS le même groupe (Hôtel Bambou / Culture Créole / Villas) — pas de croisement.
+    .filter((r) => r.categoryId !== current.categoryId && r.property === current.property)
+    .map((r) => {
+      // Tarif du MÊME palier (rateGroupId) dans l'autre chambre — le moins cher de ce palier ;
+      // repli : le même tarif exact (rateId) si le groupe n'est pas retrouvé.
+      const rate =
+        r.rates
+          .filter((x) => selected.rateGroupId && x.rateGroupId === selected.rateGroupId)
+          .sort((a, b) => (a.totalGross ?? Infinity) - (b.totalGross ?? Infinity))[0] ??
+        r.rates.find((x) => x.rateId === selected.rateId) ??
+        null;
+      return { room: r, rate };
+    })
+    .filter((o): o is UpgradeOption => !!o.rate && o.rate.totalGross != null && o.rate.totalGross > currentTotal + 0.5)
+    .sort((a, b) => (a.rate.totalGross ?? 0) - (b.rate.totalGross ?? 0))
     .slice(0, 4);
 }
 

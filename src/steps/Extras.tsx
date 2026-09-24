@@ -41,10 +41,9 @@ export function Extras() {
     return layoutProducts(visible, selectedRoom?.property);
   }, [products, selectedRoom]);
 
-  // Retour : vers le surclassement s'il y en avait, sinon vers les infos. Référence = prix
-  // d'entrée de la chambre (fromGross), pas le tarif choisi — cohérent avec l'étape Upgrade.
-  const currentTotal = selectedRoom?.fromGross ?? selectedRate?.totalGross ?? 0;
-  const back = upgradeRooms(availableRooms, selectedRoom, currentTotal).length > 0 ? "upgrade" : "guest";
+  // Retour : vers le surclassement s'il y en avait, sinon vers les infos. Comparaison à
+  // palier de tarif égal (cf. upgradeRooms), cohérent avec l'étape Upgrade.
+  const back = upgradeRooms(availableRooms, selectedRoom, selectedRate).length > 0 ? "upgrade" : "guest";
 
   return (
     <StepLayout

@@ -19,18 +19,12 @@ export function Upgrade() {
   }, [selectedRoom, selectedRate, goTo]);
 
   // Base figée à l'entrée de l'étape (pour que la liste ne change pas en sélectionnant).
-  // ⚠️ Référence = PRIX D'ENTRÉE de la chambre (`fromGross`), PAS le total du tarif choisi :
-  // sinon choisir le tarif Flexible (le plus cher) masquerait les surclassements (aucune
-  // chambre plus chère que ce total). Avec `fromGross`, les surclassements s'affichent quel
-  // que soit le tarif sélectionné, et le « + différentiel » reste d'entrée à entrée.
-  const [base] = useState(() => ({
-    room: selectedRoom,
-    rate: selectedRate,
-    total: selectedRoom?.fromGross ?? selectedRate?.totalGross ?? 0,
-  }));
+  // Le surclassement se compare À PALIER DE TARIF ÉGAL : si l'on a pris Flexible, on propose
+  // le Flexible des autres chambres (cf. upgradeRooms) — pas leur tarif le moins cher.
+  const [base] = useState(() => ({ room: selectedRoom, rate: selectedRate }));
 
   const ups = useMemo(
-    () => upgradeRooms(availableRooms, base.room, base.total),
+    () => upgradeRooms(availableRooms, base.room, base.rate),
     [availableRooms, base],
   );
 
@@ -77,8 +71,8 @@ export function Upgrade() {
             </p>
 
             <div className="space-y-4">
-              {ups.map((room) => {
-                const diff = (room.fromGross ?? 0) - base.total;
+              {ups.map(({ room, rate }) => {
+                const diff = (rate.totalGross ?? 0) - (base.rate?.totalGross ?? 0);
                 const isSelected = selectedRoom.categoryId === room.categoryId;
                 const benefits = upgradeBenefits(base.room!, room);
                 return (
@@ -117,7 +111,7 @@ export function Upgrade() {
                           <IconBed className="h-3.5 w-3.5 text-turquoise" /> {t("upgrade.beds", { count: room.normalBedCount })}
                           {room.extraBedCount > 0 ? ` +${room.extraBedCount}` : ""}
                         </span>
-                        <span className="text-ink/40">{t("upgrade.soit")} {money(room.fromGross)} · {t("upgrade.nights", { count: nightsCount })}</span>
+                        <span className="text-ink/40">{t("upgrade.soit")} {money(rate.totalGross)} · {t("upgrade.nights", { count: nightsCount })}</span>
                       </div>
                       <div className="mt-auto pt-4">
                         {isSelected ? (
@@ -131,7 +125,7 @@ export function Upgrade() {
                         ) : (
                           <button
                             type="button"
-                            onClick={() => selectRoomRate(room, room.rates[0])}
+                            onClick={() => selectRoomRate(room, rate)}
                             className="btn-accent w-full"
                           >
                             {t("upgrade.upgradeFor")} +{money(diff)} <IconArrowRight className="h-4 w-4" />
