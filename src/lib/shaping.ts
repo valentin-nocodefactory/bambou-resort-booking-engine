@@ -156,6 +156,9 @@ export function buildRooms(
     const capacity = (cat.NormalBedCount ?? 0) + (cat.ExtraBedCount ?? 0);
     const guests = (occupancy.adults ?? 0) + (occupancy.children ?? 0);
     if (capacity > 0 && guests > 0 && capacity < guests) continue;
+    // Chambres « Gran Kay Famille » : proposées UNIQUEMENT pour les recherches de 4 voyageurs
+    // et plus (règle métier client) — masquées en dessous.
+    if (guests > 0 && guests < 4 && /gran\s*kay.*famille/i.test(name)) continue;
     // Bungalow Harmonie : réservé aux 12 ans et + → masqué dès qu'un mineur est dans la
     // recherche (enfant 4-12 ou bébé <4). Règle EN DUR, par nom (cf. isAgeRestrictedRoom).
     if (isAgeRestrictedRoom(name) && ((occupancy.children ?? 0) > 0 || (occupancy.infants ?? 0) > 0)) continue;
