@@ -7,5 +7,6 @@ export type Villa = {
   tagline: string;
   description?: string;
   capacity: number;
-  image: string;
+  image: string; // couverture (= photos[0]) — compat + fallback
+  photos: string[]; // galerie complète (URL Mews CDN ou Supabase Storage), ordonnée
 };

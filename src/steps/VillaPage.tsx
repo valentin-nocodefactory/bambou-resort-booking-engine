@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Brand } from "../components/Brand";
 import { DateRangePicker } from "../components/DateRangePicker";
 import { IconArrowRight, IconCheck, IconClose, IconMinus, IconPlus, IconUsers } from "../components/icons";
-import { EMAIL_RE } from "../lib/format";
+import { EMAIL_RE, villaImg } from "../lib/format";
 import { getLang } from "../lib/lang";
 import { api } from "../lib/api";
 import type { Villa } from "../lib/villas";
@@ -258,7 +258,12 @@ export function VillaPage() {
                       }`}
                     >
                       <span className="relative block h-24 w-full">
-                        <img src={v.image} alt="" className="h-full w-full object-cover" />
+                        <img src={villaImg(v.image, 480)} alt="" className="h-full w-full object-cover" />
+                        {v.photos.length > 1 && (
+                          <span className="absolute bottom-2 left-2 rounded-full bg-marine/70 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+                            {t("roomCard.photos", { count: v.photos.length })}
+                          </span>
+                        )}
                         {on && (
                           <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-corail text-white shadow-sm">
                             <IconCheck className="h-3.5 w-3.5" />
@@ -306,6 +311,7 @@ export function VillaPage() {
       {/* Side panel : détails d'une villa (infos principales) */}
       {openVilla && !sent && (
         <VillaDetailDrawer
+          key={openVilla.id}
           villa={openVilla}
           selected={form.villaId === openVilla.id}
           onToggle={() => {
@@ -332,6 +338,8 @@ function VillaDetailDrawer({
   onClose: () => void;
 }) {
   const [shown, setShown] = useState(false);
+  const [active, setActive] = useState(0);
+  const photos = villa.photos.length ? villa.photos : villa.image ? [villa.image] : [];
   useEffect(() => {
     setShown(true);
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -353,8 +361,8 @@ function VillaDetailDrawer({
         }`}
       >
         <div className="relative h-56 w-full shrink-0">
-          <img src={villa.image} alt={villa.name} className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-marine/40 to-transparent" />
+          <img src={villaImg(photos[active] ?? villa.image, 1024)} alt={villa.name} className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-marine/55 via-marine/5 to-transparent" />
           <button
             type="button"
             aria-label={t("villaForm.close")}
@@ -363,6 +371,26 @@ function VillaDetailDrawer({
           >
             <IconClose className="h-4 w-4" />
           </button>
+          {/* Miniatures en overlay (même principe que le détail chambre hôtel). */}
+          {photos.length > 1 && (
+            <div className="absolute inset-x-0 bottom-0 p-3">
+              <div className="no-scrollbar flex gap-2 overflow-x-auto px-1 py-1">
+                {photos.map((url, i) => (
+                  <button
+                    key={`${url}-${i}`}
+                    type="button"
+                    onClick={() => setActive(i)}
+                    aria-label={t("roomDetail.photoAria", { n: i + 1 })}
+                    className={`h-12 w-12 shrink-0 overflow-hidden rounded-md transition ${
+                      i === active ? "ring-[3px] ring-white" : "ring-1 ring-white/40 hover:ring-white/80"
+                    }`}
+                  >
+                    <img src={villaImg(url, 160)} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <div className="flex flex-1 flex-col p-5 sm:p-6">
           <h2 className="font-display text-2xl leading-tight text-teal-deep">{villa.name}</h2>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase, isConfigured } from "./supabase";
+import { villaImg } from "../lib/format";
 
 // ── Types (colonnes de la table `carts`) ────────────────────────────────────
 type Cart = {
@@ -339,7 +340,7 @@ function Login() {
 function Panel({ email }: { email: string }) {
   const [range, setRange] = useState("30");
   // Onglet du funnel / des demandes : réservations Hôtel (paniers Mews) vs demandes Villa.
-  const [tab, setTab] = useState<"hotel" | "villa">("hotel");
+  const [tab, setTab] = useState<"hotel" | "villa" | "settings">("hotel");
   const [carts, setCarts] = useState<Cart[]>([]);
   const [funnel, setFunnel] = useState<FunnelRow[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -531,12 +532,9 @@ function Panel({ email }: { email: string }) {
           </div>
         )}
 
-        {/* Contenu éditable : villas (nom, accroche, description, image, capacité) */}
-        <VillasManager />
-
-        {/* Onglets Hôtel (réservations) / Villa (demandes) */}
+        {/* Onglets Hôtel (réservations) / Villa (demandes) / Réglages (config villas) */}
         <div className="flex w-fit items-center gap-1 rounded-full bg-white p-1 shadow-card">
-          {(["hotel", "villa"] as const).map((tb) => (
+          {(["hotel", "villa", "settings"] as const).map((tb) => (
             <button
               key={tb}
               onClick={() => setTab(tb)}
@@ -544,12 +542,14 @@ function Panel({ email }: { email: string }) {
                 tab === tb ? "bg-teal-deep text-cream" : "text-ink/60 hover:text-ink"
               }`}
             >
-              {tb === "hotel" ? "Hôtel" : "Villa"}
+              {tb === "hotel" ? "Hôtel" : tb === "villa" ? "Villa" : "Réglages"}
             </button>
           ))}
         </div>
 
-        {tab === "villa" ? (
+        {tab === "settings" ? (
+          <VillasManager />
+        ) : tab === "villa" ? (
           <VillaLeadsPanel range={range} />
         ) : (
         <>
@@ -948,6 +948,7 @@ type VillaRow = {
   tagline: string | null;
   description: string | null;
   image_url: string | null;
+  photos: string[] | null;
   capacity: number | null;
   sort_order: number | null;
   active: boolean;
@@ -956,8 +957,103 @@ type VillaRow = {
 const inputCls = "w-full rounded-lg border border-ink/15 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-turquoise";
 const labelCls = "block text-[11px] font-semibold uppercase tracking-wide text-ink/50";
 
+// Galerie photos d'une villa dans le BO : upload (Supabase Storage, bucket `villa-photos`),
+// réordonnancement (‹ ›, la 1re = couverture) et suppression. Les URL publiques sont stockées
+// dans `villas.photos` (persistées à l'« Enregistrer » de la villa). Même logique de vignettes
+// que le détail des chambres d'hôtel.
+function VillaPhotos({
+  villaId,
+  photos,
+  onChange,
+  onError,
+}: {
+  villaId: string;
+  photos: string[];
+  onChange: (photos: string[]) => void;
+  onError: (msg: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const upload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setBusy(true);
+    const added: string[] = [];
+    try {
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith("image/")) continue;
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+        const path = `${villaId}/${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage
+          .from("villa-photos")
+          .upload(path, file, { cacheControl: "31536000", contentType: file.type, upsert: false });
+        if (error) {
+          onError(`Upload : ${error.message}`);
+          continue;
+        }
+        const { data } = supabase.storage.from("villa-photos").getPublicUrl(path);
+        if (data?.publicUrl) added.push(data.publicUrl);
+      }
+      if (added.length) onChange([...photos, ...added]);
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  const remove = (i: number) => onChange(photos.filter((_, j) => j !== i));
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= photos.length) return;
+    const next = photos.slice();
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  };
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <label className={labelCls}>Photos ({photos.length})</label>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={busy}
+          className="rounded-lg border border-turquoise/40 bg-turquoise/5 px-3 py-1.5 text-xs font-semibold text-teal-deep transition hover:bg-turquoise/10 disabled:opacity-60"
+        >
+          {busy ? "Upload…" : "+ Ajouter des photos"}
+        </button>
+        <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => void upload(e.target.files)} />
+      </div>
+      {photos.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-ink/20 px-3 py-4 text-center text-xs text-ink/40">
+          Aucune photo — « Ajouter des photos » pour en téléverser.
+        </p>
+      ) : (
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+          {photos.map((url, i) => (
+            <div key={`${url}-${i}`} className="group relative aspect-square overflow-hidden rounded-lg ring-1 ring-ink/10">
+              <img src={villaImg(url, 240)} alt="" className="h-full w-full object-cover" loading="lazy" />
+              {i === 0 && (
+                <span className="absolute left-1 top-1 rounded bg-marine/85 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
+                  Couverture
+                </span>
+              )}
+              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-ink/75 to-transparent p-1 opacity-0 transition group-hover:opacity-100">
+                <button type="button" aria-label="Déplacer avant" disabled={i === 0} onClick={() => move(i, -1)} className="grid h-6 w-6 place-items-center rounded bg-white/90 text-sm text-ink transition hover:bg-white disabled:opacity-30">‹</button>
+                <button type="button" aria-label="Supprimer la photo" onClick={() => remove(i)} className="grid h-6 w-6 place-items-center rounded bg-white/90 text-red-600 transition hover:bg-white">×</button>
+                <button type="button" aria-label="Déplacer après" disabled={i === photos.length - 1} onClick={() => move(i, 1)} className="grid h-6 w-6 place-items-center rounded bg-white/90 text-sm text-ink transition hover:bg-white disabled:opacity-30">›</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="mt-1.5 text-[11px] text-ink/40">La 1re photo sert de couverture. Réordonnez avec ‹ ›. Enregistrez pour publier.</p>
+    </div>
+  );
+}
+
 function VillasManager() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true); // ouvert par défaut : c'est le contenu de l'onglet Réglages
   const [villas, setVillas] = useState<VillaRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -966,7 +1062,7 @@ function VillasManager() {
   const load = useCallback(async () => {
     const { data, error } = await supabase
       .from("villas")
-      .select("id,name,tagline,description,image_url,capacity,sort_order,active")
+      .select("id,name,tagline,description,image_url,photos,capacity,sort_order,active")
       .order("sort_order", { ascending: true });
     if (error) setErr(error.message);
     else {
@@ -990,7 +1086,8 @@ function VillasManager() {
         name: v.name,
         tagline: v.tagline,
         description: v.description,
-        image_url: v.image_url,
+        photos: v.photos ?? [],
+        image_url: v.photos?.[0] ?? v.image_url, // couverture = 1re photo de la galerie
         capacity: v.capacity,
         active: v.active,
         updated_at: new Date().toISOString(),
@@ -1029,8 +1126,8 @@ function VillasManager() {
                 <div key={v.id} className="grid gap-4 rounded-xl2 border border-ink/10 p-4 sm:grid-cols-[10rem_1fr]">
                   <div className="space-y-2">
                     <div className="h-28 w-full overflow-hidden rounded-lg bg-cream ring-1 ring-ink/10">
-                      {v.image_url ? (
-                        <img src={v.image_url} alt="" className="h-full w-full object-cover" />
+                      {v.photos?.[0] ?? v.image_url ? (
+                        <img src={villaImg(v.photos?.[0] ?? v.image_url ?? "", 320)} alt="" className="h-full w-full object-cover" />
                       ) : (
                         <div className="grid h-full w-full place-items-center text-xs text-ink/40">Aucune image</div>
                       )}
@@ -1062,10 +1159,12 @@ function VillasManager() {
                       <label className={labelCls}>Accroche</label>
                       <input className={inputCls} value={v.tagline ?? ""} onChange={(e) => patch(v.id, { tagline: e.target.value })} />
                     </div>
-                    <div>
-                      <label className={labelCls}>Image (URL)</label>
-                      <input className={inputCls} value={v.image_url ?? ""} placeholder="https://…" onChange={(e) => patch(v.id, { image_url: e.target.value })} />
-                    </div>
+                    <VillaPhotos
+                      villaId={v.id}
+                      photos={v.photos ?? []}
+                      onChange={(photos) => patch(v.id, { photos })}
+                      onError={setErr}
+                    />
                     <div>
                       <label className={labelCls}>Description</label>
                       <textarea

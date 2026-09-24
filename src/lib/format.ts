@@ -135,6 +135,18 @@ export function imgUrl(baseUrl: string | undefined, imageId: string | null | und
   return `${baseUrl}/${imageId}?width=${width}&mode=fit`;
 }
 
+// URL d'une photo de villa (galerie /villa). Les photos stockées sont des URL COMPLÈTES,
+// mixtes : Mews CDN (seed) ou Supabase Storage (upload depuis le BO). Pour les URL Mews on
+// peut demander une largeur (comme imgUrl → responsive) ; les autres sont renvoyées telles
+// quelles. Idempotent : on repart toujours de l'URL sans query.
+export function villaImg(url: string | null | undefined, width = 1024): string {
+  if (!url) return "";
+  if (/(^|\.)cdn\.mews\.com\/Media\/Image\//.test(url)) {
+    return `${url.split("?")[0]}?width=${width}&mode=fit`;
+  }
+  return url;
+}
+
 // yyyy-mm-dd du jour (en UTC) + ajout de N jours — pour les valeurs par défaut du sélecteur.
 export function isoDay(offsetDays = 0): string {
   const d = new Date(Date.now() + offsetDays * 86_400_000);
