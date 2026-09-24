@@ -12,6 +12,7 @@ import type {
   ReservationStatusResult,
 } from "../types/mews";
 import { toUtc } from "./format";
+import type { Villa } from "./villas";
 import { getLang, mewsLang } from "./lang";
 import { t } from "../i18n";
 import { apiLog } from "./apiLog";
@@ -216,6 +217,14 @@ export const api = {
       label: "Taux de change (affichage)",
       why: "Récupère les taux EUR→USD/CAD (BCE) pour afficher des prix approximatifs dans la devise du visiteur. La transaction reste en EUR.",
     }).catch(() => null),
+
+  // Catalogue des villas (table Supabase du back-office, seedée depuis Mews, éditable
+  // depuis le dashboard) → alimente le formulaire /villa. Best-effort : [] si indisponible.
+  villas: () =>
+    call<Villa[]>("villas", undefined, {
+      label: "Villas (back-office)",
+      why: "Liste des villas (table Supabase éditable) pour le formulaire de demande /villa.",
+    }).catch(() => [] as Villa[]),
 
   // Suivi de panier (funnel) → n8n via le Worker. Best-effort : n'échoue jamais l'UI.
   track: (payload: unknown): Promise<{ ok: boolean }> =>

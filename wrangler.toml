@@ -26,3 +26,9 @@ MEWS_CHILD_AGE_CATEGORY_ID = "5cd331e0-0069-4f46-a20f-b2cf00febb8f"
 # Repo public → l'URL est visible ; pour la garder privée, la définir en Secret Cloudflare
 # (dashboard) et retirer cette ligne.
 WEBHOOK_EVENTS = "https://n8n.srv842183.hstgr.cloud/webhook/booking-event"
+
+# Supabase (back-office) — URL + clé ANON, toutes deux PUBLIQUES par conception (la clé anon
+# vit déjà dans le front du dashboard ; c'est le RLS qui protège). Sert au endpoint /api/mews/villas
+# (lecture publique de la table `villas`, éditée depuis le dashboard). JAMAIS la clé service_role ici.
+SUPABASE_URL = "https://wrakgyuiihxlcaxinckm.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndyYWtneXVpaWh4bGNheGluY2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MzAxNjQsImV4cCI6MjEwMTQwNjE2NH0.UTNSPUh40XWfUbEfz2YL78IUn02FG8kXSauiOgtVahs"

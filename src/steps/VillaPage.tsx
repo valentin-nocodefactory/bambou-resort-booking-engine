@@ -4,7 +4,7 @@ import { IconArrowRight, IconCheck, IconMinus, IconPlus, IconUsers } from "../co
 import { EMAIL_RE, isoDay } from "../lib/format";
 import { getLang } from "../lib/lang";
 import { api } from "../lib/api";
-import { VILLAS, villaById } from "../lib/villas";
+import type { Villa } from "../lib/villas";
 import { t } from "../i18n";
 
 // Code-split : libphonenumber-js (~38 Ko gzip) n'est chargé qu'ici.
@@ -46,6 +46,7 @@ const EMPTY: VillaForm = {
 
 export function VillaPage() {
   const [geoCountry, setGeoCountry] = useState<string | undefined>();
+  const [villas, setVillas] = useState<Villa[]>([]);
   const [form, setForm] = useState<VillaForm>(EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sent, setSent] = useState(false);
@@ -54,11 +55,14 @@ export function VillaPage() {
   // Retour accueil en conservant ?lang=/?cur=.
   const goHome = () => window.location.assign(`/${window.location.search}`);
 
-  // Indicatif téléphone par défaut selon l'IP (comme le reste du moteur).
+  // Indicatif téléphone par défaut (IP) + catalogue des villas (back-office Supabase).
   useEffect(() => {
     let alive = true;
     void api.geo().then((r) => {
       if (alive && r?.country) setGeoCountry(r.country);
+    });
+    void api.villas().then((v) => {
+      if (alive) setVillas(v);
     });
     return () => {
       alive = false;
@@ -88,7 +92,7 @@ export function VillaPage() {
       people: form.people,
       withBaby: form.baby,
       villaId: form.villaId || null,
-      villaName: villaById(form.villaId)?.name ?? null,
+      villaName: villas.find((v) => v.id === form.villaId)?.name ?? null,
       message: form.message.trim() || null,
       lang: getLang(),
       submittedAt: new Date().toISOString(),
@@ -206,11 +210,12 @@ export function VillaPage() {
               </Field>
             </Section>
 
-            {/* Villa souhaitée */}
+            {/* Villa souhaitée (catalogue du back-office ; masqué si indisponible) */}
+            {villas.length > 0 && (
             <Section title={t("villaForm.villa")}>
               <p className="-mt-1.5 text-xs text-ink/50">{t("villaForm.villaHint")}</p>
               <div className="grid gap-3 sm:grid-cols-3">
-                {VILLAS.map((v) => {
+                {villas.map((v) => {
                   const on = form.villaId === v.id;
                   return (
                     <button
@@ -242,6 +247,7 @@ export function VillaPage() {
                 })}
               </div>
             </Section>
+            )}
 
             {/* Demande particulière */}
             <Field label={t("villaForm.message")}>
