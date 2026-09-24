@@ -1,6 +1,7 @@
 import { productLineTotal, useBooking } from "../state/booking";
 import { money, fmtDate } from "../lib/format";
 import { chargingLabel, spaceLabel } from "../lib/shaping";
+import { qcMeal } from "../lib/quebec";
 import { SavingsLine } from "./conversion";
 import { IconBed, IconCalendar, IconCheck, IconLock, IconUsers } from "./icons";
 import { t } from "../i18n";
@@ -39,7 +40,7 @@ export function BookingSummary() {
       <div className="space-y-3 px-5 py-4 text-sm">
         {selectedRoom && (
           <Row icon={<IconBed className="h-4 w-4" />} label={spaceLabel(selectedRoom.spaceType)}>
-            {selectedRate?.name ?? "—"}
+            {selectedRate?.name ? qcMeal(selectedRate.name) : "—"}
           </Row>
         )}
         <Row icon={<IconCalendar className="h-4 w-4" />} label={t("summary.stay")}>
@@ -69,7 +70,7 @@ export function BookingSummary() {
             key={p.id}
             label={
               <>
-                {p.name}
+                {qcMeal(p.name)}
                 {chargingLabel(p.chargingMode) ? (
                   <span className="text-ink/45"> · {chargingLabel(p.chargingMode)}</span>
                 ) : null}

@@ -2,6 +2,7 @@ import { useEffect, useState, type ComponentType, type SVGProps } from "react";
 import { api } from "../lib/api";
 import { money, imgUrl } from "../lib/format";
 import { spaceLabel } from "../lib/shaping";
+import { qcMeal } from "../lib/quebec";
 import type { ShapedRate, ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
 import { RoomTagsPanel } from "./RoomTags";
@@ -188,7 +189,7 @@ export function RoomDetailDrawer({
               </div>
 
               {room.description && (
-                <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-ink/75">{room.description}</p>
+                <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-ink/75">{qcMeal(room.description)}</p>
               )}
 
               <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-teal-deep/60">{t("roomDetail.amenities")}</p>
@@ -219,7 +220,7 @@ export function RoomDetailDrawer({
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-ink">{rate.name}</p>
+                            <p className="font-semibold text-ink">{qcMeal(rate.name)}</p>
                             {best && (
                               <span className="chip bg-turquoise text-white">
                                 <IconCheck className="h-3.5 w-3.5" /> {t("roomDetail.bestPrice")}
@@ -227,7 +228,7 @@ export function RoomDetailDrawer({
                             )}
                             {rate.isPrivate && <span className="chip bg-creole/20 text-creole">{t("roomDetail.privateRate")}</span>}
                           </div>
-                          {rate.description && <p className="mt-1 text-sm leading-relaxed text-ink/60">{rate.description}</p>}
+                          {rate.description && <p className="mt-1 text-sm leading-relaxed text-ink/60">{qcMeal(rate.description)}</p>}
                           <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-teal-deep/70">
                             <IconShield className="h-3.5 w-3.5" />
                             {rate.settlement.isAutomatic ? t("roomDetail.securePayment") : t("roomDetail.payAtHotel")}

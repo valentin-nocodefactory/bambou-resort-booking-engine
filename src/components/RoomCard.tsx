@@ -1,5 +1,6 @@
 import { money, imgUrl } from "../lib/format";
 import { spaceLabel } from "../lib/shaping";
+import { qcMeal } from "../lib/quebec";
 import type { ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
 import { RoomBenefitsOverlay, mealTags } from "./RoomTags";
@@ -87,7 +88,7 @@ export function RoomCard({
         </div>
 
         <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink/65">
-          {room.description || t("roomCard.descFallback")}
+          {qcMeal(room.description) || t("roomCard.descFallback")}
         </p>
 
         <div className="mt-2.5">

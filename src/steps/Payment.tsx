@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useBooking } from "../state/booking";
 import { ApiError, api, errorMessage } from "../lib/api";
 import { eur, money, fmtDate, toUtc } from "../lib/format";
+import { qcMeal } from "../lib/quebec";
 import { saveConfirmationSnapshot } from "../lib/confirmationSnapshot";
 import { StepLayout } from "../components/StepLayout";
 import { SecureBadge } from "../components/DataBadge";
@@ -144,7 +145,7 @@ export function Payment() {
           <h2 className="font-display text-lg text-ink">{t("payment.yourBooking")}</h2>
           <dl className="mt-3 space-y-2 text-sm">
             <Recap label={t("payment.recapAccommodation")} value={selectedRoom.name} />
-            <Recap label={t("payment.recapRate")} value={selectedRate.name} />
+            <Recap label={t("payment.recapRate")} value={qcMeal(selectedRate.name)} />
             <Recap
               label={t("payment.recapStay")}
               value={`${fmtDate(checkIn)} → ${fmtDate(checkOut)} · ${t("payment.nights", { count: nightsCount })}`}

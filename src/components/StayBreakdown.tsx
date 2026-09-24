@@ -18,17 +18,17 @@ export function StayBreakdown() {
 
   const meals = includedMeals(selectedRoom); // repas inclus dans le tarif (Hôtel: petit-déj + dîner ; Créole: petit-déj)
   const taxe = selectedRate.citySejour ?? 0;
-  // Supplément réveillon inclus dans le tarif (ligne TVA 8,5 %) → itemisé, et nommé selon la
-  // nuit couverte (l'API Distributor ne renvoie pas le nom du produit inclus).
-  // Dîner de réveillon (Noël 24/12 / St-Sylvestre 31/12) : affiché « inclus » SANS montant
-  // (le prix, côté Mews, peut changer — on ne le maîtrise pas) quand le séjour couvre la nuit
-  // ET que le tarif porte bien le supplément (ligne TVA 8,5 % > 0). Il reste fondu dans
-  // l'hébergement, comme les repas inclus. (Le 8,5 % seul ne suffit pas : c'est aussi le dîner
-  // de demi-pension de l'Hôtel → garde-fou par dates.)
+  // Réveillon (24/12 Noël, 31/12 St-Sylvestre) : ligne « inclus » SANS montant (Mews ne
+  // détaille pas le supplément), affichée DÈS QUE le séjour couvre la nuit — une ligne par
+  // réveillon couvert (les deux si le séjour les couvre tous les deux). Le LIBELLÉ dépend de
+  // la présence d'un dîner :
+  //  • « Supplément réveillon… » si un dîner est déjà là → Hôtel Bambou (demi-pension incluse)
+  //    OU Culture Créole avec le « Dîner de demi-pension » ajouté au panier ;
+  //  • sinon « Dîner de… » (Créole sans dîner) → devient « Souper de… » en canadien (qcMeal).
   const coversNoel = stayCoversNight(checkIn, checkOut, 12, 24);
   const coversSylvestre = stayCoversNight(checkIn, checkOut, 12, 31);
-  const showReveillon = (coversNoel || coversSylvestre) && (selectedRate.reveillonGross ?? 0) > 0;
-  const reveillonKey = coversNoel ? "breakdown.reveillonNoel" : "breakdown.reveillonSylvestre";
+  const hasDinner =
+    meals.includes("dinner") || selectedProducts.some((p) => /demi[-\s]?pension/i.test(p.name));
   const accommodation = Math.max(0, roomTotal - taxe);
 
   return (
@@ -48,8 +48,19 @@ export function StayBreakdown() {
           note={t("breakdown.included")}
         />
       )}
-      {showReveillon && (
-        <Row icon={<IconSparkles className="h-4 w-4" />} label={qcMeal(t(reveillonKey))} note={t("breakdown.included")} />
+      {coversNoel && (
+        <Row
+          icon={<IconSparkles className="h-4 w-4" />}
+          label={qcMeal(t(hasDinner ? "breakdown.reveillonSupplementNoel" : "breakdown.reveillonDinnerNoel"))}
+          note={t("breakdown.included")}
+        />
+      )}
+      {coversSylvestre && (
+        <Row
+          icon={<IconSparkles className="h-4 w-4" />}
+          label={qcMeal(t(hasDinner ? "breakdown.reveillonSupplementSylvestre" : "breakdown.reveillonDinnerSylvestre"))}
+          note={t("breakdown.included")}
+        />
       )}
       {selectedProducts.map((p) => (
         <Row key={p.id} label={qcMeal(p.name)} value={money(productLineTotal(p, nightsCount, guestsCount))} />
