@@ -141,8 +141,13 @@ export function imgUrl(baseUrl: string | undefined, imageId: string | null | und
 // quelles. Idempotent : on repart toujours de l'URL sans query.
 export function villaImg(url: string | null | undefined, width = 1024): string {
   if (!url) return "";
-  if (/(^|\.)cdn\.mews\.com\/Media\/Image\//.test(url)) {
-    return `${url.split("?")[0]}?width=${width}&mode=fit`;
+  try {
+    const u = new URL(url);
+    if (u.hostname === "cdn.mews.com" && u.pathname.startsWith("/Media/Image/")) {
+      return `${u.origin}${u.pathname}?width=${width}&mode=fit`;
+    }
+  } catch {
+    /* URL relative/invalide → renvoyée telle quelle */
   }
   return url;
 }
