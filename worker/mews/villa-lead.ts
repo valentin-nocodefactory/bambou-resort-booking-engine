@@ -1,4 +1,4 @@
-import { json, bad, readJson, clampInt, type Env } from "./_lib";
+import { json, bad, readJson, clampInt, postWebhook, type Env } from "./_lib";
 
 // Insert best-effort dans une table Supabase via l'API REST (clé anon + policy INSERT).
 async function sbInsert(env: Env, table: string, row: Record<string, unknown>): Promise<boolean> {
@@ -33,7 +33,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 //  • stage = "vue"     → 1 ligne dans villa_events (étape 1 : formulaire vu).
 //  • stage = "demande" → 1 ligne dans villa_leads  (étape 2 : demande envoyée, avec données).
 // Best-effort : ne bloque jamais l'UX du formulaire (le front affiche « envoyé » quoi qu'il arrive).
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const b = await readJson<Record<string, unknown>>(request);
   const sessionId = str(b.sessionId, 64);
 
@@ -45,7 +45,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (b.stage === "demande") {
     const email = str(b.email, 200);
     if (!email || !EMAIL_RE.test(email)) return bad("invalid_email");
-    const ok = await sbInsert(env, "villa_leads", {
+    const lead = {
       session_id: sessionId,
       first_name: str(b.firstName, 100),
       last_name: str(b.lastName, 100),
@@ -60,7 +60,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       villa_name: str(b.villaName, 200),
       message: str(b.message, 4000),
       lang: str(b.lang, 8),
-    });
+    };
+    const ok = await sbInsert(env, "villa_leads", lead);
+    // Notifie n8n (best-effort, en tâche de fond) : e-mail équipe / CRM. No-op si non défini.
+    waitUntil(postWebhook(env.WEBHOOK_VILLA, { event: "villa.demande", timestamp: new Date().toISOString(), ...lead }));
     return json({ ok });
   }
 

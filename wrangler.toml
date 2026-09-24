@@ -26,6 +26,9 @@ MEWS_CHILD_AGE_CATEGORY_ID = "5cd331e0-0069-4f46-a20f-b2cf00febb8f"
 # Repo public → l'URL est visible ; pour la garder privée, la définir en Secret Cloudflare
 # (dashboard) et retirer cette ligne.
 WEBHOOK_EVENTS = "https://n8n.srv842183.hstgr.cloud/webhook/booking-event"
+# Webhook n8n DÉDIÉ aux demandes de villa (notif équipe / CRM), distinct du flux paniers.
+# ⚠️ Créer le node Webhook correspondant dans n8n (chemin ci-dessous) ou ajuster l'URL.
+WEBHOOK_VILLA = "https://n8n.srv842183.hstgr.cloud/webhook/villa-lead"
 
 # Supabase (back-office) — URL + clé ANON, toutes deux PUBLIQUES par conception (la clé anon
 # vit déjà dans le front du dashboard ; c'est le RLS qui protège). Sert au endpoint /api/mews/villas

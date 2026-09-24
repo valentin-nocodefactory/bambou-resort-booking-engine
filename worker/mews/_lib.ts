@@ -15,6 +15,9 @@ export interface Env {
   // ★ UNIQUE endpoint de suivi → n8n → Supabase : reçoit TOUS les events du funnel
   // (chaque étape + paiement initié/validé). C'est LE endpoint du back-office.
   WEBHOOK_EVENTS?: string;
+  // Webhook n8n DÉDIÉ aux demandes de villa (notif équipe / CRM). Distinct de
+  // WEBHOOK_EVENTS pour ne pas polluer le flux paniers (schéma booking-event).
+  WEBHOOK_VILLA?: string;
   // Supabase (back-office) — URL + clé ANON publiques. Lecture de la table `villas`.
   SUPABASE_URL?: string;
   SUPABASE_ANON_KEY?: string;
