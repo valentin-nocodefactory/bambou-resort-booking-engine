@@ -226,6 +226,14 @@ export const api = {
       why: "Liste des villas (table Supabase éditable) pour le formulaire de demande /villa.",
     }).catch(() => [] as Villa[]),
 
+  // Suivi funnel villa + capture de la demande (formulaire /villa). Best-effort : ne bloque
+  // jamais l'UX. stage = "vue" (formulaire ouvert) ou "demande" (soumission, avec données).
+  villaLead: (payload: Record<string, unknown>) =>
+    post<{ ok: boolean }>("villa-lead", payload, {
+      label: "Demande villa",
+      why: "Enregistre une vue / une demande du formulaire villa dans le back-office (Supabase) → dashboard.",
+    }).catch(() => ({ ok: false })),
+
   // Suivi de panier (funnel) → n8n via le Worker. Best-effort : n'échoue jamais l'UI.
   track: (payload: unknown): Promise<{ ok: boolean }> =>
     post<{ ok: boolean }>("track", payload, {

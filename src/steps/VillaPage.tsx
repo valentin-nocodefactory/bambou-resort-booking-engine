@@ -67,6 +67,22 @@ function initialForm(): VillaForm {
   }
 }
 
+// Identifiant de session (stable le temps de l'onglet) pour relier la « vue » et la
+// « demande » et dédupliquer les vues côté funnel.
+function villaSessionId(): string {
+  try {
+    const k = "bambou_villa_sid";
+    let s = sessionStorage.getItem(k);
+    if (!s) {
+      s = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      sessionStorage.setItem(k, s);
+    }
+    return s;
+  } catch {
+    return `${Date.now()}`;
+  }
+}
+
 export function VillaPage() {
   const [geoCountry, setGeoCountry] = useState<string | undefined>();
   const [villas, setVillas] = useState<Villa[]>([]);
@@ -88,6 +104,8 @@ export function VillaPage() {
     void api.villas().then((v) => {
       if (alive) setVillas(v);
     });
+    // Étape 1 du funnel villa : « formulaire vu » (best-effort).
+    void api.villaLead({ stage: "vue", sessionId: villaSessionId() });
     return () => {
       alive = false;
     };
@@ -121,10 +139,9 @@ export function VillaPage() {
       lang: getLang(),
       submittedAt: new Date().toISOString(),
     };
-    // TODO(villa-lead) : brancher l'ENVOI réel (destination à définir avec le client :
-    // webhook n8n / e-mail / table Supabase). Pour l'instant on journalise le payload.
-    // eslint-disable-next-line no-console
-    console.log("[villa-lead]", payload);
+    // Étape 2 : envoi de la demande au back-office (table Supabase villa_leads) → dashboard.
+    // Best-effort : on affiche « envoyé » quoi qu'il arrive (pas d'échec visible à l'utilisateur).
+    void api.villaLead({ stage: "demande", sessionId: villaSessionId(), ...payload });
     setSent(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }

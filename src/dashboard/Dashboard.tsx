@@ -338,6 +338,8 @@ function Login() {
 // ══════════════════════════════════════════════════════════════════════════
 function Panel({ email }: { email: string }) {
   const [range, setRange] = useState("30");
+  // Onglet du funnel / des demandes : réservations Hôtel (paniers Mews) vs demandes Villa.
+  const [tab, setTab] = useState<"hotel" | "villa">("hotel");
   const [carts, setCarts] = useState<Cart[]>([]);
   const [funnel, setFunnel] = useState<FunnelRow[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -532,6 +534,25 @@ function Panel({ email }: { email: string }) {
         {/* Contenu éditable : villas (nom, accroche, description, image, capacité) */}
         <VillasManager />
 
+        {/* Onglets Hôtel (réservations) / Villa (demandes) */}
+        <div className="flex w-fit items-center gap-1 rounded-full bg-white p-1 shadow-card">
+          {(["hotel", "villa"] as const).map((tb) => (
+            <button
+              key={tb}
+              onClick={() => setTab(tb)}
+              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                tab === tb ? "bg-teal-deep text-cream" : "text-ink/60 hover:text-ink"
+              }`}
+            >
+              {tb === "hotel" ? "Hôtel" : "Villa"}
+            </button>
+          ))}
+        </div>
+
+        {tab === "villa" ? (
+          <VillaLeadsPanel range={range} />
+        ) : (
+        <>
         {/* KPIs */}
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <StatTile label="Paniers" value={kpi.total} />
@@ -733,6 +754,8 @@ function Panel({ email }: { email: string }) {
             Cliquez une ligne pour voir tous les événements de la demande (création, étapes, paiement).
           </p>
         </section>
+        </>
+        )}
       </main>
 
       {/* Drawer HORS de <main> : `main` a `space-y-6` qui appliquerait un margin-top au
@@ -759,6 +782,159 @@ function StatTile({ label, value, accent = "ink" }: { label: string; value: stri
       <p className="text-xs font-medium uppercase tracking-wide text-ink/45">{label}</p>
       <p className={`mt-1 font-display text-2xl ${ACCENT[accent] ?? ACCENT.ink}`}>{value}</p>
     </div>
+  );
+}
+
+// ── Demandes VILLA (onglet Villa) : funnel court (vues → demandes) + table ──────
+type VillaLead = {
+  id: string;
+  created_at: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  check_in: string | null;
+  check_out: string | null;
+  flexible_dates: boolean;
+  people: number | null;
+  with_baby: boolean;
+  villa_name: string | null;
+  message: string | null;
+};
+
+function VillaLeadsPanel({ range }: { range: string }) {
+  const [leads, setLeads] = useState<VillaLead[] | null>(null);
+  const [views, setViews] = useState<number | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    const days = RANGES.find((r) => r.key === range)?.days ?? null;
+    const since = days ? new Date(Date.now() - days * 86_400_000).toISOString() : null;
+    void (async () => {
+      let lq = supabase
+        .from("villa_leads")
+        .select("id,created_at,first_name,last_name,email,phone,check_in,check_out,flexible_dates,people,with_baby,villa_name,message")
+        .order("created_at", { ascending: false })
+        .limit(2000);
+      if (since) lq = lq.gte("created_at", since);
+      let eq = supabase.from("villa_events").select("session_id").limit(50000);
+      if (since) eq = eq.gte("created_at", since);
+      const [lr, er] = await Promise.all([lq, eq]);
+      if (!alive) return;
+      if (lr.error) setErr(lr.error.message);
+      else {
+        setErr(null);
+        setLeads((lr.data ?? []) as unknown as VillaLead[]);
+      }
+      if (!er.error) {
+        const distinct = new Set(((er.data ?? []) as { session_id: string | null }[]).map((x) => x.session_id).filter(Boolean));
+        setViews(distinct.size);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [range]);
+
+  const demandes = leads?.length ?? 0;
+  const vues = views ?? 0;
+  const conv = vues > 0 ? demandes / vues : 0;
+  const steps = [
+    { label: "Formulaire vu", count: vues },
+    { label: "Demande envoyée", count: demandes },
+  ];
+
+  return (
+    <>
+      {err && <div className="rounded-xl2 border border-red-200 bg-red-50 p-4 text-sm text-red-700">Erreur : {err}</div>}
+
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <StatTile label="Formulaires vus" value={views ?? "…"} />
+        <StatTile label="Demandes" value={demandes} accent="emerald" />
+        <StatTile label="Taux de conversion" value={vues > 0 ? pct(conv) : "—"} accent="teal" />
+      </section>
+
+      <section className="card p-5">
+        <div className="flex items-baseline justify-between">
+          <h2 className="font-display text-lg text-ink">Funnel villa</h2>
+          <span className="text-xs text-ink/45">formulaire vu → demande envoyée</span>
+        </div>
+        <div className="mt-4 space-y-2.5">
+          {steps.map((r, i) => (
+            <div key={r.label} className="flex items-center gap-3">
+              <div className="w-32 shrink-0 text-right text-sm font-medium text-ink/70">{r.label}</div>
+              <div className="relative h-8 flex-1 overflow-hidden rounded-lg bg-sand/60">
+                <div
+                  className="flex h-full items-center rounded-lg bg-gradient-to-r from-teal-deep to-turquoise px-3 text-sm font-semibold text-cream transition-all"
+                  style={{ width: `${steps[0].count > 0 ? Math.max((r.count / steps[0].count) * 100, r.count > 0 ? 6 : 0) : r.count > 0 ? 100 : 0}%` }}
+                >
+                  {r.count > 0 && <span>{r.count}</span>}
+                </div>
+              </div>
+              <div className="w-16 shrink-0 text-right text-xs text-ink/50">{i > 0 && steps[0].count > 0 ? pct(r.count / steps[0].count) : ""}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card overflow-hidden p-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+          <h2 className="font-display text-lg text-ink">
+            Demandes villa <span className="text-sm font-normal text-ink/45">· {demandes}</span>
+          </h2>
+          <span className="rounded-full bg-creole/15 px-2.5 py-1 text-xs font-semibold text-creole">Villa</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[900px] border-collapse text-sm">
+            <thead>
+              <tr className="border-y border-ink/10 bg-cream/60 text-left text-xs uppercase tracking-wide text-ink/50">
+                <th className="px-3 py-2 font-semibold">Date</th>
+                <th className="px-3 py-2 font-semibold">Client</th>
+                <th className="px-3 py-2 font-semibold">Contact</th>
+                <th className="px-3 py-2 font-semibold">Dates souhaitées</th>
+                <th className="px-3 py-2 font-semibold">Pers.</th>
+                <th className="px-3 py-2 font-semibold">Villa</th>
+                <th className="px-3 py-2 font-semibold">Message</th>
+              </tr>
+            </thead>
+            <tbody>
+              {!leads ? (
+                <tr>
+                  <td colSpan={7} className="px-3 py-8 text-center text-ink/45">Chargement…</td>
+                </tr>
+              ) : leads.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-3 py-8 text-center text-ink/45">Aucune demande villa sur cette période.</td>
+                </tr>
+              ) : (
+                leads.map((l) => (
+                  <tr key={l.id} className="border-b border-ink/5 align-top hover:bg-cream/40">
+                    <td className="whitespace-nowrap px-3 py-2.5 text-ink/70">{new Date(l.created_at).toLocaleDateString("fr-FR")}</td>
+                    <td className="px-3 py-2.5 font-medium text-ink">
+                      {[l.first_name, l.last_name].filter(Boolean).join(" ") || "—"}
+                      {l.with_baby ? " · 👶" : ""}
+                    </td>
+                    <td className="px-3 py-2.5 text-ink/70">
+                      <div>{l.email ?? "—"}</div>
+                      {l.phone && <div className="text-xs text-ink/50">{l.phone}</div>}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2.5 text-ink/70">
+                      {l.flexible_dates ? "Flexibles" : l.check_in && l.check_out ? `${l.check_in} → ${l.check_out}` : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 tabular-nums text-ink/70">{l.people ?? "—"}</td>
+                    <td className="px-3 py-2.5 text-ink/70">{l.villa_name ?? "—"}</td>
+                    <td className="max-w-xs px-3 py-2.5 text-ink/60">
+                      <span className="line-clamp-2">{l.message ?? "—"}</span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </>
   );
 }
 

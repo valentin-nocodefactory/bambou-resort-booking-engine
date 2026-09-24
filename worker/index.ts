@@ -20,6 +20,7 @@ import { onRequestPost as track } from "./mews/track";
 import { onRequestGet as geo } from "./mews/geo";
 import { onRequestGet as fx } from "./mews/fx";
 import { onRequestGet as villas } from "./mews/villas";
+import { onRequestPost as villaLead } from "./mews/villa-lead";
 
 // Les handlers gardent la signature Pages ({ request, env, waitUntil }) — on les adapte ici.
 // waitUntil permet de lancer les webhooks en tâche de fond sans bloquer la réponse.
@@ -39,6 +40,7 @@ const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
   geo: { GET: h(geo) },
   fx: { GET: h(fx) },
   villas: { GET: h(villas) },
+  "villa-lead": { POST: h(villaLead) },
 };
 
 const json = (data: unknown, status: number) =>
