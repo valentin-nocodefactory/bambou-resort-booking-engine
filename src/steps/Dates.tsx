@@ -9,6 +9,7 @@ import { RatingPill } from "../components/conversion";
 import {
   IconArrowRight,
   IconCheck,
+  IconChevron,
   IconLeaf,
   IconMapPin,
   IconMinus,
@@ -345,6 +346,19 @@ function GuestsField({
   const ref = useRef<HTMLDivElement>(null);
   const total = adults + children; // bébés non décomptés → hors total « voyageurs »
 
+  // Âge de chaque enfant (4-11) — PUREMENT front : n'entre PAS dans l'occupation
+  // envoyée à Mews (seul le NOMBRE d'enfants compte). Sert juste à ce que le client
+  // ne classe pas un ado de 12 ans et + comme « enfant ». Le tableau suit le compteur.
+  const [childAges, setChildAges] = useState<(number | "")[]>([]);
+  useEffect(() => {
+    setChildAges((prev) => {
+      if (prev.length === children) return prev;
+      const next = prev.slice(0, children);
+      while (next.length < children) next.push("");
+      return next;
+    });
+  }, [children]);
+
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setOpen(false);
@@ -373,6 +387,36 @@ function GuestsField({
           <Stepper label={t("dates.adults")} sub={t("dates.adultsSub")} value={adults} min={1} max={12} onChange={(v) => onChange(v, children, infants)} />
           <div className="my-3 h-px bg-ink/10" />
           <Stepper label={t("dates.children")} sub={t("dates.childrenSub")} value={children} min={0} max={10} onChange={(v) => onChange(adults, v, infants)} />
+          {children > 0 && (
+            <div className="mt-3 grid gap-2">
+              {Array.from({ length: children }).map((_, i) => (
+                <label key={i} className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-ink/70">{t("dates.childAgeOf", { n: i + 1 })}</span>
+                  <div className="relative">
+                    <select
+                      aria-label={t("dates.childAgeOf", { n: i + 1 })}
+                      value={childAges[i] ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.value === "" ? "" : Number(e.target.value);
+                        setChildAges((a) => a.map((x, j) => (j === i ? v : x)));
+                      }}
+                      className="w-28 appearance-none rounded-xl border border-ink/15 bg-white py-2 pl-3 pr-8 text-sm font-medium text-ink transition hover:border-turquoise focus:border-turquoise focus:outline-none"
+                    >
+                      <option value="" disabled>
+                        {t("dates.childAgePlaceholder")}
+                      </option>
+                      {Array.from({ length: 8 }, (_, k) => k + 4).map((age) => (
+                        <option key={age} value={age}>
+                          {t("dates.childAgeYears", { age })}
+                        </option>
+                      ))}
+                    </select>
+                    <IconChevron className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 rotate-90 text-teal-deep/50" />
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
           <div className="my-3 h-px bg-ink/10" />
           <Stepper label={t("dates.babies")} sub={t("dates.babiesSub")} value={infants} min={0} max={6} onChange={(v) => onChange(adults, children, v)} />
           {infants > 0 && (
