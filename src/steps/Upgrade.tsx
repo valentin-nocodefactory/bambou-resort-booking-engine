@@ -19,10 +19,14 @@ export function Upgrade() {
   }, [selectedRoom, selectedRate, goTo]);
 
   // Base figée à l'entrée de l'étape (pour que la liste ne change pas en sélectionnant).
+  // ⚠️ Référence = PRIX D'ENTRÉE de la chambre (`fromGross`), PAS le total du tarif choisi :
+  // sinon choisir le tarif Flexible (le plus cher) masquerait les surclassements (aucune
+  // chambre plus chère que ce total). Avec `fromGross`, les surclassements s'affichent quel
+  // que soit le tarif sélectionné, et le « + différentiel » reste d'entrée à entrée.
   const [base] = useState(() => ({
     room: selectedRoom,
     rate: selectedRate,
-    total: selectedRate?.totalGross ?? selectedRoom?.fromGross ?? 0,
+    total: selectedRoom?.fromGross ?? selectedRate?.totalGross ?? 0,
   }));
 
   const ups = useMemo(

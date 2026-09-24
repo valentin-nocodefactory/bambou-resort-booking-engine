@@ -41,8 +41,9 @@ export function Extras() {
     return layoutProducts(visible, selectedRoom?.property);
   }, [products, selectedRoom]);
 
-  // Retour : vers le surclassement s'il y en avait, sinon vers les infos.
-  const currentTotal = selectedRate?.totalGross ?? selectedRoom?.fromGross ?? 0;
+  // Retour : vers le surclassement s'il y en avait, sinon vers les infos. Référence = prix
+  // d'entrée de la chambre (fromGross), pas le tarif choisi — cohérent avec l'étape Upgrade.
+  const currentTotal = selectedRoom?.fromGross ?? selectedRate?.totalGross ?? 0;
   const back = upgradeRooms(availableRooms, selectedRoom, currentTotal).length > 0 ? "upgrade" : "guest";
 
   return (
