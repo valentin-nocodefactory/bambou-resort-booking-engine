@@ -3,8 +3,8 @@ import { t } from "../i18n";
 import { IconPhone, IconMail, IconShare, IconClose } from "./icons";
 
 // ⚙️ Contact réception (bambouresort.com). Modifiable ici en un seul endroit.
-const RECEPTION_PHONE = "+33768308396"; // format tel: (E.164)
-const RECEPTION_PHONE_DISPLAY = "+33 7 68 30 83 96";
+const RECEPTION_PHONE = "+596596660139"; // format tel: (E.164)
+const RECEPTION_PHONE_DISPLAY = "+596 596 66 01 39";
 const RECEPTION_EMAIL = "reservation@hotelbambou.fr";
 
 // Accès permanent (bouton flottant bas-droite) pour joindre la réception à toute

@@ -74,7 +74,7 @@ const DICT = {
   "dates.search": { fr: "Rechercher", en: "Search" },
   // Switcher horizontal Hébergement / Villas (les villas mènent à un formulaire dédié).
   "dates.stayType": { fr: "Type de séjour", en: "Stay type" },
-  "dates.tabStay": { fr: "Hébergement", en: "Accommodation" },
+  "dates.tabStay": { fr: "Hôtels", en: "Hotels" },
   "dates.tabVillas": { fr: "Villas", en: "Villas" },
   "dates.villasCta": { fr: "Découvrir les villas", en: "Explore the villas" },
   // Page /villa — formulaire de demande (villa privée).
@@ -127,7 +127,7 @@ const DICT = {
   "dates.promise2Text": { fr: "Face à Fort-de-France et proche de l'aéroport international Aimé Césaire (20 min en voiture).", en: "Facing Fort-de-France and close to Aimé Césaire International Airport (a 20-minute drive)." },
   "dates.promise3Title": { fr: "Une nature d'exception", en: "Exceptional nature" },
   "dates.promise3Text": { fr: "Vivez en harmonie avec la nature dans un cadre apaisant, ressourçant et authentique.", en: "Live in harmony with nature in a calm, restorative and authentic setting." },
-  "dates.allProperties": { fr: "Tous les hébergements", en: "All properties" },
+  "dates.allProperties": { fr: "Tous les hôtels", en: "All hotels" },
   "dates.propertyLabel": { fr: "Hébergement", en: "Property" },
   "dates.yourProperties": { fr: "Vos hébergements", en: "Your properties" },
   "dates.guests": { fr: "Voyageurs", en: "Guests" },
