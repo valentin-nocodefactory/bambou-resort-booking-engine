@@ -529,6 +529,9 @@ function Panel({ email }: { email: string }) {
           </div>
         )}
 
+        {/* Contenu éditable : villas (nom, accroche, description, image, capacité) */}
+        <VillasManager />
+
         {/* KPIs */}
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <StatTile label="Paniers" value={kpi.total} />
@@ -756,6 +759,163 @@ function StatTile({ label, value, accent = "ink" }: { label: string; value: stri
       <p className="text-xs font-medium uppercase tracking-wide text-ink/45">{label}</p>
       <p className={`mt-1 font-display text-2xl ${ACCENT[accent] ?? ACCENT.ink}`}>{value}</p>
     </div>
+  );
+}
+
+// ── Éditeur de villas (contenu du formulaire /villa) ────────────────────────
+// Lit/écrit la table Supabase `villas` (RLS : écriture réservée aux utilisateurs
+// authentifiés = le back-office). Les modifications se reflètent sur /villa via
+// l'endpoint public /api/mews/villas. Pour l'image, on édite l'URL (pas d'upload ici).
+type VillaRow = {
+  id: string;
+  name: string;
+  tagline: string | null;
+  description: string | null;
+  image_url: string | null;
+  capacity: number | null;
+  sort_order: number | null;
+  active: boolean;
+};
+
+const inputCls = "w-full rounded-lg border border-ink/15 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-turquoise";
+const labelCls = "block text-[11px] font-semibold uppercase tracking-wide text-ink/50";
+
+function VillasManager() {
+  const [open, setOpen] = useState(false);
+  const [villas, setVillas] = useState<VillaRow[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("villas")
+      .select("id,name,tagline,description,image_url,capacity,sort_order,active")
+      .order("sort_order", { ascending: true });
+    if (error) setErr(error.message);
+    else {
+      setErr(null);
+      setVillas((data ?? []) as VillaRow[]);
+    }
+  }, []);
+  useEffect(() => {
+    if (open && !villas) void load();
+  }, [open, villas, load]);
+
+  const patch = (id: string, p: Partial<VillaRow>) =>
+    setVillas((vs) => vs?.map((v) => (v.id === id ? { ...v, ...p } : v)) ?? null);
+
+  const save = async (v: VillaRow) => {
+    setSavingId(v.id);
+    setSavedId(null);
+    const { error } = await supabase
+      .from("villas")
+      .update({
+        name: v.name,
+        tagline: v.tagline,
+        description: v.description,
+        image_url: v.image_url,
+        capacity: v.capacity,
+        active: v.active,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", v.id);
+    setSavingId(null);
+    if (error) setErr(error.message);
+    else {
+      setErr(null);
+      setSavedId(v.id);
+      setTimeout(() => setSavedId((s) => (s === v.id ? null : s)), 2500);
+    }
+  };
+
+  return (
+    <section className="card overflow-hidden p-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between px-5 py-4 text-left"
+      >
+        <span className="font-display text-lg text-ink">Villas — contenu du formulaire</span>
+        <span className="text-sm text-ink/50">{open ? "Masquer ▲" : "Éditer ▼"}</span>
+      </button>
+
+      {open && (
+        <div className="border-t border-ink/10 p-5">
+          {err && <p className="mb-3 text-sm text-red-600">Erreur : {err}</p>}
+          {!villas ? (
+            <p className="text-sm text-ink/50">Chargement…</p>
+          ) : villas.length === 0 ? (
+            <p className="text-sm text-ink/50">Aucune villa.</p>
+          ) : (
+            <div className="space-y-5">
+              {villas.map((v) => (
+                <div key={v.id} className="grid gap-4 rounded-xl2 border border-ink/10 p-4 sm:grid-cols-[10rem_1fr]">
+                  <div className="space-y-2">
+                    <div className="h-28 w-full overflow-hidden rounded-lg bg-cream ring-1 ring-ink/10">
+                      {v.image_url ? (
+                        <img src={v.image_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="grid h-full w-full place-items-center text-xs text-ink/40">Aucune image</div>
+                      )}
+                    </div>
+                    <label className={`flex cursor-pointer items-center gap-2 text-xs ${v.active ? "text-ink" : "text-ink/50"}`}>
+                      <input type="checkbox" checked={v.active} onChange={(e) => patch(v.id, { active: e.target.checked })} className="h-4 w-4 accent-turquoise" />
+                      {v.active ? "Affichée" : "Masquée"}
+                    </label>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-[1fr_7rem]">
+                      <div>
+                        <label className={labelCls}>Nom</label>
+                        <input className={inputCls} value={v.name} onChange={(e) => patch(v.id, { name: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Capacité</label>
+                        <input
+                          type="number"
+                          min={1}
+                          className={inputCls}
+                          value={v.capacity ?? 0}
+                          onChange={(e) => patch(v.id, { capacity: parseInt(e.target.value, 10) || 0 })}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Accroche</label>
+                      <input className={inputCls} value={v.tagline ?? ""} onChange={(e) => patch(v.id, { tagline: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Image (URL)</label>
+                      <input className={inputCls} value={v.image_url ?? ""} placeholder="https://…" onChange={(e) => patch(v.id, { image_url: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Description</label>
+                      <textarea
+                        className={`${inputCls} min-h-[120px] resize-y whitespace-pre-line`}
+                        value={v.description ?? ""}
+                        onChange={(e) => patch(v.id, { description: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => void save(v)}
+                        disabled={savingId === v.id}
+                        className="btn-primary text-sm disabled:opacity-60"
+                      >
+                        {savingId === v.id ? "Enregistrement…" : savedId === v.id ? "Enregistré ✓" : "Enregistrer"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
