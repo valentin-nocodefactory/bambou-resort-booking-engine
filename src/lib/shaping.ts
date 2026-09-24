@@ -77,7 +77,7 @@ export function includedMeals(room: { property?: string | null }): ("breakfast" 
 export function buildRooms(
   avail: AvailabilityResponse,
   hotel: HotelConfig | null,
-  occupancy: { children?: number; infants?: number } = {},
+  occupancy: { adults?: number; children?: number; infants?: number } = {},
 ): ShapedRoom[] {
   const rateById = new Map(avail.Rates.map((r) => [r.Id, r]));
   const groupById = new Map<string, RateGroup>(avail.RateGroups.map((g) => [g.Id, g]));
@@ -148,6 +148,14 @@ export function buildRooms(
     // hébergement) → on l'ignore plutôt que d'afficher une carte « Hébergement » vide.
     if (!cat) continue;
     const name = loc(cat.Name, "Hébergement");
+    // Capacité TOTALE = couchages « capacité » (NormalBedCount) + « capacité supplémentaire »
+    // (ExtraBedCount). ⚠️ Mews renvoie ET chiffre les chambres SANS filtrer par occupation
+    // (une recherche 4 pers. renvoie même des chambres 2 pers.) → on écarte ICI toute chambre
+    // trop petite pour le nombre de voyageurs (adultes + enfants ; les bébés en berceau ne
+    // comptent pas). Capacité inconnue (0) → on ne filtre pas (on n'écarte pas à tort).
+    const capacity = (cat.NormalBedCount ?? 0) + (cat.ExtraBedCount ?? 0);
+    const guests = (occupancy.adults ?? 0) + (occupancy.children ?? 0);
+    if (capacity > 0 && guests > 0 && capacity < guests) continue;
     // Bungalow Harmonie : réservé aux 12 ans et + → masqué dès qu'un mineur est dans la
     // recherche (enfant 4-12 ou bébé <4). Règle EN DUR, par nom (cf. isAgeRestrictedRoom).
     if (isAgeRestrictedRoom(name) && ((occupancy.children ?? 0) > 0 || (occupancy.infants ?? 0) > 0)) continue;
@@ -160,7 +168,7 @@ export function buildRooms(
       extraBedCount: cat?.ExtraBedCount ?? 0,
       spaceType: cat?.SpaceType ?? "Room",
       availableRoomCount: rca.AvailableRoomCount,
-      capacity: (cat?.NormalBedCount ?? 0) + (cat?.ExtraBedCount ?? 0),
+      capacity,
       rates: payableRates,
       fromGross,
       property: cat?.Property ?? null,

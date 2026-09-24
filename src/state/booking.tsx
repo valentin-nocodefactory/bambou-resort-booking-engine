@@ -333,7 +333,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       })
       .then((res) => {
         if (!alive) return;
-        const rooms = buildRooms(res, hotel, { children: state.children, infants: state.infants });
+        const rooms = buildRooms(res, hotel, { adults: state.adults, children: state.children, infants: state.infants });
         setAvailableRoomsState(rooms);
         const room = rooms.find((r) => r.categoryId === state.roomId);
         const rate = room?.rates.find((rt) => rt.rateId === state.rateId) ?? room?.rates[0] ?? null;
