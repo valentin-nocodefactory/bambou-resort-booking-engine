@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useBooking, HIDDEN_PROPERTIES } from "../state/booking";
 import { api, errorMessage } from "../lib/api";
 import { fmtDate } from "../lib/format";
-import { buildRooms } from "../lib/shaping";
+import { buildRooms, coupDeCoeurRoomId } from "../lib/shaping";
 import type { AvailabilityResponse, ShapedRate, ShapedRoom } from "../types/mews";
 import { RoomCard } from "../components/RoomCard";
 import { RoomDetailDrawer } from "../components/RoomDetailDrawer";
@@ -78,6 +78,12 @@ export function Results() {
   const rooms = useMemo(
     () => allRooms.filter((r) => !r.property || properties.includes(r.property)),
     [allRooms, properties],
+  );
+
+  // Coup de cœur (mise en avant) — RÈGLE MÉTIER selon les hébergements cochés + nb de voyageurs.
+  const featuredId = useMemo(
+    () => coupDeCoeurRoomId(rooms, properties, adults + children),
+    [rooms, properties, adults, children],
   );
 
   // Teaser : hébergements NON cochés mais dispos sur ces dates (nom + nombre).
@@ -192,7 +198,7 @@ export function Results() {
                 room={room}
                 imageBaseUrl={imageBaseUrl}
                 nightsCount={nightsCount}
-                featured={i === 0}
+                featured={room.categoryId === featuredId}
                 onDetails={() => setOpenRoom(room)}
               />
               {/* Suggestion d'upsell inline après la 1re carte */}

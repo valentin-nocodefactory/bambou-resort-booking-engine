@@ -180,6 +180,28 @@ export function buildRooms(
   return rooms;
 }
 
+// Coup de cœur (mise en avant, badge « Coup de cœur voyageurs ») — RÈGLE MÉTIER EN DUR selon
+// les hébergements cochés dans la recherche ET le nombre de voyageurs (adultes + enfants) :
+//  • Tous les hébergements  → Bungalow Évasion    (1-2 pers.)
+//  • Hôtel Bambou seul      → Bungalow Sérénité   (1-2), Bungalow Découverte (3),
+//                             Chambre Gran Kay classique Famille (4 et +)
+//  • Culture Créole seul    → Bungalow Panorama   (1-2 pers.)
+// Renvoie l'id de la 1re chambre correspondante PARMI celles affichées (dispo), ou null.
+export function coupDeCoeurRoomId(rooms: ShapedRoom[], properties: string[], guests: number): string | null {
+  const hasHotel = properties.includes("hotel");
+  const hasCreole = properties.includes("creole");
+  let re: RegExp | null = null;
+  if (hasHotel && hasCreole) {
+    if (guests <= 2) re = /[ée]vasion/i;
+  } else if (hasHotel) {
+    re = guests <= 2 ? /s[ée]r[ée]nit[ée]/i : guests === 3 ? /d[ée]couverte/i : /gran\s*kay/i;
+  } else if (hasCreole) {
+    if (guests <= 2) re = /panorama/i;
+  }
+  if (!re) return null;
+  return rooms.find((r) => re!.test(r.name))?.categoryId ?? null;
+}
+
 // Option de surclassement : la chambre + le tarif du MÊME palier que celui choisi.
 export type UpgradeOption = { room: ShapedRoom; rate: ShapedRate };
 
