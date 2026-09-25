@@ -1,10 +1,14 @@
-// Appellations québécoises des repas — override selon la géolocalisation IP (région QC).
-// Règle (demande client) : au Québec, on renomme UNIQUEMENT
-//   • « petit-déjeuner » / « petit-déj » (le matin) → « déjeuner » / « déj »
-//   • « dîner » (le soir)                           → « souper »
-// ⚠️ « déjeuner » (le midi) reste INCHANGÉ : on ne le remplace PAS par « dîner ».
-// Ne touche QUE le texte français : hors Québec (ou texte anglais), c'est un no-op.
-// Chaque texte réellement remplacé est journalisé UNE fois en console.
+// Appellations canadiennes (québécoises) des repas — override selon la géolocalisation IP.
+// Règle (demande client), appliquée UNIQUEMENT au texte français, pour une IP canadienne :
+//   • « petit-déjeuner » / « petit-déj » (matin) → « déjeuner » / « déj »
+//   • « déjeuner »                        (midi)  → « dîner »
+//   • « dîner »                           (soir)  → « souper »
+// ⚠️ Substitution EN UN SEUL PASSAGE : le cycle FR→CA (déjeuner→dîner, dîner→souper) exige
+// que chaque terme soit remplacé une seule fois, sans que le résultat soit re-balayé (sinon
+// « petit-déjeuner » → « déjeuner » → « dîner » → « souper »…). D'où une SEULE regex à
+// alternatives, « petit-déjeuner » AVANT « déjeuner » (match le plus long d'abord).
+// Purement front (affichage) : ne touche NI les prix, NI les IDs, NI la logique Mews.
+// Hors IP canadienne (ou texte anglais) → no-op. Chaque texte remplacé est journalisé 1 fois.
 
 let QUEBEC = false;
 export function setQuebecLocale(on: boolean) {
@@ -15,20 +19,30 @@ export function isQuebecLocale() {
 }
 
 const isUpper = (s: string) => !!s && s[0] !== s[0].toLowerCase();
-const cased = (base: string, upper: boolean) => (upper ? base[0].toUpperCase() + base.slice(1) : base);
 const logged = new Set<string>();
+
+// « petit-déjeuner(s) » | « petit-déj » | « déjeuner(s) » | « dîner(s) » (accents & casse tolérés).
+const MEAL_RE = /petit[-\s]?d[ée]jeuners?|petit[-\s]?d[ée]j(?![a-zà-ÿ])|d[ée]jeuners?|d[îi]ners?/gi;
+
+function target(match: string): string {
+  const low = match.toLowerCase();
+  const plural = low.endsWith("s") ? "s" : "";
+  let base: string;
+  if (low.startsWith("petit")) {
+    base = low.includes("jeuner") ? "déjeuner" : "déj"; // matin → déjeuner / déj
+  } else if (low.includes("jeuner")) {
+    base = "dîner"; // midi (FR déjeuner) → dîner
+  } else {
+    base = "souper"; // soir (FR dîner) → souper
+  }
+  const out = base === "déj" ? "déj" : base + plural; // « déj » abrégé : pas de pluriel
+  return isUpper(match) ? out[0].toUpperCase() + out.slice(1) : out;
+}
 
 export function qcMeal(text: string | null | undefined): string {
   const src = text ?? "";
   if (!QUEBEC || !src) return src;
-  // Ordre : « petit-déjeuner » (complet), puis « petit-déj » (abrégé), puis « dîner ». Aucun
-  // résultat ne re-matche une règle suivante (« déjeuner »/« déj » ne contiennent pas « dîner »,
-  // « souper » ne contient pas « petit-déj ») → pas de double substitution. Et un « déjeuner »
-  // (midi) déjà présent dans le texte n'est JAMAIS touché.
-  let s = src;
-  s = s.replace(/petit[-\s]?d[ée]jeuner/gi, (m) => cased("déjeuner", isUpper(m)));
-  s = s.replace(/petit[-\s]?d[ée]j(?![a-zà-ÿ])/gi, (m) => cased("déj", isUpper(m)));
-  s = s.replace(/\bd[îi]ner\b/gi, (m) => cased("souper", isUpper(m)));
+  const s = src.replace(MEAL_RE, target);
   if (s !== src && !logged.has(src)) {
     logged.add(src);
     // eslint-disable-next-line no-console

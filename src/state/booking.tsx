@@ -492,9 +492,10 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     void api.geo().then((r) => {
       if (!alive) return;
       geoRef.current = { country: r.country, region: r.region, city: r.city }; // pour le tracking (dashboard)
-      // Région QC (en français) → appellations québécoises des repas (déjeuner/dîner/souper).
+      // IP canadienne (en français) → appellations canadiennes des repas (déjeuner/dîner/souper).
+      // Le français canadien (pas seulement le Québec) utilise ces termes → on gate sur le PAYS.
       // Indépendant de « visite fraîche » : c'est de l'affichage, pas du pré-remplissage.
-      const quebec = r.region === "QC" && getLang() === "fr";
+      const quebec = r.country === "CA" && getLang() === "fr";
       // eslint-disable-next-line no-console
       console.log(
         `[geo] pays détecté (IP): ${r.country ?? "—"} · région: ${r.region ?? "—"}${
