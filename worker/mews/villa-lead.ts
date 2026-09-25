@@ -27,6 +27,16 @@ const str = (v: unknown, max = 500): string | null => {
   return s ? s.slice(0, max) : null;
 };
 const isoDate = (v: unknown): string | null => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+
+// Attribution marketing : mappe l'objet `utm` du front (utm_*, gclid, fbclid) vers les
+// colonnes de la table (mêmes colonnes que `carts`). Best-effort, valeurs bornées.
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "fbclid"] as const;
+function utmCols(b: Record<string, unknown>): Record<string, string | null> {
+  const utm = (b.utm && typeof b.utm === "object" ? b.utm : {}) as Record<string, unknown>;
+  const out: Record<string, string | null> = {};
+  for (const k of UTM_KEYS) out[k] = str(utm[k], 200);
+  return out;
+}
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Suivi du funnel villa + capture des demandes (formulaire /villa).
@@ -38,7 +48,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
   const sessionId = str(b.sessionId, 64);
 
   if (b.stage === "vue") {
-    await sbInsert(env, "villa_events", { session_id: sessionId });
+    await sbInsert(env, "villa_events", { session_id: sessionId, ...utmCols(b) });
     return json({ ok: true });
   }
 
@@ -60,6 +70,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
       villa_name: str(b.villaName, 200),
       message: str(b.message, 4000),
       lang: str(b.lang, 8),
+      ...utmCols(b),
     };
     const ok = await sbInsert(env, "villa_leads", lead);
     // Notifie n8n (best-effort, en tâche de fond) : e-mail équipe / CRM. No-op si non défini.

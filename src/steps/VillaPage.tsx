@@ -4,6 +4,7 @@ import { DateRangePicker } from "../components/DateRangePicker";
 import { IconArrowRight, IconCheck, IconChevron, IconClose, IconExpand, IconMinus, IconPlus, IconUsers } from "../components/icons";
 import { EMAIL_RE, villaImg } from "../lib/format";
 import { getLang } from "../lib/lang";
+import { getUtms } from "../lib/utm";
 import { api } from "../lib/api";
 import type { Villa } from "../lib/villas";
 import { t } from "../i18n";
@@ -105,7 +106,7 @@ export function VillaPage() {
       if (alive) setVillas(v);
     });
     // Étape 1 du funnel villa : « formulaire vu » (best-effort).
-    void api.villaLead({ stage: "vue", sessionId: villaSessionId() });
+    void api.villaLead({ stage: "vue", sessionId: villaSessionId(), utm: getUtms() });
     return () => {
       alive = false;
     };
@@ -141,7 +142,7 @@ export function VillaPage() {
     };
     // Étape 2 : envoi de la demande au back-office (table Supabase villa_leads) → dashboard.
     // Best-effort : on affiche « envoyé » quoi qu'il arrive (pas d'échec visible à l'utilisateur).
-    void api.villaLead({ stage: "demande", sessionId: villaSessionId(), ...payload });
+    void api.villaLead({ stage: "demande", sessionId: villaSessionId(), utm: getUtms(), ...payload });
     setSent(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }

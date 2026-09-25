@@ -800,6 +800,9 @@ type VillaLead = {
   with_baby: boolean;
   villa_name: string | null;
   message: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
 };
 
 function VillaLeadsPanel({ range }: { range: string }) {
@@ -814,7 +817,7 @@ function VillaLeadsPanel({ range }: { range: string }) {
     void (async () => {
       let lq = supabase
         .from("villa_leads")
-        .select("id,created_at,first_name,last_name,email,phone,check_in,check_out,flexible_dates,people,with_baby,villa_name,message")
+        .select("id,created_at,first_name,last_name,email,phone,check_in,check_out,flexible_dates,people,with_baby,villa_name,message,utm_source,utm_medium,utm_campaign")
         .order("created_at", { ascending: false })
         .limit(2000);
       if (since) lq = lq.gte("created_at", since);
@@ -895,17 +898,18 @@ function VillaLeadsPanel({ range }: { range: string }) {
                 <th className="px-3 py-2 font-semibold">Dates souhaitées</th>
                 <th className="px-3 py-2 font-semibold">Pers.</th>
                 <th className="px-3 py-2 font-semibold">Villa</th>
+                <th className="px-3 py-2 font-semibold">Source</th>
                 <th className="px-3 py-2 font-semibold">Message</th>
               </tr>
             </thead>
             <tbody>
               {!leads ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-8 text-center text-ink/45">Chargement…</td>
+                  <td colSpan={8} className="px-3 py-8 text-center text-ink/45">Chargement…</td>
                 </tr>
               ) : leads.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-8 text-center text-ink/45">Aucune demande villa sur cette période.</td>
+                  <td colSpan={8} className="px-3 py-8 text-center text-ink/45">Aucune demande villa sur cette période.</td>
                 </tr>
               ) : (
                 leads.map((l) => (
@@ -924,6 +928,12 @@ function VillaLeadsPanel({ range }: { range: string }) {
                     </td>
                     <td className="px-3 py-2.5 tabular-nums text-ink/70">{l.people ?? "—"}</td>
                     <td className="px-3 py-2.5 text-ink/70">{l.villa_name ?? "—"}</td>
+                    <td className="px-3 py-2.5 text-ink/70">
+                      {l.utm_source || "Direct"}
+                      {(l.utm_medium || l.utm_campaign) && (
+                        <div className="text-xs text-ink/45">{[l.utm_medium, l.utm_campaign].filter(Boolean).join(" · ")}</div>
+                      )}
+                    </td>
                     <td className="max-w-xs px-3 py-2.5 text-ink/60">
                       <span className="line-clamp-2">{l.message ?? "—"}</span>
                     </td>
