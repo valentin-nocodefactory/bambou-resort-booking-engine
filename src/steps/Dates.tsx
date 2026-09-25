@@ -9,7 +9,6 @@ import { RatingPill } from "../components/conversion";
 import {
   IconArrowRight,
   IconCheck,
-  IconChevron,
   IconLeaf,
   IconMapPin,
   IconMinus,
@@ -41,17 +40,34 @@ export function Dates() {
     adults: adults || 2,
     children: children || 0,
     infants: infants || 0,
+    // Âge de chaque enfant (4-11). OBLIGATOIRE dès qu'il y a des enfants (bloque la recherche).
+    childAges: [] as (number | "")[],
     properties: properties?.length ? properties : DEFAULT_PROPERTIES,
   });
   // Type de séjour : « stay » = Hôtel Bambou / Culture Créole (moteur Mews), « villas » =
   // formulaire dédié (page /villa). En mode villas, pas de sélecteur d'hébergement.
   const [stayType, setStayType] = useState<"stay" | "villas">("stay");
   const [error, setError] = useState("");
+  const [guestsOpen, setGuestsOpen] = useState(false);
+  const [triedAges, setTriedAges] = useState(false); // a-t-on tenté de valider avec des âges manquants ?
+
+  // Âges d'enfants incomplets → bloque la recherche (règle métier : on doit connaître l'âge).
+  const agesIncomplete =
+    form.children > 0 &&
+    (form.childAges.length < form.children || form.childAges.slice(0, form.children).some((a) => a === "" || a == null));
 
   const n = nights(form.checkIn, form.checkOut);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    // Âge des enfants OBLIGATOIRE (quel que soit le parcours) : on ouvre le sélecteur et on
+    // met en évidence les âges manquants tant qu'ils ne sont pas tous renseignés.
+    if (agesIncomplete) {
+      setTriedAges(true);
+      setGuestsOpen(true);
+      setError(t("dates.errorChildAges"));
+      return;
+    }
     // Villas → page dédiée. On reprend les dates + voyageurs saisis (évite la double saisie)
     // et on conserve ?lang=/?cur= (langue & devise).
     if (stayType === "villas") {
@@ -142,7 +158,21 @@ export function Dates() {
               adults={form.adults}
               children={form.children}
               infants={form.infants}
-              onChange={(a, c, i) => setForm((f) => ({ ...f, adults: a, children: c, infants: i }))}
+              childAges={form.childAges}
+              open={guestsOpen}
+              onOpenChange={setGuestsOpen}
+              highlightMissing={triedAges}
+              onChange={(a, c, i) =>
+                setForm((f) => {
+                  const childAges = f.childAges.slice(0, c);
+                  while (childAges.length < c) childAges.push("");
+                  return { ...f, adults: a, children: c, infants: i, childAges };
+                })
+              }
+              onChildAges={(ages) => {
+                setForm((f) => ({ ...f, childAges: ages }));
+                setError("");
+              }}
             />
 
             {/* Rechercher (hébergement) / Découvrir les villas → /villa */}
@@ -335,42 +365,41 @@ function GuestsField({
   adults,
   children,
   infants,
+  childAges,
+  open,
+  onOpenChange,
+  highlightMissing,
   onChange,
+  onChildAges,
 }: {
   adults: number;
   children: number;
   infants: number;
+  childAges: (number | "")[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  highlightMissing: boolean;
   onChange: (adults: number, children: number, infants: number) => void;
+  onChildAges: (ages: (number | "")[]) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const total = adults + children; // bébés non décomptés → hors total « voyageurs »
-
-  // Âge de chaque enfant (4-11) — PUREMENT front : n'entre PAS dans l'occupation
-  // envoyée à Mews (seul le NOMBRE d'enfants compte). Sert juste à ce que le client
-  // ne classe pas un ado de 12 ans et + comme « enfant ». Le tableau suit le compteur.
-  const [childAges, setChildAges] = useState<(number | "")[]>([]);
-  useEffect(() => {
-    setChildAges((prev) => {
-      if (prev.length === children) return prev;
-      const next = prev.slice(0, children);
-      while (next.length < children) next.push("");
-      return next;
-    });
-  }, [children]);
+  // Âge de chaque enfant (4-11) : une PASTILLE par âge → 1 seul tap (au lieu d'un menu
+  // déroulant = 2 taps). Le tableau `childAges` est piloté par le parent (obligatoire).
+  const setAge = (i: number, age: number) => onChildAges(childAges.map((x, j) => (j === i ? age : x)));
 
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setOpen(false);
+    const onDoc = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && onOpenChange(false);
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
+  }, [open, onOpenChange]);
 
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => onOpenChange(!open)}
         className="flex w-full items-center gap-2.5 rounded-2xl border border-ink/15 bg-white px-4 py-3 text-left transition hover:border-turquoise"
       >
         <IconUsers className="h-4 w-4 shrink-0 text-turquoise" />
@@ -388,33 +417,44 @@ function GuestsField({
           <div className="my-3 h-px bg-ink/10" />
           <Stepper label={t("dates.children")} sub={t("dates.childrenSub")} value={children} min={0} max={10} onChange={(v) => onChange(adults, v, infants)} />
           {children > 0 && (
-            <div className="mt-3 grid gap-2">
-              {Array.from({ length: children }).map((_, i) => (
-                <label key={i} className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-ink/70">{t("dates.childAgeOf", { n: i + 1 })}</span>
-                  <div className="relative">
-                    <select
-                      aria-label={t("dates.childAgeOf", { n: i + 1 })}
-                      value={childAges[i] ?? ""}
-                      onChange={(e) => {
-                        const v = e.target.value === "" ? "" : Number(e.target.value);
-                        setChildAges((a) => a.map((x, j) => (j === i ? v : x)));
-                      }}
-                      className="w-28 appearance-none rounded-xl border border-ink/15 bg-white py-2 pl-3 pr-8 text-sm font-medium text-ink transition hover:border-turquoise focus:border-turquoise focus:outline-none"
-                    >
-                      <option value="" disabled>
-                        {t("dates.childAgePlaceholder")}
-                      </option>
-                      {Array.from({ length: 8 }, (_, k) => k + 4).map((age) => (
-                        <option key={age} value={age}>
-                          {t("dates.childAgeYears", { age })}
-                        </option>
-                      ))}
-                    </select>
-                    <IconChevron className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 rotate-90 text-teal-deep/50" />
+            <div className="mt-3 space-y-2.5">
+              <p className="text-[11px] font-medium text-ink/45">{t("dates.childAgeIntro")}</p>
+              {Array.from({ length: children }).map((_, i) => {
+                const missing = highlightMissing && (childAges[i] === "" || childAges[i] == null);
+                return (
+                  <div key={i}>
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="text-sm text-ink/70">{t("dates.childAgeOf", { n: i + 1 })}</span>
+                      {missing && <span className="text-[11px] font-semibold text-red-500">{t("dates.childAgeRequired")}</span>}
+                    </div>
+                    {/* Pastilles d'âge : 1 tap, réparties sur une seule ligne (flex-1).
+                        Teinte rouge tant que l'âge n'est pas choisi (bloquant). */}
+                    <div className="flex gap-1">
+                      {Array.from({ length: 9 }, (_, k) => k + 4).map((age) => {
+                        const sel = childAges[i] === age;
+                        return (
+                          <button
+                            key={age}
+                            type="button"
+                            aria-label={t("dates.childAgeYears", { age })}
+                            aria-pressed={sel}
+                            onClick={() => setAge(i, age)}
+                            className={`h-9 flex-1 rounded-lg text-sm font-semibold tabular-nums transition ${
+                              sel
+                                ? "bg-corail text-white shadow-sm"
+                                : missing
+                                  ? "bg-red-50 text-ink/70 ring-1 ring-red-300 hover:bg-red-100"
+                                  : "bg-sand/70 text-ink/75 hover:bg-sand"
+                            }`}
+                          >
+                            {age}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </label>
-              ))}
+                );
+              })}
             </div>
           )}
           <div className="my-3 h-px bg-ink/10" />
@@ -427,7 +467,7 @@ function GuestsField({
               <p className="mt-1 text-[11px] leading-relaxed text-marine/70">{t("dates.babyKitNote")}</p>
             </div>
           )}
-          <button type="button" onClick={() => setOpen(false)} className="btn-primary mt-4 w-full py-2 text-sm">
+          <button type="button" onClick={() => onOpenChange(false)} className="btn-primary mt-4 w-full py-2 text-sm">
             {t("dates.guestsDone")}
           </button>
         </div>

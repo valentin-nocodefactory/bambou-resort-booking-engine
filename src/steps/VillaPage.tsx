@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Brand } from "../components/Brand";
 import { DateRangePicker } from "../components/DateRangePicker";
-import { IconArrowRight, IconCheck, IconClose, IconMinus, IconPlus, IconUsers } from "../components/icons";
+import { IconArrowRight, IconCheck, IconChevron, IconClose, IconExpand, IconMinus, IconPlus, IconUsers } from "../components/icons";
 import { EMAIL_RE, villaImg } from "../lib/format";
 import { getLang } from "../lib/lang";
 import { api } from "../lib/api";
@@ -246,43 +246,62 @@ export function VillaPage() {
               <div className="grid gap-3 sm:grid-cols-3">
                 {villas.map((v) => {
                   const on = form.villaId === v.id;
+                  const toggle = () => set({ villaId: on ? "" : v.id });
                   return (
-                    <button
+                    <div
                       key={v.id}
-                      type="button"
-                      onClick={() => setOpenVilla(v)}
+                      role="button"
+                      tabIndex={0}
                       aria-pressed={on}
-                      aria-label={t("villaForm.villaDetailsAria", { name: v.name })}
-                      className={`overflow-hidden rounded-xl2 border text-left transition ${
-                        on ? "border-corail ring-1 ring-corail" : "border-ink/12 hover:border-turquoise/60"
+                      aria-label={t("villaForm.villaSelectAria", { name: v.name })}
+                      onClick={toggle}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          toggle();
+                        }
+                      }}
+                      className={`group flex cursor-pointer flex-col overflow-hidden rounded-xl2 border text-left transition ${
+                        on ? "border-corail ring-2 ring-corail" : "border-ink/12 hover:border-turquoise/60"
                       }`}
                     >
-                      <span className="relative block h-24 w-full">
-                        <img src={villaImg(v.image, 480)} alt="" className="h-full w-full object-cover" />
+                      <div className="relative aspect-[3/2] w-full overflow-hidden">
+                        <img src={villaImg(v.image, 640)} alt="" className="h-full w-full object-cover" />
                         {v.photos.length > 1 && (
                           <span className="absolute bottom-2 left-2 rounded-full bg-marine/70 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
                             {t("roomCard.photos", { count: v.photos.length })}
                           </span>
                         )}
-                        {on && (
-                          <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-corail text-white shadow-sm">
-                            <IconCheck className="h-3.5 w-3.5" />
-                          </span>
-                        )}
-                      </span>
-                      <span className="block p-3">
+                        {/* Pastille de sélection (radio) : discrète si non choisie, corail si choisie. */}
+                        <span
+                          className={`absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full shadow-sm transition ${
+                            on ? "bg-corail text-white" : "bg-white/85 text-marine/35 group-hover:text-marine/70"
+                          }`}
+                        >
+                          <IconCheck className="h-4 w-4" />
+                        </span>
+                      </div>
+                      <div className="flex flex-1 flex-col p-3">
                         <span className="block font-semibold text-marine">{v.name}</span>
                         <span className="mt-0.5 block text-xs leading-snug text-ink/55">{v.tagline}</span>
-                        <span className="mt-1.5 flex items-center justify-between gap-2 text-[11px] font-medium">
+                        <div className="mt-2 flex items-center justify-between gap-2 text-[11px] font-medium">
                           <span className="inline-flex items-center gap-1 text-teal-deep/70">
                             <IconUsers className="h-3 w-3" /> {t("villaForm.villaCapacity", { count: v.capacity })}
                           </span>
-                          <span className="inline-flex shrink-0 items-center gap-0.5 text-corail">
-                            {on ? t("villaForm.villaChosen") : t("villaForm.villaDetails")} <IconArrowRight className="h-3 w-3" />
-                          </span>
-                        </span>
-                      </span>
-                    </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenVilla(v);
+                            }}
+                            aria-label={t("villaForm.villaDetailsAria", { name: v.name })}
+                            className="inline-flex shrink-0 items-center gap-0.5 rounded-full px-2 py-1 text-corail transition hover:bg-corail/10"
+                          >
+                            {t("villaForm.villaDetails")} <IconArrowRight className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -339,6 +358,7 @@ function VillaDetailDrawer({
 }) {
   const [shown, setShown] = useState(false);
   const [active, setActive] = useState(0);
+  const [zoom, setZoom] = useState<number | null>(null); // index photo en visionneuse plein écran
   const photos = villa.photos.length ? villa.photos : villa.image ? [villa.image] : [];
   useEffect(() => {
     setShown(true);
@@ -356,24 +376,35 @@ function VillaDetailDrawer({
         className={`absolute inset-0 bg-marine/50 backdrop-blur-sm transition-opacity duration-300 ${shown ? "opacity-100" : "opacity-0"}`}
       />
       <div
-        className={`absolute right-0 top-0 flex h-full w-full max-w-md flex-col overflow-y-auto bg-cream shadow-float transition-transform duration-300 ${
+        className={`absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col overflow-y-auto bg-cream shadow-float transition-transform duration-300 ${
           shown ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="relative h-56 w-full shrink-0">
-          <img src={villaImg(photos[active] ?? villa.image, 1024)} alt={villa.name} className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-marine/55 via-marine/5 to-transparent" />
+        <div className="relative aspect-[3/2] w-full shrink-0 overflow-hidden bg-marine/5">
+          {/* Photo principale — clic = visionneuse plein écran. */}
+          <button
+            type="button"
+            onClick={() => setZoom(active)}
+            aria-label={t("villaForm.photoZoomAria")}
+            className="absolute inset-0 h-full w-full cursor-zoom-in"
+          >
+            <img src={villaImg(photos[active] ?? villa.image, 1280)} alt={villa.name} className="h-full w-full object-cover" />
+            <span className="absolute inset-0 bg-gradient-to-t from-marine/40 via-transparent to-transparent" />
+            <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-marine/45 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
+              <IconExpand className="h-3.5 w-3.5" /> {t("villaForm.photoZoomHint")}
+            </span>
+          </button>
           <button
             type="button"
             aria-label={t("villaForm.close")}
             onClick={onClose}
-            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-marine shadow-card transition hover:bg-white"
+            className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-marine shadow-card transition hover:bg-white"
           >
             <IconClose className="h-4 w-4" />
           </button>
           {/* Miniatures en overlay (même principe que le détail chambre hôtel). */}
           {photos.length > 1 && (
-            <div className="absolute inset-x-0 bottom-0 p-3">
+            <div className="absolute inset-x-0 bottom-0 z-10 p-3">
               <div className="no-scrollbar flex gap-2 overflow-x-auto px-1 py-1">
                 {photos.map((url, i) => (
                   <button
@@ -381,7 +412,7 @@ function VillaDetailDrawer({
                     type="button"
                     onClick={() => setActive(i)}
                     aria-label={t("roomDetail.photoAria", { n: i + 1 })}
-                    className={`h-12 w-12 shrink-0 overflow-hidden rounded-md transition ${
+                    className={`h-14 w-14 shrink-0 overflow-hidden rounded-md transition ${
                       i === active ? "ring-[3px] ring-white" : "ring-1 ring-white/40 hover:ring-white/80"
                     }`}
                   >
@@ -415,6 +446,79 @@ function VillaDetailDrawer({
           </div>
         </div>
       </div>
+      {zoom !== null && (
+        <PhotoLightbox
+          photos={photos}
+          index={zoom}
+          onIndex={(i) => {
+            setZoom(i);
+            setActive(i);
+          }}
+          onClose={() => setZoom(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// Visionneuse plein écran : photo en grand + navigation ‹ › (au-dessus du panneau).
+function PhotoLightbox({
+  photos,
+  index,
+  onIndex,
+  onClose,
+}: {
+  photos: string[];
+  index: number;
+  onIndex: (i: number) => void;
+  onClose: () => void;
+}) {
+  const go = (dir: -1 | 1) => onIndex((index + dir + photos.length) % photos.length);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowLeft") go(-1);
+      else if (e.key === "ArrowRight") go(1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-marine/95" role="dialog" aria-modal="true" aria-label={t("villaForm.photoZoomAria")}>
+      <button type="button" aria-label={t("villaForm.close")} onClick={onClose} className="absolute inset-0 h-full w-full cursor-zoom-out" />
+      <img src={villaImg(photos[index], 1600)} alt="" className="relative max-h-[88vh] max-w-[92vw] rounded-lg object-contain shadow-float" />
+      <button
+        type="button"
+        aria-label={t("villaForm.close")}
+        onClick={onClose}
+        className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-white/25"
+      >
+        <IconClose className="h-5 w-5" />
+      </button>
+      {photos.length > 1 && (
+        <>
+          <button
+            type="button"
+            aria-label={t("villaForm.lightboxPrev")}
+            onClick={() => go(-1)}
+            className="absolute left-3 grid h-11 w-11 place-items-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-white/25 sm:left-6"
+          >
+            <IconChevron className="h-6 w-6 rotate-180" />
+          </button>
+          <button
+            type="button"
+            aria-label={t("villaForm.lightboxNext")}
+            onClick={() => go(1)}
+            className="absolute right-3 grid h-11 w-11 place-items-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-white/25 sm:right-6"
+          >
+            <IconChevron className="h-6 w-6" />
+          </button>
+          <span className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-marine/70 px-3 py-1 text-sm font-medium text-white backdrop-blur">
+            {index + 1} / {photos.length}
+          </span>
+        </>
+      )}
     </div>
   );
 }
