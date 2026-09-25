@@ -1,27 +1,16 @@
-import { productLineTotal, useBooking } from "../state/booking";
+import { useBooking } from "../state/booking";
 import { money, fmtDate } from "../lib/format";
-import { chargingLabel, spaceLabel } from "../lib/shaping";
+import { spaceLabel } from "../lib/shaping";
 import { qcMeal } from "../lib/quebec";
+import { StayBreakdown } from "./StayBreakdown";
 import { SavingsLine } from "./conversion";
 import { IconBed, IconCalendar, IconCheck, IconLock, IconUsers } from "./icons";
 import { t } from "../i18n";
 
 // Récapitulatif sticky : hébergement, tarif, dates, occupants, extras, total.
 export function BookingSummary() {
-  const {
-    selectedRoom,
-    selectedRate,
-    checkIn,
-    checkOut,
-    nightsCount,
-    adults,
-    children,
-    guestsCount,
-    selectedProducts,
-    roomTotal,
-    productsTotal,
-    grandTotal,
-  } = useBooking();
+  const { selectedRoom, selectedRate, checkIn, checkOut, nightsCount, adults, children, productsTotal, grandTotal } =
+    useBooking();
 
   const savings =
     selectedRate?.maxGross != null && selectedRate.totalGross != null
@@ -61,26 +50,14 @@ export function BookingSummary() {
         </Row>
       </div>
 
-      <div className="border-t border-ink/10 px-5 py-4 text-sm">
-        {selectedRate && (
-          <Line label={t("summary.accommodation", { count: nightsCount })} value={money(roomTotal)} />
-        )}
-        {selectedProducts.map((p) => (
-          <Line
-            key={p.id}
-            label={
-              <>
-                {qcMeal(p.name)}
-                {chargingLabel(p.chargingMode) ? (
-                  <span className="text-ink/45"> · {chargingLabel(p.chargingMode)}</span>
-                ) : null}
-              </>
-            }
-            value={money(productLineTotal(p, nightsCount, guestsCount))}
-          />
-        ))}
-        {!selectedRate && !selectedProducts.length && (
-          <p className="text-ink/50">{t("summary.selectPrompt")}</p>
+      {/* Détail du prix — IDENTIQUE au récap de la dernière étape (même composant
+          StayBreakdown → toujours synchronisé en live) : hébergement, repas inclus,
+          suppléments réveillon, extras, taxe de séjour. Le total est porté par le pied. */}
+      <div className="border-t border-ink/10 px-5 py-4">
+        {selectedRoom && selectedRate ? (
+          <StayBreakdown hideTotal />
+        ) : (
+          <p className="text-sm text-ink/50">{t("summary.selectPrompt")}</p>
         )}
       </div>
 
@@ -118,15 +95,6 @@ function Row({ icon, label, children }: { icon: React.ReactNode; label: string; 
         <p className="text-xs font-semibold uppercase tracking-wide text-teal-deep/60">{label}</p>
         <p className="text-ink">{children}</p>
       </div>
-    </div>
-  );
-}
-
-function Line({ label, value }: { label: React.ReactNode; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 py-1">
-      <span className="text-ink/75">{label}</span>
-      <span className="shrink-0 font-semibold text-ink">{value}</span>
     </div>
   );
 }

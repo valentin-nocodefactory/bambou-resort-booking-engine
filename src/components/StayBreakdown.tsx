@@ -11,7 +11,9 @@ import { t } from "../i18n";
 // dans le tarif Mews (ligne TVA 0 %, portée par ShapedRate.citySejour) — jamais « en dur »,
 // elle s'adapte à chaque hébergement (Hôtel 1,20 € / Créole 1,70 €/adulte/nuit…). Le total
 // affiché reste STRICTEMENT celui de Mews (hébergement = tarif − taxe de séjour).
-export function StayBreakdown() {
+// `hideTotal` : masque la ligne « Total » finale — utilisé quand le détail est embarqué
+// dans le résumé sticky (BookingSummary) qui porte déjà son propre total en pied.
+export function StayBreakdown({ hideTotal = false }: { hideTotal?: boolean } = {}) {
   const { selectedRoom, selectedRate, checkIn, checkOut, nightsCount, guestsCount, selectedProducts, roomTotal, grandTotal } =
     useBooking();
   if (!selectedRoom || !selectedRate) return null;
@@ -66,9 +68,11 @@ export function StayBreakdown() {
         <Row key={p.id} label={qcMeal(p.name)} value={money(productLineTotal(p, nightsCount, guestsCount))} />
       ))}
       {taxe > 0 && <Row label={t("breakdown.cityTax")} value={money(taxe)} />}
-      <div className="mt-1.5 border-t border-ink/10 pt-2.5">
-        <Row label={t("breakdown.total")} value={money(grandTotal)} strong />
-      </div>
+      {!hideTotal && (
+        <div className="mt-1.5 border-t border-ink/10 pt-2.5">
+          <Row label={t("breakdown.total")} value={money(grandTotal)} strong />
+        </div>
+      )}
     </dl>
   );
 }
