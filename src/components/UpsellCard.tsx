@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { productLineTotal } from "../state/booking";
+import { productLineTotalCtx } from "../state/booking";
 import { money, imgUrl } from "../lib/format";
 import { chargingLabel } from "../lib/shaping";
 import { qcMeal } from "../lib/quebec";
@@ -16,6 +16,9 @@ export function UpsellCard({
   product,
   imageBaseUrl,
   selected,
+  property,
+  checkIn,
+  checkOut,
   nightsCount,
   guestsCount,
   onToggle,
@@ -24,13 +27,18 @@ export function UpsellCard({
   product: ShapedProduct;
   imageBaseUrl: string;
   selected: boolean;
+  property?: string | null;
+  checkIn: string;
+  checkOut: string;
   nightsCount: number;
   guestsCount: number;
   onToggle: () => void;
   locked?: boolean; // extra obligatoire (ex. réveillon aux dates concernées) : non décochable
 }) {
   const [detail, setDetail] = useState(false);
-  const lineTotal = productLineTotal(product, nightsCount, guestsCount);
+  // Total aligné sur le récap : Culture Créole, le dîner de demi-pension n'est pas facturé les
+  // nuits de réveillon (déjà incluses) → même règle que le total (cf. productLineTotalCtx).
+  const lineTotal = productLineTotalCtx(product, { property, checkIn, checkOut, nights: nightsCount, guests: guestsCount });
   return (
     <>
       <div

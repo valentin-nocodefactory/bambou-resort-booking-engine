@@ -12,7 +12,7 @@ import { api } from "../lib/api";
 import { getLang } from "../lib/lang";
 import { getUtms } from "../lib/utm";
 import { nights as countNights } from "../lib/format";
-import { buildRooms, shapeProducts, cheapestDrinkProduct } from "../lib/shaping";
+import { buildRooms, shapeProducts, cheapestDrinkProduct, stayCoversNight } from "../lib/shaping";
 import { setQuebecLocale } from "../lib/quebec";
 import {
   getCurrency,
@@ -575,8 +575,20 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   );
 
   const productsTotal = useMemo(
-    () => selectedProducts.reduce((sum, p) => sum + productLineTotal(p, nightsCount, guestsCount), 0),
-    [selectedProducts, nightsCount, guestsCount],
+    () =>
+      selectedProducts.reduce(
+        (sum, p) =>
+          sum +
+          productLineTotalCtx(p, {
+            property: selectedRoom?.property,
+            checkIn: state.checkIn,
+            checkOut: state.checkOut,
+            nights: nightsCount,
+            guests: guestsCount,
+          }),
+        0,
+      ),
+    [selectedProducts, selectedRoom, state.checkIn, state.checkOut, nightsCount, guestsCount],
   );
 
   const roomTotal = selectedRate?.totalGross ?? 0;
@@ -683,6 +695,28 @@ export function useBooking(): BookingContextValue {
 }
 
 // Total d'une ligne produit selon son mode de facturation.
+// Nombre de nuits de réveillon (24/12 Noël, 31/12 St-Sylvestre) couvertes par le séjour (0-2).
+function reveillonNightsCovered(checkIn: string, checkOut: string): number {
+  return (stayCoversNight(checkIn, checkOut, 12, 24) ? 1 : 0) + (stayCoversNight(checkIn, checkOut, 12, 31) ? 1 : 0);
+}
+
+// Total d'une ligne produit AVEC la règle métier réveillon.
+// Culture Créole : le « Dîner de demi-pension » (produit payant, à la nuit) n'est PAS facturé
+// les nuits de réveillon car le dîner de réveillon est DÉJÀ inclus dans la réservation → on
+// retire ces nuits pour ne pas double-facturer. Hôtel Bambou : demi-pension incluse au tarif,
+// seul le supplément réveillon est facturé automatiquement par Mews → aucune déduction produit.
+// (Affichage : le total réel reste celui facturé par Mews à la création — cf. ProductIds.)
+export function productLineTotalCtx(
+  p: ShapedProduct,
+  ctx: { property?: string | null; checkIn: string; checkOut: string; nights: number; guests: number },
+): number {
+  let nights = ctx.nights;
+  if (ctx.property === "creole" && /demi[-\s]?pension/i.test(p.name)) {
+    nights = Math.max(0, nights - reveillonNightsCovered(ctx.checkIn, ctx.checkOut));
+  }
+  return productLineTotal(p, nights, ctx.guests);
+}
+
 export function productLineTotal(p: ShapedProduct, nights: number, guests: number): number {
   const n = Math.max(1, nights);
   const g = Math.max(1, guests);

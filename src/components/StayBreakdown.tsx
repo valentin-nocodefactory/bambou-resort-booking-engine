@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useBooking, productLineTotal } from "../state/booking";
+import { useBooking, productLineTotalCtx } from "../state/booking";
 import { money } from "../lib/format";
 import { includedMeals, stayCoversNight } from "../lib/shaping";
 import { qcMeal } from "../lib/quebec";
@@ -65,7 +65,11 @@ export function StayBreakdown({ hideTotal = false }: { hideTotal?: boolean } = {
         />
       )}
       {selectedProducts.map((p) => (
-        <Row key={p.id} label={qcMeal(p.name)} value={money(productLineTotal(p, nightsCount, guestsCount))} />
+        <Row
+          key={p.id}
+          label={qcMeal(p.name)}
+          value={money(productLineTotalCtx(p, { property: selectedRoom.property, checkIn, checkOut, nights: nightsCount, guests: guestsCount }))}
+        />
       ))}
       {taxe > 0 && <Row label={t("breakdown.cityTax")} value={money(taxe)} />}
       {!hideTotal && (

@@ -15,6 +15,8 @@ export function Extras() {
     airportTransfer,
     setAirportTransfer,
     imageBaseUrl,
+    checkIn,
+    checkOut,
     nightsCount,
     guestsCount,
     selectedRoom,
@@ -117,6 +119,9 @@ export function Extras() {
                       product={p}
                       imageBaseUrl={imageBaseUrl}
                       selected={productIds.includes(p.id)}
+                      property={selectedRoom?.property}
+                      checkIn={checkIn}
+                      checkOut={checkOut}
                       nightsCount={nightsCount}
                       guestsCount={guestsCount}
                       onToggle={() => toggleProduct(p.id)}
