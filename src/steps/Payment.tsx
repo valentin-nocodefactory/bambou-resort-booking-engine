@@ -16,6 +16,7 @@ export function Payment() {
     hotel,
     selectedRoom,
     selectedRate,
+    selectedCombo,
     checkIn,
     checkOut,
     adults,
@@ -58,7 +59,45 @@ export function Payment() {
       const p = products.find((pr) => pr.id === id);
       return !p || !p.property || p.property === selectedRoom.property;
     });
+    // Combo : produits « par personne » (repas) mis sur les 2 chambres → chacune facture SON
+    // occupation, somme = groupe entier. Produits « au forfait » (Once/PerNight) sur la 1re
+    // chambre uniquement → facturés une seule fois. (Cohérent avec l'estimation affichée.)
+    const perPersonIds = safeProductIds.filter((id) => {
+      const p = products.find((pr) => pr.id === id);
+      return !!p && /PerPerson/i.test(p.chargingMode);
+    });
+    const forfaitIds = safeProductIds.filter((id) => !perPersonIds.includes(id));
     try {
+      const reservations = selectedCombo
+        ? [selectedCombo.a, selectedCombo.b].map((cr, i) => {
+            const ids = i === 0 ? [...perPersonIds, ...forfaitIds] : perPersonIds;
+            return {
+              roomCategoryId: cr.room.categoryId,
+              startUtc: toUtc(checkIn),
+              endUtc: toUtc(checkOut),
+              rateId: cr.rate.rateId,
+              adults: cr.occupancy.adults,
+              children: cr.occupancy.children,
+              infants: cr.occupancy.infants,
+              productIds: ids.length ? ids : undefined,
+              voucherCode: voucherCode || undefined,
+              notes: i === 0 ? guest.notes.trim() || undefined : undefined,
+            };
+          })
+        : [
+            {
+              roomCategoryId: selectedRoom.categoryId,
+              startUtc: toUtc(checkIn),
+              endUtc: toUtc(checkOut),
+              rateId: selectedRate.rateId,
+              adults,
+              children,
+              infants,
+              productIds: safeProductIds.length ? safeProductIds : undefined,
+              voucherCode: voucherCode || undefined,
+              notes: guest.notes.trim() || undefined,
+            },
+          ];
       const result = await api.createReservation({
         property: selectedRoom.property ?? undefined,
         customer: {
@@ -69,20 +108,7 @@ export function Payment() {
           nationalityCode: guest.nationalityCode || undefined,
           sendMarketingEmails: guest.sendMarketingEmails,
         },
-        reservations: [
-          {
-            roomCategoryId: selectedRoom.categoryId,
-            startUtc: toUtc(checkIn),
-            endUtc: toUtc(checkOut),
-            rateId: selectedRate.rateId,
-            adults,
-            children,
-            infants,
-            productIds: safeProductIds.length ? safeProductIds : undefined,
-            voucherCode: voucherCode || undefined,
-            notes: guest.notes.trim() || undefined,
-          },
-        ],
+        reservations,
         returnUrl: `${window.location.origin}/confirmation`,
       });
 
@@ -98,7 +124,7 @@ export function Payment() {
         email: guest.email.trim(),
         total: grandTotal,
         airportTransfer,
-        roomName: selectedRoom.name,
+        roomName: selectedCombo ? `${selectedCombo.a.room.name} + ${selectedCombo.b.room.name}` : selectedRoom.name,
       });
 
       // Panier → « paiement initié ». On await (avant la redirection) pour être sûr
@@ -144,8 +170,17 @@ export function Payment() {
         <div className="card p-5">
           <h2 className="font-display text-lg text-ink">{t("payment.yourBooking")}</h2>
           <dl className="mt-3 space-y-2 text-sm">
-            <Recap label={t("payment.recapAccommodation")} value={selectedRoom.name} />
-            <Recap label={t("payment.recapRate")} value={qcMeal(selectedRate.name)} />
+            {selectedCombo ? (
+              <>
+                <Recap label={t("summary.combo")} value={`${selectedCombo.a.room.name} + ${selectedCombo.b.room.name}`} />
+                <Recap label={t("payment.recapRate")} value={qcMeal(selectedCombo.a.rate.name)} />
+              </>
+            ) : (
+              <>
+                <Recap label={t("payment.recapAccommodation")} value={selectedRoom.name} />
+                <Recap label={t("payment.recapRate")} value={qcMeal(selectedRate.name)} />
+              </>
+            )}
             <Recap
               label={t("payment.recapStay")}
               value={`${fmtDate(checkIn)} → ${fmtDate(checkOut)} · ${t("payment.nights", { count: nightsCount })}`}

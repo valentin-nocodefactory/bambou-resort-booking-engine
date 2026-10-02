@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useBooking, HIDDEN_PROPERTIES } from "../state/booking";
 import { api, errorMessage } from "../lib/api";
 import { fmtDate } from "../lib/format";
-import { buildRooms, coupDeCoeurRoomId } from "../lib/shaping";
+import { buildRooms, buildCombos, splitOccupancy, coupDeCoeurRoomId, type Combo } from "../lib/shaping";
 import type { AvailabilityResponse, ShapedRate, ShapedRoom } from "../types/mews";
 import { RoomCard } from "../components/RoomCard";
+import { ComboCard } from "../components/ComboCard";
 import { RoomDetailDrawer } from "../components/RoomDetailDrawer";
 import { InlineUpsell } from "../components/UpsellCard";
 import { RatingPill, UrgencyBanner } from "../components/conversion";
@@ -28,6 +29,7 @@ export function Results() {
     rateId,
     selectedRoom,
     selectRoomRate,
+    selectCombo,
     hydrateSelection,
     setAvailableRooms,
     setProperties,
@@ -41,6 +43,9 @@ export function Results() {
   const [error, setError] = useState<string | null>(null);
   const [openRoom, setOpenRoom] = useState<ShapedRoom | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  // Combos 2 chambres (groupe trop grand pour une seule chambre). null = non calculé.
+  const [combos, setCombos] = useState<Combo[] | null>(null);
+  const [combosLoading, setCombosLoading] = useState(false);
   // Accordéons « autres hébergements » (ouverts/fermés par clé d'hébergement).
   const [openProps, setOpenProps] = useState<string[]>([]);
   const toggleProp = (key: string) =>
@@ -79,6 +84,39 @@ export function Results() {
     () => allRooms.filter((r) => !r.property || properties.includes(r.property)),
     [allRooms, properties],
   );
+
+  // Combos 2 chambres : UNIQUEMENT si aucune chambre seule n'accueille le groupe (≥ 5 pers,
+  // ≥ 2 adultes). On refait 1-2 appels dispo à la demi-occupation → prix exact par chambre.
+  useEffect(() => {
+    const guests = adults + children;
+    if (loading || error || !data || allRooms.length > 0 || guests < 5) {
+      setCombos(null);
+      return;
+    }
+    const split = splitOccupancy(adults, children, infants);
+    if (!split) {
+      setCombos(null);
+      return;
+    }
+    let alive = true;
+    setCombosLoading(true);
+    const same = split.big.adults === split.small.adults && split.big.children === split.small.children;
+    const fetchOcc = (o: typeof split.big) =>
+      api.availability({ checkIn, checkOut, adults: o.adults, children: o.children, infants: o.infants, voucherCode });
+    Promise.all(same ? [fetchOcc(split.big)] : [fetchOcc(split.big), fetchOcc(split.small)])
+      .then((results) => {
+        if (!alive) return;
+        const bigRes = results[0];
+        if (!bigRes) return setCombos([]);
+        const smallRes = same ? bigRes : results[1] ?? bigRes;
+        setCombos(buildCombos(bigRes, smallRes, hotel, split.big, split.small, properties));
+      })
+      .catch(() => alive && setCombos([]))
+      .finally(() => alive && setCombosLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [loading, error, data, allRooms.length, adults, children, infants, checkIn, checkOut, voucherCode, hotel, properties]);
 
   // Coup de cœur (mise en avant) — RÈGLE MÉTIER selon les hébergements cochés + nb de voyageurs.
   const featuredId = useMemo(
@@ -135,6 +173,12 @@ export function Results() {
     goTo("guest");
   }
 
+  // Combo : parcours simplifié → on saute le surclassement (Guest redirige vers Extras).
+  function chooseCombo(combo: Combo) {
+    selectCombo(combo);
+    goTo("guest");
+  }
+
   // Upsell inline : un extra de l'hébergement de la 1re chambre (sinon il serait
   // refusé à la réservation, cf. produits rattachés à une config Mews).
   const inlineProduct = products.find((p) => !p.property || p.property === rooms[0]?.property) ?? null;
@@ -186,9 +230,24 @@ export function Results() {
 
       {!loading && error && <ErrorBox message={error} onRetry={() => setReloadKey((k) => k + 1)} />}
 
-      {!loading && !error && rooms.length === 0 && (
-        <EmptyBox onModify={() => goTo("dates")} />
-      )}
+      {!loading && !error && rooms.length === 0 &&
+        (combosLoading ? (
+          <SkeletonList />
+        ) : combos && combos.length > 0 ? (
+          <div className="mt-6">
+            <div className="mb-4">
+              <h2 className="font-display text-xl text-ink">{t("combo.heading")}</h2>
+              <p className="mt-1 text-sm text-ink/60">{t("combo.subheading")}</p>
+            </div>
+            <div className="space-y-4">
+              {combos.slice(0, 4).map((c) => (
+                <ComboCard key={c.key} combo={c} imageBaseUrl={imageBaseUrl} onChoose={() => chooseCombo(c)} />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <EmptyBox onModify={() => goTo("dates")} />
+        ))}
 
       {!loading && !error && rooms.length > 0 && (
         <div className="mt-5 space-y-4">

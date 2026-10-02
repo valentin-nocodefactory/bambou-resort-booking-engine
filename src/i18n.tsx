@@ -323,6 +323,17 @@ const DICT = {
   "results.emptyTitle": { fr: "Aucune disponibilité pour ces dates", en: "No availability for these dates" },
   "results.emptyBody": { fr: "Essayez d'autres dates ou ajustez le nombre de voyageurs. Nos plus beaux bungalows partent vite.", en: "Try other dates or adjust the number of guests. Our finest bungalows go fast." },
 
+  // ── Combo 2 chambres (groupe trop grand pour une seule chambre) ──────────────
+  "combo.heading": { fr: "Votre groupe ne tient pas dans une seule chambre", en: "Your group doesn't fit in a single room" },
+  "combo.subheading": { fr: "Voici des combinaisons de 2 chambres qui accueillent tout le monde, dans le même hébergement et avec un seul paiement.", en: "Here are 2-room combinations that fit everyone — same property, single payment." },
+  "combo.badge": { fr: (p) => `Combo 2 chambres · ${p.count} personnes`, en: (p) => `2-room combo · ${p.count} guests` },
+  "combo.note": { fr: "Même hébergement · 1 seul paiement", en: "Same property · single payment" },
+  "combo.roomLabel": { fr: (p) => `Chambre ${p.n}`, en: (p) => `Room ${p.n}` },
+  "combo.roomOcc": { fr: (p) => `${p.count} pers.`, en: (p) => `${p.count} guests` },
+  "combo.beds": { fr: (p) => `${p.count} couchages`, en: (p) => `${p.count} beds` },
+  "combo.total": { fr: "Total", en: "Total" },
+  "combo.choose": { fr: "Choisir ce combo", en: "Select this combo" },
+
   // ── RoomCard / RoomDetailDrawer / UpsellCard / BookingSummary ──────────────
   "roomCard.viewPhotosAria": { fr: (p) => `Voir les photos de ${p.name}`, en: (p) => `View photos of ${p.name}` },
   "roomCard.photos": { fr: (p) => `${p.count} photos`, en: (p) => `${p.count} photos` },
@@ -377,6 +388,7 @@ const DICT = {
   "upsell.mandatoryNote": { fr: "Inclus pour ces dates", en: "Included for these dates" },
   "summary.yourStay": { fr: "Votre séjour", en: "Your stay" },
   "summary.toCompose": { fr: "À composer", en: "To build" },
+  "summary.combo": { fr: "Combo 2 chambres", en: "2-room combo" },
   "summary.stay": { fr: "Séjour", en: "Stay" },
   "summary.nights": { fr: (p) => `${p.count} nuit${(p.count as number) > 1 ? "s" : ""}`, en: (p) => `${p.count} night${(p.count as number) > 1 ? "s" : ""}` },
   "summary.travelers": { fr: "Voyageurs", en: "Guests" },

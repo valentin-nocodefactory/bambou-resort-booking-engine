@@ -14,9 +14,38 @@ import { t } from "../i18n";
 // `hideTotal` : masque la ligne « Total » finale — utilisé quand le détail est embarqué
 // dans le résumé sticky (BookingSummary) qui porte déjà son propre total en pied.
 export function StayBreakdown({ hideTotal = false }: { hideTotal?: boolean } = {}) {
-  const { selectedRoom, selectedRate, checkIn, checkOut, nightsCount, guestsCount, selectedProducts, roomTotal, grandTotal } =
+  const { selectedRoom, selectedRate, selectedCombo, checkIn, checkOut, nightsCount, guestsCount, selectedProducts, roomTotal, grandTotal } =
     useBooking();
   if (!selectedRoom || !selectedRate) return null;
+
+  // Combo 2 chambres : détail simplifié = 1 ligne par chambre (tarif incluant repas/taxe),
+  // puis extras, puis total. Les repas/réveillon sont déjà compris dans le tarif de chaque
+  // chambre → pas de ligne « inclus » séparée ici.
+  if (selectedCombo) {
+    return (
+      <dl className="space-y-1.5 text-sm">
+        {[selectedCombo.a, selectedCombo.b].map((cr, i) => (
+          <Row
+            key={i}
+            label={`${t("combo.roomLabel", { n: i + 1 })} · ${cr.room.name}`}
+            value={money(cr.rate.totalGross)}
+          />
+        ))}
+        {selectedProducts.map((p) => (
+          <Row
+            key={p.id}
+            label={qcMeal(p.name)}
+            value={money(productLineTotalCtx(p, { property: selectedRoom.property, checkIn, checkOut, nights: nightsCount, guests: guestsCount }))}
+          />
+        ))}
+        {!hideTotal && (
+          <div className="mt-1.5 border-t border-ink/10 pt-2.5">
+            <Row label={t("breakdown.total")} value={money(grandTotal)} strong />
+          </div>
+        )}
+      </dl>
+    );
+  }
 
   const meals = includedMeals(selectedRoom); // repas inclus dans le tarif (Hôtel: petit-déj + dîner ; Créole: petit-déj)
   const taxe = selectedRate.citySejour ?? 0;

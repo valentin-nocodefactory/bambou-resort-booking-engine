@@ -21,6 +21,7 @@ export function Extras() {
     guestsCount,
     selectedRoom,
     selectedRate,
+    selectedCombo,
     availableRooms,
     grandTotal,
     goTo,
@@ -43,9 +44,13 @@ export function Extras() {
     return layoutProducts(visible, selectedRoom?.property);
   }, [products, selectedRoom]);
 
-  // Retour : vers le surclassement s'il y en avait, sinon vers les infos. Comparaison à
-  // palier de tarif égal (cf. upgradeRooms), cohérent avec l'étape Upgrade.
-  const back = upgradeRooms(availableRooms, selectedRoom, selectedRate).length > 0 ? "upgrade" : "guest";
+  // Retour : combo → directement aux infos (surclassement sauté). Sinon vers le surclassement
+  // s'il y en avait, sinon vers les infos. Comparaison à palier de tarif égal (cf. upgradeRooms).
+  const back = selectedCombo
+    ? "guest"
+    : upgradeRooms(availableRooms, selectedRoom, selectedRate).length > 0
+      ? "upgrade"
+      : "guest";
 
   return (
     <StepLayout

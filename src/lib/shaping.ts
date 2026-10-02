@@ -183,6 +183,75 @@ export function buildRooms(
   return rooms;
 }
 
+// ── Combos 2 chambres (groupe trop grand pour une seule chambre) ─────────────
+// Quand aucune chambre seule n'a assez de couchages, on propose 2 chambres du MÊME
+// hébergement couvrant le groupe. On répartit en 2 demi-occupations et on tarife CHAQUE
+// chambre à SA demi-occupation (les repas sont par personne → prix exact). Parcours
+// simplifié : pas de surclassement par chambre, 1 seul paiement (cf. Results/booking).
+
+export type Occ = { adults: number; children: number; infants: number };
+export type ComboRoom = { room: ShapedRoom; rate: ShapedRate; occupancy: Occ };
+export type Combo = { key: string; property: string; a: ComboRoom; b: ComboRoom; totalGross: number };
+
+// Répartition d'un groupe en 2 demi-occupations (A = la plus grande moitié). Chaque chambre
+// doit avoir ≥ 1 adulte (Mews exige AdultCount ≥ 1) → combo possible seulement si adults ≥ 2.
+// Les bébés en berceau (gratuits, non décomptés) vont tous dans la chambre A. null sinon.
+export function splitOccupancy(adults: number, children: number, infants: number): { big: Occ; small: Occ } | null {
+  if (adults < 2) return null;
+  const total = adults + children;
+  const bigCount = Math.ceil(total / 2);
+  const smallCount = Math.floor(total / 2);
+  const adultsBig = Math.ceil(adults / 2);
+  const adultsSmall = adults - adultsBig; // ≥ 1 car adults ≥ 2
+  const childrenBig = bigCount - adultsBig;
+  const childrenSmall = smallCount - adultsSmall;
+  if (childrenBig < 0 || childrenSmall < 0) return null; // garde-fou (ne devrait pas arriver)
+  return {
+    big: { adults: adultsBig, children: childrenBig, infants },
+    small: { adults: adultsSmall, children: childrenSmall, infants: 0 },
+  };
+}
+
+// Construit les combos de 2 chambres (même hébergement) à partir des dispos tarifées pour
+// CHACUNE des 2 demi-occupations. `allowedProperties` : restreint aux hébergements cochés.
+export function buildCombos(
+  availBig: AvailabilityResponse,
+  availSmall: AvailabilityResponse,
+  hotel: HotelConfig | null,
+  bigOcc: Occ,
+  smallOcc: Occ,
+  allowedProperties: string[] | null,
+): Combo[] {
+  const roomsBig = buildRooms(availBig, hotel, bigOcc); // chambres qui tiennent la grande moitié
+  const roomsSmall = buildRooms(availSmall, hotel, smallOcc); // … la petite moitié
+  const byKey = new Map<string, Combo>();
+
+  for (const a of roomsBig) {
+    if (!a.property || (allowedProperties && !allowedProperties.includes(a.property))) continue;
+    const aRate = a.rates[0];
+    if (!aRate || a.fromGross == null || (a.availableRoomCount ?? 0) < 1) continue;
+    for (const b of roomsSmall) {
+      if (b.property !== a.property) continue;
+      const bRate = b.rates[0];
+      if (!bRate || b.fromGross == null || (b.availableRoomCount ?? 0) < 1) continue;
+      // Même catégorie des 2 côtés → il faut 2 chambres dispos de ce type.
+      if (a.categoryId === b.categoryId && (a.availableRoomCount ?? 0) < 2) continue;
+      const key = a.property + "|" + [a.categoryId, b.categoryId].sort().join("+");
+      const combo: Combo = {
+        key,
+        property: a.property,
+        a: { room: a, rate: aRate, occupancy: bigOcc },
+        b: { room: b, rate: bRate, occupancy: smallOcc },
+        totalGross: a.fromGross + b.fromGross,
+      };
+      const prev = byKey.get(key); // on garde l'assignation la moins chère par paire
+      if (!prev || combo.totalGross < prev.totalGross) byKey.set(key, combo);
+    }
+  }
+
+  return [...byKey.values()].sort((x, y) => x.totalGross - y.totalGross);
+}
+
 // Coup de cœur (mise en avant, badge « Coup de cœur voyageurs ») — RÈGLE MÉTIER EN DUR selon
 // les hébergements cochés dans la recherche ET le nombre de voyageurs (adultes + enfants) :
 //  • Tous les hébergements  → Bungalow Évasion    (1-2 pers.)

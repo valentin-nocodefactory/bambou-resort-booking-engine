@@ -3,11 +3,12 @@ import { IconCheck } from "./icons";
 import { t } from "../i18n";
 
 export function StepProgress() {
-  const { step, goTo } = useBooking();
+  const { step, goTo, selectedCombo } = useBooking();
   // Libellés construits À CHAQUE rendu (jamais au chargement du module) : `t()` doit être
   // évalué APRÈS initLang(). Sinon, en anglais, les libellés resteraient figés en FR (langue
   // par défaut à l'import des modules). Même précaution que dans Dates.tsx.
-  const STEPS: { key: Step; label: string }[] = [
+  // Combo 2 chambres : pas de surclassement → on retire l'étape du fil d'Ariane.
+  const ALL_STEPS: { key: Step; label: string }[] = [
     { key: "dates", label: t("stepProgress.dates") },
     { key: "results", label: t("stepProgress.room") },
     { key: "guest", label: t("stepProgress.yourInfo") },
@@ -15,6 +16,7 @@ export function StepProgress() {
     { key: "extras", label: t("stepProgress.extras") },
     { key: "payment", label: t("stepProgress.payment") },
   ];
+  const STEPS = ALL_STEPS.filter((s) => !(selectedCombo && s.key === "upgrade"));
   const current = step === "confirmation" ? STEPS.length : STEPS.findIndex((s) => s.key === step);
   const isConfirmation = current >= STEPS.length;
   const currentLabel = isConfirmation ? t("stepProgress.confirmation") : (STEPS[current]?.label ?? "");

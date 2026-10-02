@@ -12,11 +12,12 @@ import { IconArrowRight, IconBed, IconCheck, IconSparkles } from "../components/
 // On part du choix initial (le moins cher si l'utilisateur a cliqué « Choisir »)
 // et on propose les chambres plus haut de gamme avec leur différentiel de prix.
 export function Upgrade() {
-  const { availableRooms, selectedRoom, selectedRate, selectRoomRate, imageBaseUrl, nightsCount, goTo } = useBooking();
+  const { availableRooms, selectedRoom, selectedRate, selectedCombo, selectRoomRate, imageBaseUrl, nightsCount, goTo } = useBooking();
 
   useEffect(() => {
     if (!selectedRoom || !selectedRate) goTo("results");
-  }, [selectedRoom, selectedRate, goTo]);
+    else if (selectedCombo) goTo("extras"); // combo : pas de surclassement par chambre
+  }, [selectedRoom, selectedRate, selectedCombo, goTo]);
 
   // Base figée à l'entrée de l'étape (pour que la liste ne change pas en sélectionnant).
   // Le surclassement se compare À PALIER DE TARIF ÉGAL : si l'on a pris Flexible, on propose

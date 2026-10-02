@@ -9,7 +9,7 @@ import { IconArrowRight } from "../components/icons";
 const PhoneInput = lazy(() => import("../components/PhoneInput").then((m) => ({ default: m.PhoneInput })));
 
 export function Guest() {
-  const { selectedRoom, selectedRate, guest, setGuest, goTo } = useBooking();
+  const { selectedRoom, selectedRate, selectedCombo, guest, setGuest, goTo } = useBooking();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [phoneValid, setPhoneValid] = useState(true);
 
@@ -29,10 +29,10 @@ export function Guest() {
     else if (!guest.telephone.trim()) errs.telephone = t("guest.err.telephoneRequired");
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
-    // On passe TOUJOURS par le surclassement : même sans chambre supérieure, l'étape sert à
-    // promouvoir des offres (ex. pack romantique Culture Créole). L'écran gère le cas « vous
-    // avez déjà l'un de nos plus beaux hébergements » tout en affichant les stories.
-    goTo("upgrade");
+    // Combo 2 chambres : parcours simplifié → pas de surclassement, on va directement aux
+    // extras. Sinon on passe TOUJOURS par le surclassement (même sans chambre supérieure :
+    // l'étape promeut des offres, ex. pack romantique Créole, et gère le cas « déjà au top »).
+    goTo(selectedCombo ? "extras" : "upgrade");
   }
 
   return (

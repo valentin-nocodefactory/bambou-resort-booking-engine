@@ -9,7 +9,7 @@ import { t } from "../i18n";
 
 // Récapitulatif sticky : hébergement, tarif, dates, occupants, extras, total.
 export function BookingSummary() {
-  const { selectedRoom, selectedRate, checkIn, checkOut, nightsCount, adults, children, productsTotal, grandTotal } =
+  const { selectedRoom, selectedRate, selectedCombo, checkIn, checkOut, nightsCount, adults, children, productsTotal, grandTotal } =
     useBooking();
 
   const savings =
@@ -22,15 +22,21 @@ export function BookingSummary() {
       <div className="bg-teal-deep px-5 py-4">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-creole-soft">{t("summary.yourStay")}</p>
         <p className="mt-0.5 font-display text-lg text-cream">
-          {selectedRoom ? selectedRoom.name : t("summary.toCompose")}
+          {selectedCombo ? t("summary.combo") : selectedRoom ? selectedRoom.name : t("summary.toCompose")}
         </p>
       </div>
 
       <div className="space-y-3 px-5 py-4 text-sm">
-        {selectedRoom && (
-          <Row icon={<IconBed className="h-4 w-4" />} label={spaceLabel(selectedRoom.spaceType)}>
-            {selectedRate?.name ? qcMeal(selectedRate.name) : "—"}
+        {selectedCombo ? (
+          <Row icon={<IconBed className="h-4 w-4" />} label={t("combo.badge", { count: adults + children })}>
+            {selectedCombo.a.room.name} + {selectedCombo.b.room.name}
           </Row>
+        ) : (
+          selectedRoom && (
+            <Row icon={<IconBed className="h-4 w-4" />} label={spaceLabel(selectedRoom.spaceType)}>
+              {selectedRate?.name ? qcMeal(selectedRate.name) : "—"}
+            </Row>
+          )
         )}
         <Row icon={<IconCalendar className="h-4 w-4" />} label={t("summary.stay")}>
           {checkIn && checkOut ? (

@@ -12,7 +12,7 @@ import { api } from "../lib/api";
 import { getLang } from "../lib/lang";
 import { getUtms } from "../lib/utm";
 import { nights as countNights } from "../lib/format";
-import { buildRooms, shapeProducts, cheapestDrinkProduct, stayCoversNight } from "../lib/shaping";
+import { buildRooms, shapeProducts, cheapestDrinkProduct, stayCoversNight, type Combo } from "../lib/shaping";
 import { setQuebecLocale } from "../lib/quebec";
 import {
   getCurrency,
@@ -200,6 +200,10 @@ interface BookingContextValue extends BookingState {
   // sélection runtime (hydratée depuis les résultats)
   selectedRoom: ShapedRoom | null;
   selectedRate: ShapedRate | null;
+  // Combo 2 chambres (groupe trop grand pour une seule chambre). Non null → parcours
+  // simplifié : pas de surclassement, 2 réservations en une commande. selectedRoom/Rate
+  // pointent alors sur la 1re chambre (compat des composants mono-chambre).
+  selectedCombo: Combo | null;
   availableRooms: ShapedRoom[]; // liste des résultats (pour le surclassement)
   guest: Guest;
   created: ReservationCreateResult | null;
@@ -217,6 +221,7 @@ interface BookingContextValue extends BookingState {
     >,
   ) => void;
   selectRoomRate: (room: ShapedRoom, rate: ShapedRate) => void;
+  selectCombo: (combo: Combo) => void;
   hydrateSelection: (room: ShapedRoom | null, rate: ShapedRate | null) => void;
   setAvailableRooms: (rooms: ShapedRoom[]) => void;
   // Filtre d'affichage des hébergements (page résultats) : change `properties`
@@ -261,6 +266,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<BookingState>(() => ({ ...defaults, ...readUrl() }));
   const [selectedRoom, setSelectedRoom] = useState<ShapedRoom | null>(null);
   const [selectedRate, setSelectedRate] = useState<ShapedRate | null>(null);
+  const [selectedCombo, setSelectedCombo] = useState<Combo | null>(null);
   const [availableRooms, setAvailableRoomsState] = useState<ShapedRoom[]>([]);
   // Réhydratation d'un lien profond partagé : vrai tant que la sélection (chambre/tarif)
   // encodée dans l'URL n'est pas reconstruite, pour ne pas afficher (et faire rebondir)
@@ -369,6 +375,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         if (searchChanged) {
           setSelectedRoom(null);
           setSelectedRate(null);
+          setSelectedCombo(null);
           setAvailableRoomsState([]);
         }
         return {
@@ -393,6 +400,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
 
   const selectRoomRate: BookingContextValue["selectRoomRate"] = useCallback(
     (room, rate) => {
+      setSelectedCombo(null); // sélection d'une chambre unique → on sort de tout combo
       setSelectedRoom(room);
       setSelectedRate(rate);
       setState((s) => ({
@@ -400,6 +408,23 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         roomId: room.categoryId,
         rateId: rate.rateId,
         productIds: validProductsFor(s.productIds, room.property),
+      }));
+    },
+    [validProductsFor],
+  );
+
+  // Sélection d'un combo 2 chambres → parcours simplifié. selectedRoom/Rate pointent sur la
+  // 1re chambre (compat des composants mono-chambre) ; selectedCombo porte les 2 chambres.
+  const selectCombo: BookingContextValue["selectCombo"] = useCallback(
+    (combo) => {
+      setSelectedCombo(combo);
+      setSelectedRoom(combo.a.room);
+      setSelectedRate(combo.a.rate);
+      setState((s) => ({
+        ...s,
+        roomId: combo.a.room.categoryId,
+        rateId: combo.a.rate.rateId,
+        productIds: validProductsFor(s.productIds, combo.property),
       }));
     },
     [validProductsFor],
@@ -431,6 +456,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const clearSelection = useCallback(() => {
     setSelectedRoom(null);
     setSelectedRate(null);
+    setSelectedCombo(null);
     setState((s) => ({ ...s, roomId: null, rateId: null }));
   }, []);
 
@@ -460,6 +486,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const resetAll = useCallback(() => {
     setSelectedRoom(null);
     setSelectedRate(null);
+    setSelectedCombo(null);
     setGuestState(emptyGuest);
     setCreatedState(null);
     setState({ ...defaults });
@@ -591,7 +618,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     [selectedProducts, selectedRoom, state.checkIn, state.checkOut, nightsCount, guestsCount],
   );
 
-  const roomTotal = selectedRate?.totalGross ?? 0;
+  // Combo : hébergement = somme des 2 chambres ; sinon = tarif de la chambre unique.
+  const roomTotal = selectedCombo ? selectedCombo.totalGross : selectedRate?.totalGross ?? 0;
   const grandTotal = roomTotal + productsTotal;
 
   // ── Suivi de panier → n8n (via /api/mews/track) ──────────────────────────────
@@ -658,6 +686,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     reloadHotel: loadHotel,
     selectedRoom,
     selectedRate,
+    selectedCombo,
     availableRooms,
     guest,
     created,
@@ -669,6 +698,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     grandTotal,
     setSearch,
     selectRoomRate,
+    selectCombo,
     hydrateSelection,
     setAvailableRooms,
     setProperties,
