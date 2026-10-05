@@ -13,6 +13,7 @@ import { getLang } from "../lib/lang";
 import { getUtms } from "../lib/utm";
 import { nights as countNights } from "../lib/format";
 import { buildRooms, shapeProducts, cheapestDrinkProduct, stayCoversNight, type Combo } from "../lib/shaping";
+import { REVEILLON_REMISE_IDS } from "../lib/reveillon";
 import { setQuebecLocale } from "../lib/quebec";
 import {
   getCurrency,
@@ -356,7 +357,13 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hotel, hotelError]);
 
-  const products = useMemo(() => shapeProducts(hotel), [hotel]);
+  // On retire les produits « remise réveillon » du catalogue visible : ils sont « proposés
+  // aux clients » côté Mews (obligatoire pour être commandables) mais ne doivent JAMAIS
+  // apparaître dans notre UI/panier — ils sont ajoutés en coulisses à la création (cf. Payment).
+  const products = useMemo(
+    () => shapeProducts(hotel).filter((p) => !REVEILLON_REMISE_IDS.includes(p.id)),
+    [hotel],
+  );
   const imageBaseUrl = hotel?.ImageBaseUrl ?? "";
 
   const patch = useCallback((p: Partial<BookingState>) => setState((s) => ({ ...s, ...p })), []);

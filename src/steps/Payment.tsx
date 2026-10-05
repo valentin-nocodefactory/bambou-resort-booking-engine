@@ -3,6 +3,7 @@ import { useBooking } from "../state/booking";
 import { ApiError, api, errorMessage } from "../lib/api";
 import { eur, money, fmtDate, toUtc } from "../lib/format";
 import { qcMeal } from "../lib/quebec";
+import { reveillonRemiseIds, hasDemiPensionDinner } from "../lib/reveillon";
 import { saveConfirmationSnapshot } from "../lib/confirmationSnapshot";
 import { StepLayout } from "../components/StepLayout";
 import { SecureBadge } from "../components/DataBadge";
@@ -25,6 +26,7 @@ export function Payment() {
     voucherCode,
     productIds,
     products,
+    selectedProducts,
     guest,
     grandTotal,
     airportTransfer,
@@ -67,10 +69,19 @@ export function Payment() {
       return !!p && /PerPerson/i.test(p.chargingMode);
     });
     const forfaitIds = safeProductIds.filter((id) => !perPersonIds.includes(id));
+    // Dédoublonnage réveillon (Culture Créole + dîner demi-pension + séjour couvrant 24/31) :
+    // on ajoute en coulisses les remises −38 €/pers pour annuler le dîner des nuits de réveillon
+    // (déjà inclus). PerPerson → s'applique par occupation de CHAQUE réservation (combo inclus).
+    const remiseIds = reveillonRemiseIds({
+      property: selectedRoom.property,
+      checkIn,
+      checkOut,
+      hasDinner: hasDemiPensionDinner(selectedProducts),
+    });
     try {
       const reservations = selectedCombo
         ? [selectedCombo.a, selectedCombo.b].map((cr, i) => {
-            const ids = i === 0 ? [...perPersonIds, ...forfaitIds] : perPersonIds;
+            const ids = [...perPersonIds, ...(i === 0 ? forfaitIds : []), ...remiseIds];
             return {
               roomCategoryId: cr.room.categoryId,
               startUtc: toUtc(checkIn),
@@ -93,7 +104,7 @@ export function Payment() {
               adults,
               children,
               infants,
-              productIds: safeProductIds.length ? safeProductIds : undefined,
+              productIds: [...safeProductIds, ...remiseIds].length ? [...safeProductIds, ...remiseIds] : undefined,
               voucherCode: voucherCode || undefined,
               notes: guest.notes.trim() || undefined,
             },
