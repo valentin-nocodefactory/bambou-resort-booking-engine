@@ -159,9 +159,9 @@ export function VillaPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-marine/70 via-marine/55 to-marine/85" />
         <div className="relative z-10 mx-auto w-full max-w-3xl px-5 py-6 sm:px-8 sm:py-7">
-          <button type="button" onClick={goHome} aria-label={t("header.home")}>
+          <a href="https://bambouresort.com" aria-label={t("header.home")} className="inline-flex">
             <Brand className="text-cream drop-shadow-[0_1px_12px_rgba(6,26,45,0.55)]" />
-          </button>
+          </a>
           <div className="mt-7 max-w-xl">
             <h1 className="font-display text-4xl leading-tight text-white drop-shadow-[0_2px_20px_rgba(6,26,45,0.5)] sm:text-5xl">
               {t("villa.title")}
