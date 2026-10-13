@@ -85,11 +85,12 @@ export function Results() {
     [allRooms, properties],
   );
 
-  // Combos 2 chambres : UNIQUEMENT si aucune chambre seule n'accueille le groupe (≥ 5 pers,
-  // ≥ 2 adultes). On refait 1-2 appels dispo à la demi-occupation → prix exact par chambre.
+  // Combos 2 chambres : proposés dès que le groupe fait ≥ 5 pers (≥ 2 adultes), EN ALTERNATIVE
+  // aux chambres seules (et seule option quand aucune chambre n'accueille tout le groupe). On
+  // refait 1-2 appels dispo à la demi-occupation → prix exact par chambre.
   useEffect(() => {
     const guests = adults + children;
-    if (loading || error || !data || allRooms.length > 0 || guests < 5) {
+    if (loading || error || !data || guests < 5) {
       setCombos(null);
       return;
     }
@@ -116,7 +117,7 @@ export function Results() {
     return () => {
       alive = false;
     };
-  }, [loading, error, data, allRooms.length, adults, children, infants, checkIn, checkOut, voucherCode, hotel, properties]);
+  }, [loading, error, data, adults, children, infants, checkIn, checkOut, voucherCode, hotel, properties]);
 
   // Coup de cœur (mise en avant) — RÈGLE MÉTIER selon les hébergements cochés + nb de voyageurs.
   const featuredId = useMemo(
@@ -270,6 +271,21 @@ export function Results() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Groupe nombreux : combo 2 chambres proposé EN ALTERNATIVE, sous les chambres seules. */}
+      {!loading && !error && rooms.length > 0 && combos && combos.length > 0 && (
+        <div className="mt-8">
+          <div className="mb-4">
+            <h2 className="font-display text-xl text-ink">{t("combo.altHeading")}</h2>
+            <p className="mt-1 text-sm text-ink/60">{t("combo.altSubheading")}</p>
+          </div>
+          <div className="space-y-4">
+            {combos.slice(0, 4).map((c) => (
+              <ComboCard key={c.key} combo={c} imageBaseUrl={imageBaseUrl} onChoose={() => chooseCombo(c)} />
+            ))}
+          </div>
         </div>
       )}
 

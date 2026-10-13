@@ -326,6 +326,8 @@ const DICT = {
   // ── Combo 2 chambres (groupe trop grand pour une seule chambre) ──────────────
   "combo.heading": { fr: "Votre groupe ne tient pas dans une seule chambre", en: "Your group doesn't fit in a single room" },
   "combo.subheading": { fr: "Voici des combinaisons de 2 chambres qui accueillent tout le monde, dans le même hébergement et avec un seul paiement.", en: "Here are 2-room combinations that fit everyone — same property, single payment." },
+  "combo.altHeading": { fr: "Besoin de plus d'espace ? Réservez 2 chambres", en: "Need more space? Book 2 rooms" },
+  "combo.altSubheading": { fr: "Pour un groupe, combinez 2 chambres dans le même hébergement — chacun son espace, un seul paiement.", en: "For a group, combine 2 rooms in the same property — more space, single payment." },
   "combo.badge": { fr: (p) => `Combo 2 chambres · ${p.count} personnes`, en: (p) => `2-room combo · ${p.count} guests` },
   "combo.note": { fr: "Même hébergement · 1 seul paiement", en: "Same property · single payment" },
   "combo.roomLabel": { fr: (p) => `Chambre ${p.n}`, en: (p) => `Room ${p.n}` },
@@ -343,6 +345,7 @@ const DICT = {
   "roomCard.noFees": { fr: "0 € de frais et commission", en: "€0 fees and commission" },
   "roomCard.breakfastIncl": { fr: "Petit-déj inclus", en: "Breakfast included" },
   "roomCard.dinnerIncl": { fr: "Dîner inclus", en: "Dinner included" },
+  "roomCard.reveillonIncl": { fr: "Réveillon inclus", en: "Festive dinner included" },
   "benefit.sea": { fr: "Vue mer", en: "Sea view" },
   "benefit.exceptional": { fr: "Vue exceptionnelle", en: "Exceptional view" },
   "benefit.garden": { fr: "Vue jardin", en: "Garden view" },

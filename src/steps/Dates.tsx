@@ -40,8 +40,11 @@ export function Dates() {
     adults: adults || 2,
     children: children || 0,
     infants: infants || 0,
-    // Âge de chaque enfant (4-11). OBLIGATOIRE dès qu'il y a des enfants (bloque la recherche).
-    childAges: [] as (number | "")[],
+    // Âge de chaque enfant (4-12). OBLIGATOIRE dès qu'il y a des enfants (bloque la recherche).
+    // Initialisé à la longueur de `children` : au RETOUR en arrière, `children` est restauré (> 0)
+    // alors que les âges ne sont pas mémorisés → sans ce pré-dimensionnement, les pastilles
+    // s'affichent mais `setAge` mapperait un tableau vide (clic sans effet). cf. setAge.
+    childAges: Array.from({ length: children || 0 }, () => "" as number | ""),
     properties: properties?.length ? properties : DEFAULT_PROPERTIES,
   });
   // Type de séjour : « stay » = Hôtel Bambou / Culture Créole (moteur Mews), « villas » =
@@ -386,7 +389,11 @@ function GuestsField({
   const total = adults + children; // bébés non décomptés → hors total « voyageurs »
   // Âge de chaque enfant (4-11) : une PASTILLE par âge → 1 seul tap (au lieu d'un menu
   // déroulant = 2 taps). Le tableau `childAges` est piloté par le parent (obligatoire).
-  const setAge = (i: number, age: number) => onChildAges(childAges.map((x, j) => (j === i ? age : x)));
+  // Robuste même si `childAges` est plus court que `children` (ex. retour en arrière) : on
+  // reconstruit un tableau à la longueur `children` avant d'écrire l'âge au rang i, pour que le
+  // clic sur une pastille soit TOUJOURS pris en compte (sinon .map sur un tableau vide = no-op).
+  const setAge = (i: number, age: number) =>
+    onChildAges(Array.from({ length: children }, (_, j) => (j === i ? age : childAges[j] ?? "")));
 
   useEffect(() => {
     if (!open) return;

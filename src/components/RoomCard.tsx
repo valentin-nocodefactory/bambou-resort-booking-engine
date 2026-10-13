@@ -3,7 +3,8 @@ import { spaceLabel } from "../lib/shaping";
 import { qcMeal } from "../lib/quebec";
 import type { ShapedRoom } from "../types/mews";
 import { Photo } from "./Photo";
-import { RoomBenefitsOverlay, mealTags } from "./RoomTags";
+import { RoomBenefitsOverlay, mealTags, reveillonTags } from "./RoomTags";
+import { useBooking } from "../state/booking";
 import { FavoriteBadge, HotBadge, SavingsBadge, ScarcityBadge, ViewersNudge, seeded } from "./conversion";
 import { IconArrowRight, IconBed, IconCheck } from "./icons";
 import { t } from "../i18n";
@@ -30,6 +31,7 @@ export function RoomCard({
   // « Voir le détail » séparé : tout le monde passe par les détails.
   onDetails: () => void;
 }) {
+  const { checkIn, checkOut } = useBooking();
   const cheapest = room.rates[0];
   // RÉEL (Mews) : AvailableRoomCount → « Plus que N chambres ».
   const lowStock = room.availableRoomCount > 0 && room.availableRoomCount <= 3;
@@ -98,8 +100,9 @@ export function RoomCard({
           <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
             <IconCheck className="h-3.5 w-3.5" /> {t("roomCard.noFees")}
           </span>
-          {/* Repas inclus dans le tarif (Hôtel = demi-pension, Culture Créole = petit-déj). */}
-          {mealTags(room).map((meal) => (
+          {/* Repas inclus dans le tarif (Hôtel = demi-pension, Culture Créole = petit-déj)
+              + « Réveillon inclus » quand le séjour couvre le 24 ou le 31/12. */}
+          {[...mealTags(room), ...reveillonTags(checkIn, checkOut)].map((meal) => (
             <span
               key={meal.key}
               className="inline-flex w-fit items-center gap-1 rounded-full bg-turquoise/10 px-2.5 py-1 text-[11px] font-semibold text-teal-deep"

@@ -1,8 +1,9 @@
 import type { ComponentType, SVGProps } from "react";
-import { includedMeals, roomBenefits } from "../lib/shaping";
+import { includedMeals, roomBenefits, stayCoversNight } from "../lib/shaping";
 import { qcMeal } from "../lib/quebec";
+import { useBooking } from "../state/booking";
 import type { ShapedRoom } from "../types/mews";
-import { IconWave, IconLeaf, IconStairs, IconGroundFloor, IconCroissant, IconCloche, IconStar, IconPalm } from "./icons";
+import { IconWave, IconLeaf, IconStairs, IconGroundFloor, IconCroissant, IconCloche, IconStar, IconPalm, IconSparkles } from "./icons";
 import { t, type TKey } from "../i18n";
 
 type IconC = ComponentType<SVGProps<SVGSVGElement>>;
@@ -34,6 +35,15 @@ export function mealTags(room: ShapedRoom): Tag[] {
   return includedMeals(room).map((m) => ({ key: m, label: qcMeal(t(MEAL[m].key)), Icon: MEAL[m].Icon }));
 }
 
+// Tag « Réveillon inclus » : les nuits de réveillon (24/12 Noël, 31/12 Saint-Sylvestre), le dîner
+// de gala est compris dans le séjour (supplément automatique à l'Hôtel Bambou, dîner déjà inclus
+// en Culture Créole). Affiché à côté des repas inclus dès que le séjour couvre une de ces nuits.
+export function reveillonTags(checkIn: string, checkOut: string): Tag[] {
+  const covers =
+    stayCoversNight(checkIn, checkOut, 12, 24) || stayCoversNight(checkIn, checkOut, 12, 31);
+  return covers ? [{ key: "reveillon", label: t("roomCard.reveillonIncl"), Icon: IconSparkles }] : [];
+}
+
 // Tags bénéfice en OVERLAY sur la photo (fond sombre translucide, lisibles sur l'image).
 export function RoomBenefitsOverlay({ room }: { room: ShapedRoom }) {
   const tags = benefitTags(room);
@@ -54,7 +64,8 @@ export function RoomBenefitsOverlay({ room }: { room: ShapedRoom }) {
 
 // Bénéfices + repas repris dans le PANNEAU de détails (chips clairs).
 export function RoomTagsPanel({ room }: { room: ShapedRoom }) {
-  const tags = [...benefitTags(room), ...mealTags(room)];
+  const { checkIn, checkOut } = useBooking();
+  const tags = [...benefitTags(room), ...mealTags(room), ...reveillonTags(checkIn, checkOut)];
   if (!tags.length) return null;
   return (
     <div className="flex flex-wrap gap-1.5">

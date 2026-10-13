@@ -503,14 +503,14 @@ const EXTRAS_LAYOUT: Record<string, { label: TKey; items: RegExp[] }[]> = {
       /flottant/i,                 // Supplément Petit déjeuner flottant en mer
       /plage/i,                    // Supplément Dîner sur la plage
     ] },
+    { label: "prodCat.services", items: [
+      /facilit/i,                  // Crédit boisson – Facilité (60 €)
+      /libert/i,                   // Crédit boisson – Liberté (100 €)
+    ] },
     { label: "prodCat.comfort", items: [
       /douce escale|romantique/i,  // Douce escale – Accueil romantique
       /champagne/i,                // Champagne Collet
       /anniversaire/i,             // Joyeux Séjour – Anniversaire (Enfant & Adulte)
-    ] },
-    { label: "prodCat.services", items: [
-      /facilit/i,                  // Crédit boisson – Facilité (60 €)
-      /libert/i,                   // Crédit boisson – Liberté (100 €)
     ] },
   ],
   creole: [
@@ -520,14 +520,14 @@ const EXTRAS_LAYOUT: Record<string, { label: TKey; items: RegExp[] }[]> = {
       /flottant/i,                 // Supplément Petit déjeuner flottant en mer
       /plage/i,                    // Dîner sur la plage
     ] },
+    { label: "prodCat.services", items: [
+      /facilit/i,                  // Crédit boisson – Facilité (60 €)
+      /libert/i,                   // Crédit boisson – Liberté (100 €)
+    ] },
     { label: "prodCat.comfort", items: [
       /douce escale|romantique/i,  // Douce escale – Accueil romantique
       /champagne/i,                // Champagne Jacquart
       /anniversaire/i,             // Joyeux séjour – Anniversaire
-    ] },
-    { label: "prodCat.services", items: [
-      /facilit/i,                  // Crédit boisson – Facilité (60 €)
-      /libert/i,                   // Crédit boisson – Liberté (100 €)
     ] },
   ],
 };
