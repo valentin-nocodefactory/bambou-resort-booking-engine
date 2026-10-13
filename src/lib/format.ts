@@ -86,10 +86,33 @@ export function money(value: number | null | undefined, opts?: { decimals?: 0 | 
   return meta.position === "prefix" ? `${meta.symbol}${num}` : `${num} ${meta.symbol}`;
 }
 
-// Normalise une date (yyyy-mm-dd ou ISO) en ISO 8601 UTC minuit.
+// Fuseau de l'établissement = `IanaTimeZoneIdentifier` de la config Mews (Enterprise).
+// Les dates de séjour sont des dates CALENDRIER de l'hôtel : l'API Mews attend un
+// StartUtc/EndUtc = l'instant UTC de MINUIT LOCAL de l'hôtel. Envoyer un minuit UTC
+// (T00:00:00Z) décalait la réservation d'UN JOUR EN ARRIÈRE sur un fuseau à l'ouest de UTC
+// (ici UTC−4 → Mews réservait le 22 pour un choix du 23). On ancre donc à minuit local.
+const HOTEL_TZ = "America/Caracas"; // UTC−4 (= config Mews, même enterprise pour les 3 hébergements)
+
+// Décalage (minutes, local − UTC) d'un fuseau IANA à un instant donné (gère un éventuel DST).
+function tzOffsetMinutes(tz: string, utcMs: number): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  }).formatToParts(new Date(utcMs));
+  const p: Record<string, string> = {};
+  for (const x of parts) p[x.type] = x.value;
+  return Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - utcMs) / 60_000);
+}
+
+// Normalise une date (yyyy-mm-dd) en ISO 8601 UTC = MINUIT LOCAL DE L'HÔTEL (≠ minuit UTC).
+// Un ISO complet (déjà horodaté) passe tel quel.
 export function toUtc(date: string): string {
   if (!date) return date;
-  return /T/.test(date) ? date : `${date}T00:00:00Z`;
+  if (/T/.test(date)) return date;
+  const [y, m, d] = date.split("-").map(Number);
+  const utcMidnight = Date.UTC(y, m - 1, d);
+  const offMin = tzOffsetMinutes(HOTEL_TZ, utcMidnight);
+  return new Date(utcMidnight - offMin * 60_000).toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
 // Nombre de nuits entre deux dates (calcul en UTC, robuste DST).
