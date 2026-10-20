@@ -33,14 +33,16 @@ export function DateRangePicker({
   onChange,
   minDate = isoDay(0),
   blockHolidayMin = true,
+  minNights = HOLIDAY_MIN_NIGHTS,
 }: {
   checkIn: string;
   checkOut: string;
   onChange: (checkIn: string, checkOut: string) => void;
   minDate?: string;
-  // Applique le minimum 4 nuits pendant les fêtes (moteur Mews). Désactivé pour la demande
-  // de villa (formulaire libre, « pas de blocages de dates »).
+  // Applique un séjour minimum pendant les fêtes (24/12–01/01), directement dans le calendrier.
   blockHolidayMin?: boolean;
+  // Nombre de nuits minimum pendant les fêtes : 4 par défaut (moteur hôtels), 6 pour les villas.
+  minNights?: number;
 }) {
   const [open, setOpen] = useState(false);
   const [hover, setHover] = useState<string | null>(null);
@@ -78,7 +80,7 @@ export function DateRangePicker({
     !!checkIn &&
     !checkOut &&
     candidateEnd > checkIn &&
-    nights(checkIn, candidateEnd) < HOLIDAY_MIN_NIGHTS &&
+    nights(checkIn, candidateEnd) < minNights &&
     stayCoversHoliday(checkIn, candidateEnd);
 
   function pick(day: string) {
@@ -204,7 +206,7 @@ export function DateRangePicker({
                             role="tooltip"
                             className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1.5 hidden w-36 -translate-x-1/2 rounded-lg bg-marine px-2 py-1.5 text-center text-[11px] font-medium leading-tight text-cream shadow-float group-hover:block"
                           >
-                            {t("datePicker.holidayMin")}
+                            {t("datePicker.holidayMin", { count: minNights })}
                           </span>
                         )}
                       </div>

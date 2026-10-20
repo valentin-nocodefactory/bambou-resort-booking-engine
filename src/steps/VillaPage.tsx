@@ -3,7 +3,7 @@ import { Brand } from "../components/Brand";
 import { DateRangePicker } from "../components/DateRangePicker";
 import { IconArrowRight, IconCheck, IconChevron, IconClose, IconExpand, IconMinus, IconPlus, IconUsers } from "../components/icons";
 import { EMAIL_RE, villaImg, nights } from "../lib/format";
-import { stayCoversNight } from "../lib/shaping";
+import { stayCoversHoliday } from "../lib/shaping";
 import { getLang } from "../lib/lang";
 import { getUtms } from "../lib/utm";
 import { api } from "../lib/api";
@@ -127,7 +127,7 @@ export function VillaPage() {
     else if (
       form.checkIn &&
       form.checkOut &&
-      (stayCoversNight(form.checkIn, form.checkOut, 12, 24) || stayCoversNight(form.checkIn, form.checkOut, 12, 31)) &&
+      stayCoversHoliday(form.checkIn, form.checkOut) &&
       nights(form.checkIn, form.checkOut) < VILLA_HOLIDAY_MIN_NIGHTS
     )
       errs.dates = t("villaForm.errHolidayMin");
@@ -239,7 +239,7 @@ export function VillaPage() {
                   checkIn={form.checkIn}
                   checkOut={form.checkOut}
                   onChange={(ci, co) => set({ checkIn: ci, checkOut: co })}
-                  blockHolidayMin={false}
+                  minNights={VILLA_HOLIDAY_MIN_NIGHTS}
                 />
                 <Check checked={form.flexible} onChange={(v) => set({ flexible: v })} label={t("villaForm.flexible")} className="mt-3" />
               </Field>

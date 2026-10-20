@@ -450,7 +450,7 @@ const DICT = {
   "datePicker.prevMonth": { fr: "Mois précédent", en: "Previous month" },
   "datePicker.nextMonth": { fr: "Mois suivant", en: "Next month" },
   "datePicker.selectDates": { fr: "Sélectionnez vos dates", en: "Select your dates" },
-  "datePicker.holidayMin": { fr: "4 nuits minimum pendant Noël ou le jour de l'an", en: "4-night minimum over Christmas or New Year" },
+  "datePicker.holidayMin": { fr: (p) => `${p.count} nuits minimum pendant Noël ou le jour de l'an`, en: (p) => `${p.count}-night minimum over Christmas or New Year` },
   "datePicker.nights": { fr: (p) => `${p.count} nuit${Number(p.count) > 1 ? "s" : ""}`, en: (p) => `${p.count} night${Number(p.count) > 1 ? "s" : ""}` },
   "datePicker.clear": { fr: "Effacer les dates", en: "Clear dates" },
   "datePicker.apply": { fr: "Appliquer", en: "Apply" },
