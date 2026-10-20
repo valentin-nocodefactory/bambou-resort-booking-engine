@@ -67,6 +67,9 @@ export interface Guest {
   nationalityCode: string;
   sendMarketingEmails: boolean;
   notes: string;
+  // Combo 2 chambres + groupe 100 % adultes : consentement à l'attribution de chambres
+  // communicantes/attenantes selon dispo (priorité aux familles avec jeunes enfants). Bloquant.
+  comboConsent: boolean;
 }
 
 const emptyGuest: Guest = {
@@ -77,6 +80,7 @@ const emptyGuest: Guest = {
   nationalityCode: "FR",
   sendMarketingEmails: false,
   notes: "",
+  comboConsent: false,
 };
 
 // Note ajoutée AUTOMATIQUEMENT dans les notes de réservation dès qu'il y a un bébé en berceau
@@ -188,6 +192,11 @@ function writeUrl(s: BookingState, g: Guest) {
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────
+// Booking engine custom chargé par un code voucher (résolu via /api/mews/voucher → table
+// voucher_configs). `code` = le voucher saisi ; `configId` = la config Mews à interroger ;
+// `property` = hébergement (hotel/creole/villas) pour les catégories d'âge ; `label` = libellé.
+export type VoucherConfig = { configId: string; property: string; label: string; code: string };
+
 interface BookingContextValue extends BookingState {
   // config hôtel
   hotel: HotelConfig | null;
@@ -205,6 +214,9 @@ interface BookingContextValue extends BookingState {
   // simplifié : pas de surclassement, 2 réservations en une commande. selectedRoom/Rate
   // pointent alors sur la 1re chambre (compat des composants mono-chambre).
   selectedCombo: Combo | null;
+  // Mode voucher : booking engine custom chargé via un code voucher. Non null → le moteur
+  // interroge CETTE config (sélecteur d'hébergement masqué). Résolu depuis `voucherCode`.
+  voucherConfig: VoucherConfig | null;
   availableRooms: ShapedRoom[]; // liste des résultats (pour le surclassement)
   guest: Guest;
   created: ReservationCreateResult | null;
@@ -223,6 +235,8 @@ interface BookingContextValue extends BookingState {
   ) => void;
   selectRoomRate: (room: ShapedRoom, rate: ShapedRate) => void;
   selectCombo: (combo: Combo) => void;
+  // Charge (ou retire si null) un booking engine custom depuis un code voucher déjà résolu.
+  setVoucherConfig: (vc: VoucherConfig | null) => void;
   hydrateSelection: (room: ShapedRoom | null, rate: ShapedRate | null) => void;
   setAvailableRooms: (rooms: ShapedRoom[]) => void;
   // Filtre d'affichage des hébergements (page résultats) : change `properties`
@@ -268,6 +282,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [selectedRoom, setSelectedRoom] = useState<ShapedRoom | null>(null);
   const [selectedRate, setSelectedRate] = useState<ShapedRate | null>(null);
   const [selectedCombo, setSelectedCombo] = useState<Combo | null>(null);
+  const [voucherConfig, setVoucherConfigState] = useState<VoucherConfig | null>(null);
   const [availableRooms, setAvailableRoomsState] = useState<ShapedRoom[]>([]);
   // Réhydratation d'un lien profond partagé : vrai tant que la sélection (chambre/tarif)
   // encodée dans l'URL n'est pas reconstruite, pour ne pas afficher (et faire rebondir)
@@ -367,6 +382,40 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const imageBaseUrl = hotel?.ImageBaseUrl ?? "";
 
   const patch = useCallback((p: Partial<BookingState>) => setState((s) => ({ ...s, ...p })), []);
+
+  // Charge/retire un booking engine custom (voucher). Synchronise le code dans l'état (→ URL
+  // ?voucher=, transmis à la dispo/résa). null = retour au mode standard (3 hébergements).
+  const setVoucherConfig = useCallback(
+    (vc: VoucherConfig | null) => {
+      setVoucherConfigState(vc);
+      patch({ voucherCode: vc?.code ?? "" });
+    },
+    [patch],
+  );
+
+  // Lien profond / rechargement : un code voucher présent dans l'URL mais pas encore résolu en
+  // config → on le résout une fois (back-office) pour re-basculer le moteur sur la bonne config.
+  // L'écran Dates, lui, résout à la saisie et appelle setVoucherConfig directement.
+  const voucherTriedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const code = state.voucherCode.trim();
+    if (!code) {
+      voucherTriedRef.current = null;
+      return;
+    }
+    if (voucherConfig?.code === code || voucherTriedRef.current === code) return;
+    voucherTriedRef.current = code;
+    let alive = true;
+    void api
+      .resolveVoucher(code)
+      .then((r) => {
+        if (alive && r.config?.configId) setVoucherConfigState({ ...r.config, code });
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [state.voucherCode, voucherConfig]);
 
   const setSearch: BookingContextValue["setSearch"] = useCallback(
     (p) =>
@@ -494,6 +543,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setSelectedRoom(null);
     setSelectedRate(null);
     setSelectedCombo(null);
+    setVoucherConfigState(null);
     setGuestState(emptyGuest);
     setCreatedState(null);
     setState({ ...defaults });
@@ -694,6 +744,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     selectedRoom,
     selectedRate,
     selectedCombo,
+    voucherConfig,
     availableRooms,
     guest,
     created,
@@ -706,6 +757,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setSearch,
     selectRoomRate,
     selectCombo,
+    setVoucherConfig,
     hydrateSelection,
     setAvailableRooms,
     setProperties,

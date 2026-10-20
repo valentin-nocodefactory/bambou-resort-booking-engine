@@ -18,6 +18,7 @@ export function Payment() {
     selectedRoom,
     selectedRate,
     selectedCombo,
+    voucherConfig,
     checkIn,
     checkOut,
     adults,
@@ -111,6 +112,8 @@ export function Payment() {
           ];
       const result = await api.createReservation({
         property: selectedRoom.property ?? undefined,
+        configId: voucherConfig?.configId, // mode voucher : réservation créée sur la config custom
+
         customer: {
           email: guest.email.trim(),
           firstName: guest.firstName.trim(),

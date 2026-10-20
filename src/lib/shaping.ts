@@ -78,6 +78,9 @@ export function buildRooms(
   avail: AvailabilityResponse,
   hotel: HotelConfig | null,
   occupancy: { adults?: number; children?: number; infants?: number } = {},
+  // Mode voucher : le code voucher EST le canal dédié des tarifs partenaires (CSE/COS/Asso.)
+  // → on ne les exclut plus (c'est tout l'intérêt du booking engine associé au voucher).
+  opts: { allowExcludedRates?: boolean } = {},
 ): ShapedRoom[] {
   const rateById = new Map(avail.Rates.map((r) => [r.Id, r]));
   const groupById = new Map<string, RateGroup>(avail.RateGroups.map((g) => [g.Id, g]));
@@ -111,7 +114,7 @@ export function buildRooms(
     for (const [rateId, price] of byRate) {
       const rate = rateById.get(rateId);
       const name = loc(rate?.Name, "Tarif");
-      if (isBookingExcludedRate(name)) continue; // tarif CSE/partenaires : non réservable ici
+      if (!opts.allowExcludedRates && isBookingExcludedRate(name)) continue; // CSE/partenaires : masqué hors canal voucher
       const group = rate ? groupById.get(rate.RateGroupId) : undefined;
       rates.push({
         rateId,
@@ -221,9 +224,10 @@ export function buildCombos(
   bigOcc: Occ,
   smallOcc: Occ,
   allowedProperties: string[] | null,
+  opts: { allowExcludedRates?: boolean } = {},
 ): Combo[] {
-  const roomsBig = buildRooms(availBig, hotel, bigOcc); // chambres qui tiennent la grande moitié
-  const roomsSmall = buildRooms(availSmall, hotel, smallOcc); // … la petite moitié
+  const roomsBig = buildRooms(availBig, hotel, bigOcc, opts); // chambres qui tiennent la grande moitié
+  const roomsSmall = buildRooms(availSmall, hotel, smallOcc, opts); // … la petite moitié
   const byKey = new Map<string, Combo>();
 
   for (const a of roomsBig) {
@@ -232,11 +236,12 @@ export function buildCombos(
     if (!aRate || a.fromGross == null || (a.availableRoomCount ?? 0) < 1) continue;
     for (const b of roomsSmall) {
       if (b.property !== a.property) continue;
+      // Chambre 2 = MÊME catégorie que la chambre 1 (règle métier) : on n'apparie jamais deux
+      // catégories différentes → il faut donc ≥ 2 chambres physiques dispos de cette catégorie.
+      if (b.categoryId !== a.categoryId) continue;
       const bRate = b.rates[0];
-      if (!bRate || b.fromGross == null || (b.availableRoomCount ?? 0) < 1) continue;
-      // Même catégorie des 2 côtés → il faut 2 chambres dispos de ce type.
-      if (a.categoryId === b.categoryId && (a.availableRoomCount ?? 0) < 2) continue;
-      const key = a.property + "|" + [a.categoryId, b.categoryId].sort().join("+");
+      if (!bRate || b.fromGross == null || (a.availableRoomCount ?? 0) < 2) continue;
+      const key = a.property + "|" + a.categoryId;
       const combo: Combo = {
         key,
         property: a.property,

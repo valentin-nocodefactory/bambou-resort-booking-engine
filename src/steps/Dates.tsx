@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useBooking, DEFAULT_PROPERTIES, HIDDEN_PROPERTIES } from "../state/booking";
 import { nights } from "../lib/format";
+import { api } from "../lib/api";
 import { stayCoversHoliday, HOLIDAY_MIN_NIGHTS } from "../lib/shaping";
 import { t, type TKey } from "../i18n";
 import { DateRangePicker } from "../components/DateRangePicker";
@@ -14,6 +15,7 @@ import {
   IconMinus,
   IconPalm,
   IconPlus,
+  IconSparkles,
   IconUsers,
   IconWave,
 } from "../components/icons";
@@ -33,7 +35,8 @@ const PROPERTY_OPTIONS = ALL_PROPERTY_OPTIONS.filter((o) => !HIDDEN_PROPERTIES.i
 // Écran de recherche STANDALONE (pas de hero) — moteur de réservation seul,
 // entouré d'éléments de réassurance / conversion. Style Airbnb.
 export function Dates() {
-  const { checkIn, checkOut, adults, children, infants, properties, setSearch, goTo } = useBooking();
+  const { checkIn, checkOut, adults, children, infants, properties, voucherConfig, setVoucherConfig, setSearch, goTo } =
+    useBooking();
   const [form, setForm] = useState({
     checkIn: checkIn || "",
     checkOut: checkOut || "",
@@ -53,6 +56,33 @@ export function Dates() {
   const [error, setError] = useState("");
   const [guestsOpen, setGuestsOpen] = useState(false);
   const [triedAges, setTriedAges] = useState(false); // a-t-on tenté de valider avec des âges manquants ?
+  // Code voucher → charge un booking engine custom (table voucher_configs, éditable au dashboard).
+  const [voucherOpen, setVoucherOpen] = useState(false);
+  const [voucherInput, setVoucherInput] = useState("");
+  const [voucherBusy, setVoucherBusy] = useState(false);
+  const [voucherErr, setVoucherErr] = useState("");
+
+  async function applyVoucher() {
+    const code = voucherInput.trim().toUpperCase();
+    if (!code) return;
+    setVoucherBusy(true);
+    setVoucherErr("");
+    try {
+      const r = await api.resolveVoucher(code);
+      if (r.config?.configId) {
+        setVoucherConfig({ ...r.config, code });
+        setVoucherOpen(false);
+        setVoucherInput("");
+        setStayType("stay");
+      } else {
+        setVoucherErr(t("dates.voucherUnknown"));
+      }
+    } catch {
+      setVoucherErr(t("dates.voucherUnknown"));
+    } finally {
+      setVoucherBusy(false);
+    }
+  }
 
   // Âges d'enfants incomplets → bloque la recherche (règle métier : on doit connaître l'âge).
   const agesIncomplete =
@@ -131,17 +161,33 @@ export function Dates() {
         {/* Moteur de recherche — juste sous le titre (remonté pour que le calendrier
             s'ouvre dans l'espace libre en dessous, sans scroll) */}
         <form onSubmit={submit} className="relative z-20 mt-6 max-w-4xl rounded-3xl border border-white/50 bg-white/95 p-2.5 shadow-float backdrop-blur sm:p-4">
-          {/* Switcher Hébergement / Villas — les villas mènent à un formulaire dédié (/villa). */}
-          <StayTypeSwitcher value={stayType} onChange={setStayType} />
+          {/* Switcher Hébergement / Villas — masqué en mode voucher (contexte imposé par le code). */}
+          {!voucherConfig ? (
+            <StayTypeSwitcher value={stayType} onChange={setStayType} />
+          ) : (
+            <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 rounded-xl2 border border-turquoise/40 bg-turquoise/10 px-3 py-2">
+              <span className="inline-flex items-center gap-2 text-sm font-semibold text-teal-deep">
+                <IconSparkles className="h-4 w-4 text-turquoise" />
+                {t("dates.voucherActive", { label: voucherConfig.label })}
+              </span>
+              <button
+                type="button"
+                onClick={() => setVoucherConfig(null)}
+                className="text-xs font-semibold text-teal-deep/70 underline underline-offset-2 hover:text-teal-deep"
+              >
+                {t("dates.voucherRemove")}
+              </button>
+            </div>
+          )}
 
           <div
             className={`grid gap-3 lg:items-stretch ${
-              stayType === "villas" ? "lg:grid-cols-[1.6fr_1fr_auto]" : "lg:grid-cols-[1.1fr_1.6fr_1fr_auto]"
+              stayType === "villas" || voucherConfig ? "lg:grid-cols-[1.6fr_1fr_auto]" : "lg:grid-cols-[1.1fr_1.6fr_1fr_auto]"
             }`}
           >
             {/* Hébergements (multi-sélection : 1, 2 ou 3) → filtre les logements. Masqué en
                 mode villas (pas de dropdown : la sélection se fait sur la page /villa). */}
-            {stayType === "stay" && (
+            {stayType === "stay" && !voucherConfig && (
               <PropertiesField
                 options={PROPERTY_OPTIONS}
                 selected={form.properties}
@@ -193,6 +239,51 @@ export function Dates() {
           </div>
 
           {error && <p className="mt-2 px-1 text-sm font-medium text-red-600">{error}</p>}
+
+          {/* Code voucher / congrès → charge le booking engine custom associé. */}
+          {stayType === "stay" && !voucherConfig && (
+            <div className="mt-2 px-1">
+              {!voucherOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setVoucherOpen(true)}
+                  className="text-xs font-semibold text-teal-deep/70 underline underline-offset-2 hover:text-teal-deep"
+                >
+                  {t("dates.voucherToggle")}
+                </button>
+              ) : (
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      value={voucherInput}
+                      onChange={(e) => {
+                        setVoucherInput(e.target.value);
+                        setVoucherErr("");
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void applyVoucher();
+                        }
+                      }}
+                      placeholder={t("dates.voucherPlaceholder")}
+                      className="w-44 rounded-lg border border-ink/15 bg-white px-3 py-1.5 text-sm uppercase text-ink outline-none focus:border-turquoise"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void applyVoucher()}
+                      disabled={voucherBusy || !voucherInput.trim()}
+                      className="btn-primary px-4 py-1.5 text-sm disabled:opacity-60"
+                    >
+                      {voucherBusy ? "…" : t("dates.voucherApply")}
+                    </button>
+                  </div>
+                  {voucherErr && <p className="mt-1 text-xs font-medium text-red-600">{voucherErr}</p>}
+                </div>
+              )}
+            </div>
+          )}
         </form>
 
         {/* Espace en bas → place pour l'ouverture du calendrier + pousse les arguments en bas */}

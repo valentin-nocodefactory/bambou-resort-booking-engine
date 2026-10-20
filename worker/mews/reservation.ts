@@ -36,6 +36,8 @@ interface Body {
   booker?: InCustomer;
   // Hébergement de la chambre choisie (hotel/creole/villas) → détermine la config Mews.
   property?: string;
+  // Mode voucher : config d'un booking engine custom → PRIORITAIRE sur `property`.
+  configId?: string;
   reservations?: InReservation[];
   // URL absolue de retour (origine + chemin) fournie par le front — sert à
   // construire la redirection Payment Request (Voie A). Jamais l'app base url côté front.
@@ -122,8 +124,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const Booker = cleanCustomer(b.booker);
 
   const res = await mewsJson<any>(env, "reservationGroups/create", {
-    // Config de l'hébergement choisi (Bambou/Créole/Villas) ; défaut = config primaire.
-    ConfigurationId: propertyByKey(b.property)?.configId ?? env.MEWS_CONFIG_ID,
+    // Config : voucher (booking engine custom) prioritaire, sinon hébergement choisi, sinon primaire.
+    ConfigurationId:
+      (typeof b.configId === "string" && b.configId) || propertyByKey(b.property)?.configId || env.MEWS_CONFIG_ID,
     HotelId: env.MEWS_HOTEL_ID,
     // Fixe la langue de la page de paiement hébergée + des e-mails de confirmation Mews.
     LanguageCode,

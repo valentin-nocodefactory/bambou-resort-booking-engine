@@ -340,7 +340,7 @@ function Login() {
 function Panel({ email }: { email: string }) {
   const [range, setRange] = useState("30");
   // Onglet du funnel / des demandes : réservations Hôtel (paniers Mews) vs demandes Villa.
-  const [tab, setTab] = useState<"hotel" | "villa" | "settings">("hotel");
+  const [tab, setTab] = useState<"hotel" | "villa" | "settings" | "vouchers">("hotel");
   const [carts, setCarts] = useState<Cart[]>([]);
   const [funnel, setFunnel] = useState<FunnelRow[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -534,7 +534,7 @@ function Panel({ email }: { email: string }) {
 
         {/* Onglets Hôtel (réservations) / Villa (demandes) / Réglages (config villas) */}
         <div className="flex w-fit items-center gap-1 rounded-full bg-white p-1 shadow-card">
-          {(["hotel", "villa", "settings"] as const).map((tb) => (
+          {(["hotel", "villa", "settings", "vouchers"] as const).map((tb) => (
             <button
               key={tb}
               onClick={() => setTab(tb)}
@@ -542,12 +542,14 @@ function Panel({ email }: { email: string }) {
                 tab === tb ? "bg-teal-deep text-cream" : "text-ink/60 hover:text-ink"
               }`}
             >
-              {tb === "hotel" ? "Hôtel" : tb === "villa" ? "Villa" : "Réglages"}
+              {tb === "hotel" ? "Hôtel" : tb === "villa" ? "Villa" : tb === "settings" ? "Réglages" : "Vouchers"}
             </button>
           ))}
         </div>
 
-        {tab === "settings" ? (
+        {tab === "vouchers" ? (
+          <VoucherConfigsManager />
+        ) : tab === "settings" ? (
           <VillasManager />
         ) : tab === "villa" ? (
           <VillaLeadsPanel range={range} />
@@ -1198,6 +1200,177 @@ function VillasManager() {
               ))}
             </div>
           )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ── Vouchers → booking engines (onglet Vouchers) ────────────────────────────
+// Lit/écrit la table Supabase `voucher_configs` (RLS : écriture réservée aux utilisateurs
+// connectés). Mappe un code voucher → un booking engine custom : quand le code est saisi dans
+// le moteur, celui-ci bascule sur cette config (dispo / prix / réservation).
+type VoucherRow = {
+  id: string;
+  code: string;
+  config_id: string;
+  property: string;
+  label: string | null;
+  active: boolean;
+};
+const VC_PROPS = ["hotel", "creole", "villas"] as const;
+const VC_PROP_LABEL: Record<string, string> = { hotel: "Hôtel Bambou", creole: "Culture Créole", villas: "Villas" };
+
+function VoucherConfigsManager() {
+  const [rows, setRows] = useState<VoucherRow[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("voucher_configs")
+      .select("id,code,config_id,property,label,active")
+      .order("created_at", { ascending: true });
+    if (error) setErr(error.message);
+    else {
+      setErr(null);
+      setRows((data ?? []) as VoucherRow[]);
+    }
+  }, []);
+  useEffect(() => {
+    if (!rows) void load();
+  }, [rows, load]);
+
+  const patch = (id: string, p: Partial<VoucherRow>) =>
+    setRows((rs) => rs?.map((r) => (r.id === id ? { ...r, ...p } : r)) ?? null);
+
+  const save = async (r: VoucherRow) => {
+    const code = r.code.trim().toUpperCase();
+    const configId = r.config_id.trim();
+    if (!code || !configId) {
+      setErr("Code et ConfigurationId sont obligatoires.");
+      return;
+    }
+    setSavingId(r.id);
+    setSavedId(null);
+    const { error } = await supabase
+      .from("voucher_configs")
+      .update({ code, config_id: configId, property: r.property, label: r.label, active: r.active, updated_at: new Date().toISOString() })
+      .eq("id", r.id);
+    setSavingId(null);
+    if (error) setErr(error.message);
+    else {
+      setErr(null);
+      patch(r.id, { code, config_id: configId });
+      setSavedId(r.id);
+      setTimeout(() => setSavedId((s) => (s === r.id ? null : s)), 2500);
+    }
+  };
+
+  const add = async () => {
+    const { data, error } = await supabase
+      .from("voucher_configs")
+      .insert({ code: "", config_id: "", property: "hotel", label: "", active: true })
+      .select("id,code,config_id,property,label,active")
+      .single();
+    if (error) setErr(error.message);
+    else if (data) setRows((rs) => [...(rs ?? []), data as VoucherRow]);
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("voucher_configs").delete().eq("id", id);
+    if (error) setErr(error.message);
+    else setRows((rs) => rs?.filter((r) => r.id !== id) ?? null);
+  };
+
+  return (
+    <section className="card p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-display text-lg text-ink">Vouchers → booking engines</h2>
+          <p className="mt-0.5 text-sm text-ink/55">
+            Un code saisi dans le moteur charge la config associée (dispo, prix, réservation sur ce booking engine).
+          </p>
+        </div>
+        <button type="button" onClick={() => void add()} className="btn-primary text-sm">
+          + Ajouter
+        </button>
+      </div>
+      {err && <p className="mb-3 text-sm text-red-600">Erreur : {err}</p>}
+      {!rows ? (
+        <p className="text-sm text-ink/50">Chargement…</p>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-ink/50">Aucun voucher. Cliquez « + Ajouter ».</p>
+      ) : (
+        <div className="space-y-3">
+          {rows.map((r) => (
+            <div key={r.id} className="grid gap-3 rounded-xl2 border border-ink/10 p-4 sm:grid-cols-[9rem_1fr_9rem_6rem] sm:items-end">
+              <div>
+                <label className={labelCls}>Code</label>
+                <input
+                  className={`${inputCls} uppercase`}
+                  value={r.code}
+                  onChange={(e) => patch(r.id, { code: e.target.value })}
+                  placeholder="CARIBCONGRES"
+                />
+              </div>
+              <div>
+                <label className={labelCls}>ConfigurationId (booking engine)</label>
+                <input
+                  className={`${inputCls} font-mono text-xs`}
+                  value={r.config_id}
+                  onChange={(e) => patch(r.id, { config_id: e.target.value })}
+                  placeholder="2bd5d00d-…"
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Hébergement</label>
+                <select className={inputCls} value={r.property} onChange={(e) => patch(r.id, { property: e.target.value })}>
+                  {VC_PROPS.map((p) => (
+                    <option key={p} value={p}>
+                      {VC_PROP_LABEL[p]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <label className={`flex items-center gap-2 pb-2 text-xs ${r.active ? "text-ink" : "text-ink/50"}`}>
+                <input
+                  type="checkbox"
+                  checked={r.active}
+                  onChange={(e) => patch(r.id, { active: e.target.checked })}
+                  className="h-4 w-4 accent-turquoise"
+                />
+                {r.active ? "Actif" : "Inactif"}
+              </label>
+              <div className="sm:col-span-4">
+                <label className={labelCls}>Libellé (affiché au client)</label>
+                <input
+                  className={inputCls}
+                  value={r.label ?? ""}
+                  onChange={(e) => patch(r.id, { label: e.target.value })}
+                  placeholder="Congrès Caraïbes"
+                />
+              </div>
+              <div className="flex items-center gap-4 sm:col-span-4">
+                <button
+                  type="button"
+                  onClick={() => void save(r)}
+                  disabled={savingId === r.id}
+                  className="btn-primary text-sm disabled:opacity-60"
+                >
+                  {savingId === r.id ? "Enregistrement…" : savedId === r.id ? "Enregistré ✓" : "Enregistrer"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void remove(r.id)}
+                  className="text-sm font-semibold text-red-600/80 hover:text-red-600"
+                >
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </section>

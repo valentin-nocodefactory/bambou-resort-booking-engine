@@ -20,6 +20,11 @@ interface Body {
   infants?: number; // bébés en berceau — gratuits ET non décomptés (cf. occupancyForProperty)
   properties?: string[]; // clés d'hébergements (hotel/creole/villas). Vide/absent = tous.
   voucherCode?: string;
+  // Mode « voucher » : un code saisi mappé à un booking engine custom → on interroge UNIQUEMENT
+  // cette config (au lieu des 3 hébergements). `voucherProperty` donne les catégories d'âge à
+  // utiliser (hotel/creole/villas). Résolu en amont par /api/mews/voucher (table voucher_configs).
+  voucherConfigId?: string;
+  voucherProperty?: string;
   languageCode?: string; // fr-FR | en-GB — localise noms/descriptions de chambres & tarifs.
 }
 
@@ -39,11 +44,16 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   // décrémenter la dispo ; ailleurs (Villas) il est simplement consigné en note à la résa.
   const infants = clampInt(b.infants, 0, 10, 0);
 
-  // Hébergements demandés (whitelist stricte). Vide/absent → tous.
+  // Mode voucher : un booking engine custom unique (catégories d'âge de `voucherProperty`).
+  // Sinon : hébergements demandés (whitelist stricte ; vide/absent → tous).
+  const voucherConfigId = typeof b.voucherConfigId === "string" && b.voucherConfigId ? b.voucherConfigId : undefined;
+  const voucherProp = voucherConfigId ? propertyByKey(b.voucherProperty) : undefined;
   const requested =
-    Array.isArray(b.properties) && b.properties.length
-      ? b.properties.map(propertyByKey).filter((p): p is NonNullable<typeof p> => !!p)
-      : PROPERTIES;
+    voucherConfigId && voucherProp
+      ? [{ ...voucherProp, configId: voucherConfigId }]
+      : Array.isArray(b.properties) && b.properties.length
+        ? b.properties.map(propertyByKey).filter((p): p is NonNullable<typeof p> => !!p)
+        : PROPERTIES;
   // Enfants (4-12) : un hébergement sans catégorie enfant ne peut pas les accueillir → écarté
   // si children > 0. Bébés (<4) : les hébergements « adultes uniquement » (Créole) sont AUSSI
   // écartés dès qu'il y a un bébé. (Hôtel & Villas gardent les bébés.)

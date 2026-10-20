@@ -9,9 +9,13 @@ import { IconArrowRight } from "../components/icons";
 const PhoneInput = lazy(() => import("../components/PhoneInput").then((m) => ({ default: m.PhoneInput })));
 
 export function Guest() {
-  const { selectedRoom, selectedRate, selectedCombo, guest, setGuest, goTo } = useBooking();
+  const { selectedRoom, selectedRate, selectedCombo, children, infants, guest, setGuest, goTo } = useBooking();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [phoneValid, setPhoneValid] = useState(true);
+
+  // Combo 2 chambres AVEC un groupe 100 % adultes (ni enfant 4-12, ni bébé 0-3) → consentement
+  // bloquant : chambres communicantes/attenantes selon dispo, priorité aux familles avec enfants.
+  const needsComboConsent = !!selectedCombo && children === 0 && infants === 0;
 
   // Garde-fou : pas de sélection → retour aux résultats.
   useEffect(() => {
@@ -27,6 +31,7 @@ export function Guest() {
     // Téléphone OBLIGATOIRE (Culture Créole l'exige côté Mews ; requis partout par choix).
     if (!phoneValid) errs.telephone = t("guest.err.telephone");
     else if (!guest.telephone.trim()) errs.telephone = t("guest.err.telephoneRequired");
+    if (needsComboConsent && !guest.comboConsent) errs.comboConsent = t("guest.err.comboConsent");
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
     // Combo 2 chambres : parcours simplifié → pas de surclassement, on va directement aux
@@ -105,6 +110,27 @@ export function Guest() {
           />
           {t("guest.marketing")}
         </label>
+
+        {needsComboConsent && (
+          <div>
+            <label
+              className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-sm text-ink/80 transition ${
+                errors.comboConsent ? "border-red-300 bg-red-50" : "border-turquoise/40 bg-turquoise/5"
+              }`}
+            >
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 accent-turquoise"
+                checked={guest.comboConsent}
+                onChange={(e) => setGuest({ comboConsent: e.target.checked })}
+              />
+              <span>
+                {t("guest.comboConsent")} <span className="text-creole">*</span>
+              </span>
+            </label>
+            {errors.comboConsent && <p className="mt-1 text-xs font-medium text-red-600">{errors.comboConsent}</p>}
+          </div>
+        )}
 
         <div className="flex justify-end pt-1">
           <button type="submit" className="btn-primary">

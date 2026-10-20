@@ -23,6 +23,7 @@ export function Results() {
     children,
     infants,
     voucherCode,
+    voucherConfig,
     properties,
     nightsCount,
     roomId,
@@ -56,6 +57,12 @@ export function Results() {
     if (!checkIn || !checkOut) goTo("dates");
   }, [checkIn, checkOut, goTo]);
 
+  // Mode voucher : on interroge UNIQUEMENT la config du booking engine custom (sinon les 3
+  // hébergements standard). Résolu dans le state depuis le code voucher saisi.
+  const voucherOverride = voucherConfig
+    ? { voucherConfigId: voucherConfig.configId, voucherProperty: voucherConfig.property }
+    : {};
+
   // On interroge TOUS les hébergements (pas de filtre `properties` côté requête) :
   // le filtre est appliqué à l'affichage, ce qui permet de compter les hébergements
   // NON cochés dispos et de les proposer en teaser (bascule instantanée, sans refetch).
@@ -64,19 +71,20 @@ export function Results() {
     setLoading(true);
     setError(null);
     api
-      .availability({ checkIn, checkOut, adults, children, infants, voucherCode })
+      .availability({ checkIn, checkOut, adults, children, infants, voucherCode, ...voucherOverride })
       .then((res) => alive && setData(res))
       .catch((e) => alive && setError(errorMessage(e)))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [checkIn, checkOut, adults, children, infants, voucherCode, reloadKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkIn, checkOut, adults, children, infants, voucherCode, voucherConfig?.configId, reloadKey]);
 
   // Toutes les chambres dispos (tous hébergements), taguées par `property`.
   const allRooms = useMemo(
-    () => (data ? buildRooms(data, hotel, { adults, children, infants }) : []),
-    [data, hotel, adults, children, infants],
+    () => (data ? buildRooms(data, hotel, { adults, children, infants }, { allowExcludedRates: !!voucherConfig }) : []),
+    [data, hotel, adults, children, infants, voucherConfig],
   );
 
   // Filtre d'affichage : hébergements cochés (une chambre sans property reste visible).
@@ -103,21 +111,22 @@ export function Results() {
     setCombosLoading(true);
     const same = split.big.adults === split.small.adults && split.big.children === split.small.children;
     const fetchOcc = (o: typeof split.big) =>
-      api.availability({ checkIn, checkOut, adults: o.adults, children: o.children, infants: o.infants, voucherCode });
+      api.availability({ checkIn, checkOut, adults: o.adults, children: o.children, infants: o.infants, voucherCode, ...voucherOverride });
     Promise.all(same ? [fetchOcc(split.big)] : [fetchOcc(split.big), fetchOcc(split.small)])
       .then((results) => {
         if (!alive) return;
         const bigRes = results[0];
         if (!bigRes) return setCombos([]);
         const smallRes = same ? bigRes : results[1] ?? bigRes;
-        setCombos(buildCombos(bigRes, smallRes, hotel, split.big, split.small, properties));
+        setCombos(buildCombos(bigRes, smallRes, hotel, split.big, split.small, properties, { allowExcludedRates: !!voucherConfig }));
       })
       .catch(() => alive && setCombos([]))
       .finally(() => alive && setCombosLoading(false));
     return () => {
       alive = false;
     };
-  }, [loading, error, data, adults, children, infants, checkIn, checkOut, voucherCode, hotel, properties]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, error, data, adults, children, infants, checkIn, checkOut, voucherCode, voucherConfig?.configId, hotel, properties]);
 
   // Coup de cœur (mise en avant) — RÈGLE MÉTIER selon les hébergements cochés + nb de voyageurs.
   const featuredId = useMemo(

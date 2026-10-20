@@ -82,6 +82,15 @@ export interface SearchParams {
   infants: number; // bébés en berceau — gratuits + non décomptés
   voucherCode?: string;
   properties?: string[]; // hébergements cochés (hotel/creole/villas)
+  // Mode voucher : booking engine custom unique (config + hébergement pour les catégories d'âge).
+  voucherConfigId?: string;
+  voucherProperty?: string;
+}
+
+// Réponse de /api/mews/voucher : validité Mews + config associée (back-office) si mappée.
+export interface VoucherResolve {
+  valid: boolean;
+  config: { configId: string; property: string; label: string } | null;
 }
 
 export interface GuestPayload {
@@ -125,6 +134,7 @@ export const api = {
         languageCode: mewsLang(),
         ...(p.voucherCode ? { voucherCode: p.voucherCode } : {}),
         ...(p.properties?.length ? { properties: p.properties } : {}),
+        ...(p.voucherConfigId ? { voucherConfigId: p.voucherConfigId, voucherProperty: p.voucherProperty } : {}),
       },
       {
         label: "Disponibilités & prix",
@@ -163,6 +173,7 @@ export const api = {
     customer: GuestPayload;
     booker?: GuestPayload;
     property?: string; // hébergement de la chambre choisie → config Mews côté serveur
+    configId?: string; // mode voucher : config du booking engine custom (prioritaire)
     reservations: ReservationLine[];
     returnUrl?: string;
   }) =>
@@ -183,10 +194,10 @@ export const api = {
       why: "Reconstruit le lien de paiement Mews pour un règlement encore en attente (bouton « Reprendre le paiement »).",
     }),
 
-  validateVoucher: (voucherCode: string) =>
-    post<unknown>("voucher", { voucherCode }, {
-      label: "Validation du code promo",
-      why: "Vérifie la validité d'un code promotionnel ; une nouvelle recherche avec ce code débloque les tarifs privés.",
+  resolveVoucher: (voucherCode: string) =>
+    post<VoucherResolve>("voucher", { voucherCode }, {
+      label: "Code voucher",
+      why: "Vérifie un code voucher et, s'il est associé à un booking engine dans le back-office, renvoie la config à charger (le moteur bascule dessus). Sinon, le code débloque les tarifs privés sur l'offre standard.",
     }),
 
   // Détection best-effort du pays via l'IP (Cloudflare). Pré-remplit l'indicatif
