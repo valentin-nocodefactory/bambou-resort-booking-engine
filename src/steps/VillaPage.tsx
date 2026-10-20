@@ -2,7 +2,8 @@ import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Brand } from "../components/Brand";
 import { DateRangePicker } from "../components/DateRangePicker";
 import { IconArrowRight, IconCheck, IconChevron, IconClose, IconExpand, IconMinus, IconPlus, IconUsers } from "../components/icons";
-import { EMAIL_RE, villaImg } from "../lib/format";
+import { EMAIL_RE, villaImg, nights } from "../lib/format";
+import { stayCoversNight } from "../lib/shaping";
 import { getLang } from "../lib/lang";
 import { getUtms } from "../lib/utm";
 import { api } from "../lib/api";
@@ -27,9 +28,13 @@ type VillaForm = {
   flexible: boolean;
   people: number;
   baby: boolean;
-  villaId: string;
+  villaIds: string[]; // multi-sélection (obligatoire : ≥ 1, jusqu'à toutes)
   message: string;
 };
+
+// Séjour minimum en villa pendant les fêtes : 6 nuits si le séjour couvre le réveillon de Noël
+// (24/12) ou de la Saint-Sylvestre (31/12). Analogue au min hôtel (fêtes), mais 6 nuits en villa.
+const VILLA_HOLIDAY_MIN_NIGHTS = 6;
 
 const EMPTY: VillaForm = {
   firstName: "",
@@ -42,7 +47,7 @@ const EMPTY: VillaForm = {
   flexible: false,
   people: 2,
   baby: false,
-  villaId: "",
+  villaIds: [],
   message: "",
 };
 
@@ -119,7 +124,15 @@ export function VillaPage() {
     if (!EMAIL_RE.test(form.email.trim())) errs.email = t("villaForm.errEmail");
     if (!form.flexible && (!form.checkIn || !form.checkOut)) errs.dates = t("villaForm.errDates");
     else if (form.checkIn && form.checkOut && form.checkOut <= form.checkIn) errs.dates = t("villaForm.errDatesOrder");
+    else if (
+      form.checkIn &&
+      form.checkOut &&
+      (stayCoversNight(form.checkIn, form.checkOut, 12, 24) || stayCoversNight(form.checkIn, form.checkOut, 12, 31)) &&
+      nights(form.checkIn, form.checkOut) < VILLA_HOLIDAY_MIN_NIGHTS
+    )
+      errs.dates = t("villaForm.errHolidayMin");
     if (form.people < 1) errs.people = t("villaForm.errPeople");
+    if (form.villaIds.length === 0) errs.villa = t("villaForm.errVilla");
     if (form.phone && !form.phoneValid) errs.phone = t("villaForm.errPhone");
     setErrors(errs);
     if (Object.keys(errs).length) return;
@@ -134,8 +147,8 @@ export function VillaPage() {
       flexibleDates: form.flexible,
       people: form.people,
       withBaby: form.baby,
-      villaId: form.villaId || null,
-      villaName: villas.find((v) => v.id === form.villaId)?.name ?? null,
+      villaIds: form.villaIds,
+      villaNames: form.villaIds.map((id) => villas.find((v) => v.id === id)?.name).filter(Boolean),
       message: form.message.trim() || null,
       lang: getLang(),
       submittedAt: new Date().toISOString(),
@@ -240,14 +253,26 @@ export function VillaPage() {
               </Field>
             </Section>
 
-            {/* Villa souhaitée (catalogue du back-office ; masqué si indisponible) */}
+            {/* Villa(s) souhaitée(s) — OBLIGATOIRE, multi-sélection (1, plusieurs ou toutes). */}
             {villas.length > 0 && (
-            <Section title={t("villaForm.villa")}>
-              <p className="-mt-1.5 text-xs text-ink/50">{t("villaForm.villaHint")}</p>
-              <div className="grid gap-3 sm:grid-cols-3">
+            <Section title={`${t("villaForm.villa")} *`}>
+              <div className="-mt-1.5 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-ink/50">{t("villaForm.villaHint")}</p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    set({ villaIds: form.villaIds.length === villas.length ? [] : villas.map((v) => v.id) })
+                  }
+                  className="text-xs font-semibold text-turquoise underline underline-offset-2 hover:text-teal-deep"
+                >
+                  {form.villaIds.length === villas.length ? t("villaForm.villaNone") : t("villaForm.villaAll")}
+                </button>
+              </div>
+              <div className="mt-2 grid gap-3 sm:grid-cols-3">
                 {villas.map((v) => {
-                  const on = form.villaId === v.id;
-                  const toggle = () => set({ villaId: on ? "" : v.id });
+                  const on = form.villaIds.includes(v.id);
+                  const toggle = () =>
+                    set({ villaIds: on ? form.villaIds.filter((id) => id !== v.id) : [...form.villaIds, v.id] });
                   return (
                     <div
                       key={v.id}
@@ -306,6 +331,7 @@ export function VillaPage() {
                   );
                 })}
               </div>
+              {errors.villa && <p className="mt-2 text-xs font-medium text-red-600">{errors.villa}</p>}
             </Section>
             )}
 
@@ -333,9 +359,13 @@ export function VillaPage() {
         <VillaDetailDrawer
           key={openVilla.id}
           villa={openVilla}
-          selected={form.villaId === openVilla.id}
+          selected={form.villaIds.includes(openVilla.id)}
           onToggle={() => {
-            set({ villaId: form.villaId === openVilla.id ? "" : openVilla.id });
+            set({
+              villaIds: form.villaIds.includes(openVilla.id)
+                ? form.villaIds.filter((id) => id !== openVilla.id)
+                : [...form.villaIds, openVilla.id],
+            });
             setOpenVilla(null);
           }}
           onClose={() => setOpenVilla(null)}

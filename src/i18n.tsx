@@ -99,7 +99,9 @@ const DICT = {
   "villaForm.peopleHint": { fr: "Enfants de 4 ans et plus compris", en: "Children aged 4+ included" },
   "villaForm.baby": { fr: "Avec un bébé (moins de 4 ans)", en: "Travelling with a baby (under 4)" },
   "villaForm.villa": { fr: "Villa souhaitée", en: "Preferred villa" },
-  "villaForm.villaHint": { fr: "Optionnel — vous pouvez laisser notre équipe vous conseiller.", en: "Optional — our team can advise you." },
+  "villaForm.villaHint": { fr: "Sélectionnez une ou plusieurs villas (ou toutes).", en: "Select one or more villas (or all)." },
+  "villaForm.villaAll": { fr: "Tout sélectionner", en: "Select all" },
+  "villaForm.villaNone": { fr: "Tout désélectionner", en: "Clear all" },
   "villaForm.villaCapacity": { fr: (p) => `Jusqu'à ${p.count} pers.`, en: (p) => `Up to ${p.count} guests` },
   "villaForm.villaDetails": { fr: "Détails", en: "Details" },
   "villaForm.villaChosen": { fr: "Choisie", en: "Selected" },
@@ -120,6 +122,11 @@ const DICT = {
   "villaForm.errDates": { fr: "Indiquez vos dates, ou cochez « dates flexibles ».", en: "Enter your dates, or tick “flexible dates”." },
   "villaForm.errDatesOrder": { fr: "Le départ doit être après l'arrivée.", en: "Check-out must be after check-in." },
   "villaForm.errPeople": { fr: "Au moins 1 personne.", en: "At least 1 guest." },
+  "villaForm.errVilla": { fr: "Sélectionnez au moins une villa.", en: "Select at least one villa." },
+  "villaForm.errHolidayMin": {
+    fr: "Pendant les fêtes (séjour couvrant le 24/12 ou le 31/12), un minimum de 6 nuits est demandé en villa.",
+    en: "During the holidays (stay covering 24/12 or 31/12), a minimum 6-night stay is required for villas.",
+  },
   "villaForm.errPhone": { fr: "Numéro de téléphone invalide.", en: "Invalid phone number." },
   "villaForm.successTitle": { fr: "Demande envoyée, merci !", en: "Request sent — thank you!" },
   "villaForm.successBody": {

@@ -27,6 +27,9 @@ const str = (v: unknown, max = 500): string | null => {
   return s ? s.slice(0, max) : null;
 };
 const isoDate = (v: unknown): string | null => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+// Liste de chaînes bornée (multi-sélection villas).
+const strArr = (v: unknown, max = 500, maxItems = 20): string[] =>
+  Array.isArray(v) ? (v.map((x) => str(x, max)).filter((x): x is string => !!x) as string[]).slice(0, maxItems) : [];
 
 // Attribution marketing : mappe l'objet `utm` du front (utm_*, gclid, fbclid) vers les
 // colonnes de la table (mêmes colonnes que `carts`). Best-effort, valeurs bornées.
@@ -55,6 +58,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
   if (b.stage === "demande") {
     const email = str(b.email, 200);
     if (!email || !EMAIL_RE.test(email)) return bad("invalid_email");
+    const villaIds = strArr(b.villaIds, 64);
+    const villaNames = strArr(b.villaNames, 200);
     const lead = {
       session_id: sessionId,
       first_name: str(b.firstName, 100),
@@ -66,8 +71,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUnti
       flexible_dates: !!b.flexibleDates,
       people: clampInt(b.people, 1, 99, 1),
       with_baby: !!b.withBaby,
-      villa_id: str(b.villaId, 64),
-      villa_name: str(b.villaName, 200),
+      // Multi-sélection villas : `villa_ids` = liste structurée ; `villa_name` = liste lisible
+      // (jointe) → back-compat dashboard + e-mails n8n qui lisent déjà `villa_name`. `villa_id` =
+      // 1er id (compat). Repli sur les anciens champs mono-villa si le front ne poste pas d'array.
+      villa_ids: villaIds.length ? villaIds : null,
+      villa_id: villaIds[0] ?? str(b.villaId, 64),
+      villa_name: villaNames.length ? villaNames.join(", ") : str(b.villaName, 200),
       message: str(b.message, 4000),
       lang: str(b.lang, 8),
       ...utmCols(b),
