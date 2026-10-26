@@ -93,12 +93,12 @@ export function Results() {
     [allRooms, properties],
   );
 
-  // Combos 2 chambres : proposés dès que le groupe fait ≥ 5 pers (≥ 2 adultes), EN ALTERNATIVE
+  // Combos 2 chambres : proposés dès que le groupe fait ≥ 4 pers (≥ 2 adultes), EN ALTERNATIVE
   // aux chambres seules (et seule option quand aucune chambre n'accueille tout le groupe). On
   // refait 1-2 appels dispo à la demi-occupation → prix exact par chambre.
   useEffect(() => {
     const guests = adults + children;
-    if (loading || error || !data || guests < 5) {
+    if (loading || error || !data || guests < 4) {
       setCombos(null);
       return;
     }
